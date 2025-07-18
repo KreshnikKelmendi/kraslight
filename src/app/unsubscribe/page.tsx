@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { FaEnvelope, FaCheck, FaTimes } from 'react-icons/fa';
+import Link from 'next/link';
 
 const UnsubscribePage = () => {
   const searchParams = useSearchParams();
@@ -79,12 +80,12 @@ const UnsubscribePage = () => {
 
           {/* Actions */}
           <div className="space-y-3">
-            <a
+            <Link
               href="/"
               className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
             >
               Kthehu në Ballina
-            </a>
+            </Link>
             
             {status === 'success' && (
               <p className="text-sm text-gray-500">

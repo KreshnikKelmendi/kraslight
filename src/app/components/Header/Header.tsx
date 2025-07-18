@@ -65,7 +65,7 @@ const Header = () => {
       clearInterval(brendshemInterval);
       clearInterval(jashtemInterval);
     };
-  }, []);
+  }, [ndricimBrendshemImages.length, ndricimJashtemImages.length]);
 
   // Handle scroll effect
   useEffect(() => {
@@ -126,22 +126,7 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Image carousel functions
-  const nextSlide = (type: 'brendshem' | 'jashtem') => {
-    if (type === 'brendshem') {
-      setCurrentBrendshemSlide((prev) => (prev + 1) % ndricimBrendshemImages.length);
-    } else {
-      setCurrentJashtemSlide((prev) => (prev + 1) % ndricimJashtemImages.length);
-    }
-  };
-
-  const prevSlide = (type: 'brendshem' | 'jashtem') => {
-    if (type === 'brendshem') {
-      setCurrentBrendshemSlide((prev) => (prev - 1 + ndricimBrendshemImages.length) % ndricimBrendshemImages.length);
-    } else {
-      setCurrentJashtemSlide((prev) => (prev - 1 + ndricimJashtemImages.length) % ndricimJashtemImages.length);
-    }
-  };
+  // Removed unused nextSlide and prevSlide
 
   return (
     <header className={`sticky top-0 left-0 right-0 z-40 transition-all duration-300 ${
@@ -258,7 +243,7 @@ const Header = () => {
                             <Link
                               key={index}
                               href={getBrandUrl(brand)}
-                              onClick={e => { scrollToTop(); handleBrandClick(); }}
+                              onClick={scrollToTop}
                               className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
                             >
                               <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{brand.name}</span>
@@ -348,7 +333,7 @@ const Header = () => {
                               </div>
                               <Link 
                                 href="/collections/685ffbb0bf9f854bf7948a02" 
-                                onClick={e => { scrollToTop(); handleLightingClick(); }}
+                                onClick={scrollToTop}
                                 className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200 shadow-sm"
                               >
                                 Shiko Produktet
@@ -400,7 +385,7 @@ const Header = () => {
                               </div>
                               <Link 
                                 href="/collections/68601f21bf9f854bf7948a47" 
-                                onClick={e => { scrollToTop(); handleLightingClick(); }}
+                                onClick={scrollToTop}
                                 className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200 shadow-sm"
                               >
                                 Shiko Produktet
@@ -528,7 +513,7 @@ const Header = () => {
             </div>
             <div className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-6">
-                <Link href="/" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={e => { scrollToTop(); setIsMobileMenuOpen(false); }}>
+                <Link href="/" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={scrollToTop}>
                   BALLINA
                 </Link>
                 {/* Brands dropdown in mobile menu */}
@@ -554,7 +539,7 @@ const Header = () => {
                             <Link
                               key={index}
                               href={getBrandUrl(brand)}
-                              onClick={e => { scrollToTop(); handleBrandClick(); setIsMobileMenuOpen(false); }}
+                              onClick={scrollToTop}
                               className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
                             >
                               <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{brand.name}</span>
@@ -624,7 +609,7 @@ const Header = () => {
                               </div>
                               <Link 
                                 href="/collections/685ffbb0bf9f854bf7948a02" 
-                                onClick={e => { scrollToTop(); handleLightingClick(); setIsMobileMenuOpen(false); }}
+                                onClick={scrollToTop}
                                 className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200"
                               >
                                 Shiko
@@ -677,7 +662,7 @@ const Header = () => {
                               </div>
                               <Link 
                                 href="/collections/68601f21bf9f854bf7948a47" 
-                                onClick={e => { scrollToTop(); handleLightingClick(); setIsMobileMenuOpen(false); }}
+                                onClick={scrollToTop}
                                 className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200"
                               >
                                 Shiko
@@ -689,10 +674,10 @@ const Header = () => {
                     </div>
                   </div>
                 </div>
-                <Link href="/collections/materiale-elektrike" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={e => { scrollToTop(); setIsMobileMenuOpen(false); }}>
+                <Link href="/collections/materiale-elektrike" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={scrollToTop}>
                   MATERIALE ELEKTRIKE
                 </Link>
-                <Link href="/shop/new-arrivals" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={e => { scrollToTop(); setIsMobileMenuOpen(false); }}>
+                <Link href="/shop/new-arrivals" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={scrollToTop}>
                   <span className="flex items-center gap-3">
                     ARRITJET E REJA
                     <span className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-xs px-2 py-1 font-bold">NEW</span>

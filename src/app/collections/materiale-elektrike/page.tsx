@@ -59,8 +59,12 @@ export default function MaterialeElektrikePage() {
           setMaxAvailablePrice(maxPrice);
           setPriceRange([minPrice, maxPrice]);
         }
-      } catch (err: any) {
-        setError(err.message || 'Gabim gjatë marrjes së produkteve');
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+          setError((err as any).message);
+        } else {
+          setError('Gabim gjatë marrjes së produkteve');
+        }
       } finally {
         setLoading(false);
       }
@@ -78,7 +82,7 @@ export default function MaterialeElektrikePage() {
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter((product: Product) => {
+    const filtered = products.filter((product: Product) => {
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
       const matchesBrand = filters.brands.length === 0 || filters.brands.includes(product.brand || '');
       const matchesSubcategory = filters.subcategories.length === 0 || filters.subcategories.includes(product.subcategory || '');

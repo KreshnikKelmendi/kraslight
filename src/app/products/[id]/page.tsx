@@ -123,8 +123,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const thumbnailImages = productImages.filter(img => img !== currentImage);
 
   // Fallback handler for broken images
-  const handleImageError = (e: any) => {
-    e.target.src = '/images/placeholder.jpg';
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = '/images/placeholder.jpg';
   };
 
   // Check if add to cart button should be enabled
@@ -154,11 +154,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <div className="space-y-3 sm:space-y-6">
             {/* Main Image */}
             <div className="relative aspect-square w-full max-w-xs sm:max-w-full mx-auto overflow-hidden bg-gray-50">
-              <img
+              <Image
                 src={currentImage}
                 alt={product.title}
                 className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                 onError={handleImageError}
+                width={600}
+                height={600}
+                unoptimized
               />
               {/* Discount Badge */}
               {product.discountPercentage && (
@@ -186,11 +189,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                         : 'hover:ring-1 hover:ring-gray-300'
                     }`}
                   >
-                    <img
+                    <Image
                       src={image}
                       alt={`${product.title} - Image ${index + 1}`}
                       className="object-cover w-full h-full"
                       onError={handleImageError}
+                      width={100}
+                      height={100}
+                      unoptimized
                     />
                   </button>
                 ))}

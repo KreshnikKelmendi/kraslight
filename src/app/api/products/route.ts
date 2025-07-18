@@ -3,23 +3,6 @@ import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
 import { Document, Types } from 'mongoose';
 
-interface IProduct extends Document {
-  _id: Types.ObjectId;
-  title: string;
-  price: number;
-  originalPrice: number;
-  discountPercentage: number;
-  image: string;
-  stock: number;
-  brand: string;
-  sizes: string;
-  gender: string;
-  category: string;
-  isNewArrival?: boolean;
-  __v: number;
-  createdAt: Date;
-}
-
 export async function GET(request: Request) {
   try {
     await connectToDB();
@@ -31,7 +14,7 @@ export async function GET(request: Request) {
     const adminView = searchParams.get('admin') === 'true';
     
     // Build query object
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (gender && ['Meshkuj', 'Femra'].includes(gender)) {
       query.gender = gender;
     }

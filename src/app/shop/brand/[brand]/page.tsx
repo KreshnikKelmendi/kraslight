@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { FaTimes, FaFilter, FaChevronRight, FaSearch, FaTimesCircle, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
+import { FaTimes, FaFilter, FaSearch, FaTimesCircle } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Product {
   _id: string;
@@ -49,7 +49,6 @@ export default function BrandPage() {
   });
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
@@ -130,10 +129,6 @@ export default function BrandPage() {
       const categories = Array.from(new Set(data.map((p: Product) => p.category).filter(Boolean)));
       setAvailableCategories(categories as string[]);
       
-      // Extract unique brands
-      const brands = Array.from(new Set(data.map((p: Product) => p.brand).filter(Boolean)));
-      setAvailableBrands(brands as string[]);
-      
       // Extract unique subcategories
       const subcategories = Array.from(new Set(data.map((p: Product) => p.subcategory).filter(Boolean)));
       setAvailableSubcategories(subcategories as string[]);
@@ -157,33 +152,12 @@ export default function BrandPage() {
     }
   }
 
-  const handleTypeFilter = (type: string | null) => {
-    setFilters(prev => ({ ...prev, type }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handlePriceFilter = (type: 'min' | 'max', value: string) => {
-    const numValue = value === '' ? null : Number(value);
-    setFilters(prev => ({ ...prev, [type === 'min' ? 'minPrice' : 'maxPrice']: numValue }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleCategoryFilter = (category: string) => {
     setFilters(prev => ({
       ...prev,
       categories: prev.categories.includes(category)
         ? prev.categories.filter(c => c !== category)
         : [...prev.categories, category]
-    }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleBrandFilter = (brand: string) => {
-    setFilters(prev => ({
-      ...prev,
-      brands: prev.brands.includes(brand)
-        ? prev.brands.filter(b => b !== brand)
-        : [...prev.brands, brand]
     }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -212,7 +186,7 @@ export default function BrandPage() {
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter(product => {
+    const filtered = products.filter(product => {
       const matchesType = !filters.type || product.category === filters.type;
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
       const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);

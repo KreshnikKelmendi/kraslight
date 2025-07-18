@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     console.log('Testing email configuration...');
     

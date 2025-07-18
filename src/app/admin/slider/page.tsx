@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '../../lib/AuthContext';
-import { FaLink, FaLayerGroup, FaTags, FaSave, FaEdit, FaCheck } from 'react-icons/fa';
+import { FaSave, FaEdit, FaCheck } from 'react-icons/fa';
 
 interface Slide {
   image: string;
@@ -21,12 +21,9 @@ interface Slider {
 export default function SliderAdmin() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const [slider, setSlider] = useState<Slider | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [collections, setCollections] = useState<{ _id: string; name: string }[]>([]);
-  const [showCollectionDropdown, setShowCollectionDropdown] = useState<number | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState<number | null>(null);
@@ -48,7 +45,6 @@ export default function SliderAdmin() {
           const sliderRes = await fetch('/api/sliders');
           if (sliderRes.ok) {
             const sliderData = await sliderRes.json();
-            setSlider(sliderData);
             setSlides(sliderData.slides || []);
           }
         } catch (err) {
@@ -68,8 +64,8 @@ export default function SliderAdmin() {
       try {
         const res = await fetch('/api/collections');
         const data = await res.json();
-        setCollections(data.map((c: any) => ({ _id: c._id, name: c.name })));
-      } catch (err) {
+        // setCollections(data.map((c: { _id: string; name: string }) => ({ _id: c._id, name: c.name })));
+      } catch {
         // ignore error
       }
     };
@@ -80,11 +76,11 @@ export default function SliderAdmin() {
       try {
         const res = await fetch('/api/products');
         const data = await res.json();
-        const uniqueCategories = Array.from(new Set(data.map((p: any) => p.category).filter((c: unknown): c is string => typeof c === 'string' && !!c)));
-        const uniqueBrands = Array.from(new Set(data.map((p: any) => p.brand).filter((b: unknown): b is string => typeof b === 'string' && !!b)));
-        setCategories(uniqueCategories as string[]);
-        setBrands(uniqueBrands as string[]);
-      } catch (err) {
+        const uniqueCategories = Array.from(new Set(data.map((p: { category: string }) => p.category).filter((c: string): c is string => typeof c === 'string' && !!c))) as string[];
+        const uniqueBrands = Array.from(new Set(data.map((p: { brand: string }) => p.brand).filter((b: string): b is string => typeof b === 'string' && !!b))) as string[];
+        setCategories(uniqueCategories);
+        setBrands(uniqueBrands);
+      } catch {
         // ignore error
       }
     };
@@ -123,8 +119,8 @@ export default function SliderAdmin() {
         image: data.path
       };
       setSlides(newSlides);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload image');
+    } catch {
+      setError('Failed to upload image');
     }
   };
 
@@ -176,8 +172,8 @@ export default function SliderAdmin() {
 
       router.refresh();
       alert('Slider saved successfully!');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save slider');
+    } catch {
+      setError('Failed to save slider');
     }
   };
 
@@ -349,7 +345,6 @@ export default function SliderAdmin() {
                               className={`px-4 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-200 hover:bg-gray-200 transition-colors text-sm font-medium ${showCategoryDropdown === index ? 'ring-2 ring-gray-300' : ''}`}
                               onClick={isEditing ? () => {
                                 setShowCategoryDropdown(showCategoryDropdown === index ? null : index);
-                                setShowCollectionDropdown(null);
                                 setShowBrandDropdown(null);
                               } : undefined}
                               disabled={!isEditing}
@@ -361,7 +356,6 @@ export default function SliderAdmin() {
                               className={`px-4 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-200 hover:bg-gray-200 transition-colors text-sm font-medium ${showBrandDropdown === index ? 'ring-2 ring-gray-300' : ''}`}
                               onClick={isEditing ? () => {
                                 setShowBrandDropdown(showBrandDropdown === index ? null : index);
-                                setShowCollectionDropdown(null);
                                 setShowCategoryDropdown(null);
                               } : undefined}
                               disabled={!isEditing}

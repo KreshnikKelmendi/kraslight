@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
 import path from 'path';
-import { writeFile, unlink } from 'fs/promises';
+import { writeFile } from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function DELETE(
@@ -127,13 +127,13 @@ export async function PUT(
     // Handle characteristics
     if (characteristics) {
       try {
-        const characteristicsArray = JSON.parse(characteristics);
-        const filteredCharacteristics = characteristicsArray.filter((char: any) => 
+        const characteristicsArray = JSON.parse(characteristics) as { key: string; value: string }[];
+        const filteredCharacteristics = characteristicsArray.filter((char) => 
           char.key && char.value && char.key.trim() !== '' && char.value.trim() !== ''
         );
         // Clear and rebuild the characteristics array
         product.characteristics.splice(0, product.characteristics.length);
-        filteredCharacteristics.forEach((char: any) => {
+        filteredCharacteristics.forEach((char) => {
           product.characteristics.push({ key: char.key, value: char.value });
         });
         product.markModified('characteristics');

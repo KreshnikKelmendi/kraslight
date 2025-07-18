@@ -74,8 +74,12 @@ export default function Main() {
           slides: validSlides
         });
         setError(null);
-      } catch (err: any) {
-        console.error('Error fetching slider:', err);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+          console.error('Error fetching slider:', (err as any).message);
+        } else {
+          console.error('Error fetching slider:', err);
+        }
         setSlider({
           _id: 'error',
           slides: []
@@ -105,10 +109,7 @@ export default function Main() {
     setCurrentSlide((prev) => (prev + 1) % slider.slides.length);
   };
 
-  const prevSlide = () => {
-    if (!slider?.slides?.length) return;
-    setCurrentSlide((prev) => (prev - 1 + slider.slides.length) % slider.slides.length);
-  };
+  // Removed unused prevSlide
 
   const currentSlideContent = slider?.slides[currentSlide];
 

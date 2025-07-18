@@ -34,7 +34,7 @@ interface TotalLook {
 export default function TotalLookShowcase() {
   const [looks, setLooks] = useState<TotalLook[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openLookId, setOpenLookId] = useState<string | null>(null);
+  const [openLookId] = useState<string | null>(null);
   const [selectedLook, setSelectedLook] = useState<TotalLook | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

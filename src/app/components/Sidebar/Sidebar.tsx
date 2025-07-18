@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { FaGrin } from 'react-icons/fa';
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const router = useRouter();
 
   const handleSignOut = () => {

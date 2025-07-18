@@ -44,7 +44,7 @@ const Footer = () => {
         setMessage(data.error || 'Gabim gjatë abonimit');
         setMessageType('error');
       }
-    } catch (error) {
+    } catch {
       setMessage('Gabim i lidhjes me serverin');
       setMessageType('error');
     } finally {

@@ -167,7 +167,7 @@ export default function TotalLookAdminPage() {
       } else {
         showErrorAlert(isEditing ? "❌ Gabim gjatë përditësimit të ShopLook!" : "❌ Gabim gjatë shtimit të ShopLook!");
       }
-    } catch (error) {
+    } catch {
       showErrorAlert(isEditing ? "❌ Gabim gjatë përditësimit të ShopLook!" : "❌ Gabim gjatë shtimit të ShopLook!");
     } finally {
       setLoading(false);
@@ -413,7 +413,7 @@ export default function TotalLookAdminPage() {
                         } else {
                           showErrorAlert("❌ Gabim gjatë fshirjes së ShopLook!");
                         }
-                      } catch (error) {
+                      } catch {
                         showErrorAlert("❌ Gabim gjatë fshirjes së ShopLook!");
                       }
                     }

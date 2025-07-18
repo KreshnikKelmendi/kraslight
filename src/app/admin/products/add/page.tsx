@@ -38,7 +38,6 @@ export default function AddProduct() {
   // Cleanup preview URLs when component unmounts or when images are removed
   useEffect(() => {
     return () => {
-      // Cleanup preview URLs when component unmounts
       previewUrls.forEach(url => {
         if (url.startsWith('blob:')) {
           URL.revokeObjectURL(url);
@@ -48,7 +47,7 @@ export default function AddProduct() {
         URL.revokeObjectURL(brandLogoPreview);
       }
     };
-  }, []);
+  }, [previewUrls, brandLogoPreview]);
 
   // Auto-close modal after 1500ms
   useEffect(() => {

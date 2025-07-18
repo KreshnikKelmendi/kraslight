@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import { FaTimes, FaFilter, FaSort } from 'react-icons/fa';
-import Link from 'next/link';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -38,7 +36,6 @@ interface Filters {
 }
 
 export default function BagsPage() {
-  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,12 +222,6 @@ export default function BagsPage() {
     setSortBy('default');
   };
 
-  function getValidImage(...candidates: (string | undefined)[]) {
-    return candidates.find(
-      (img) => typeof img === 'string' && img.trim().length > 1
-    ) || '/images/placeholder.jpg';
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
@@ -380,7 +371,7 @@ export default function BagsPage() {
               <div className="relative flex-1 lg:flex-none">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'default' | 'price-low' | 'price-high' | 'name')}
                   className="w-full lg:w-auto appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 font-bwseidoround"
                 >
                   <option value="default">Rendit sipas</option>

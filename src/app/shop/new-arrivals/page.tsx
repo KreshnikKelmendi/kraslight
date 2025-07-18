@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import { FaTimes, FaFilter, FaSort } from 'react-icons/fa';
-import Link from 'next/link';
+import { FaTimes, FaFilter } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Product {
   id?: string;
@@ -37,7 +35,6 @@ interface Filters {
 }
 
 export default function NewArrivalsPage() {
-  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +50,6 @@ export default function NewArrivalsPage() {
   const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high' | 'name'>('default');
   const [productCount, setProductCount] = useState(0);
   const [brandCount, setBrandCount] = useState(0);
-  const [currentSlide, setCurrentSlide] = useState(0);
   // Add a new state for filter loading
   const [filterLoading, setFilterLoading] = useState(false);
 
@@ -70,7 +66,7 @@ export default function NewArrivalsPage() {
   // Auto-slide effect - fast changing
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prevSlide) => (prevSlide + 1) % sliderImages.length);
+      // setCurrentSlide((prevSlide) => (prevSlide + 1) % sliderImages.length); // This line was removed
     }, 1500); // 1.5 seconds for fast changing
 
     return () => clearInterval(interval);
@@ -221,11 +217,6 @@ export default function NewArrivalsPage() {
 
 
 
-  const handlePriceFilter = (type: 'min' | 'max', value: string) => {
-    const numValue = value === '' ? null : Number(value);
-    setFilters(prev => ({ ...prev, [type === 'min' ? 'minPrice' : 'maxPrice']: numValue }));
-  };
-
   const handleBrandFilter = (brand: string) => {
     setFilters(prev => ({
       ...prev,
@@ -253,15 +244,6 @@ export default function NewArrivalsPage() {
       mainCategories: [],
     });
   };
-
-  function getValidImage(...candidates: (string | undefined)[]) {
-    for (const candidate of candidates) {
-      if (candidate && candidate.trim() !== '') {
-        return candidate;
-      }
-    }
-    return '/images/placeholder.jpg';
-  }
 
   if (loading) {
     return (
@@ -629,7 +611,7 @@ export default function NewArrivalsPage() {
                 <span className="text-sm font-medium text-gray-700">Rendit:</span>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'default' | 'price-low' | 'price-high' | 'name')}
                   className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-white"
                 >
                   <option value="default">Rendit sipas</option>

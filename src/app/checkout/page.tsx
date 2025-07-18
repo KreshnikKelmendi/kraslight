@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../lib/store';
 import { clearCart } from '../../lib/cartSlice';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function CheckoutPage() {
   const cart = useSelector((state: RootState) => state.cart.items);
@@ -69,7 +70,7 @@ export default function CheckoutPage() {
       setSuccess(true);
       dispatch(clearCart());
       setTimeout(() => router.push('/'), 2500);
-    } catch (err) {
+    } catch {
       setError('Failed to place order');
     } finally {
       setLoading(false);
@@ -311,7 +312,7 @@ export default function CheckoutPage() {
                 {cart.map(item => (
                   <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
                     {item.image && (
-                      <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg border flex-shrink-0" />
+                      <Image src={item.image} alt={item.name} width={64} height={64} className="w-16 h-16 object-cover rounded-lg border flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-gray-900 mb-1 truncate">{item.name}</h4>

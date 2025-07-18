@@ -1,5 +1,5 @@
 'use client';
-// import Image from 'next/image';
+import Image from 'next/image';
 import { motion, useInView } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
@@ -15,15 +15,12 @@ const sliderImages = [
 
 const SecondBanner = () => {
   const [current, setCurrent] = useState(0);
-  const [isGrayscale, setIsGrayscale] = useState(false);
   const textRef = useRef(null);
   const isInView = useInView(textRef, { once: true, amount: 0.3 });
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % sliderImages.length);
-      // Toggle grayscale effect every 2 slides
-      setIsGrayscale((prev) => !prev);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -47,10 +44,11 @@ const SecondBanner = () => {
         {/* Small Left Image Slider */}
         <div className="flex-shrink-0 w-20 h-28 md:w-36 2xl:w-52 md:h-full relative overflow-hidden shadow-md">
           {sliderImages.map((img, idx) => (
-            <img
+            <Image
               key={img}
               src={img}
               alt={`Slider ${idx + 1}`}
+              fill
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${idx === current ? 'opacity-100' : 'opacity-0'}`}
               style={{ zIndex: idx === current ? 2 : 1 }}
             />
@@ -76,7 +74,7 @@ const SecondBanner = () => {
             animate={isInView ? "visible" : "hidden"}
             className="block text-3xl lg:text-7xl text-gray-400 font-bwseidoround leading-tight"
           >
-            It's the perfect
+            It&apos;s the perfect
           </motion.span>
           <motion.span 
             custom={1}

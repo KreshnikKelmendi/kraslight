@@ -165,7 +165,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
     // Append existing images that weren't removed
     const existingImages = product?.images || [];
-    existingImages.forEach((image, index) => {
+    existingImages.forEach((image) => {
       if (previewUrls.includes(image)) {
         formData.append('existingImages', image);
       }

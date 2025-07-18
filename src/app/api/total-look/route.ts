@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { TotalLook } from '../../models/TotalLook';
-import { Product } from '../../models/Product';
 import { connectToDB } from '../../lib/mongodb';
 
 export async function GET() {

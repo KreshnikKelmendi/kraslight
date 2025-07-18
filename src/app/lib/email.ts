@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import type { Order, OrderItem } from '../types/order';
 
 // Helper function to get the correct image URL for emails
 function getEmailImageUrl(imagePath: string, productName: string): string {
@@ -13,7 +14,7 @@ function getEmailImageUrl(imagePath: string, productName: string): string {
 }
 
 // Send confirmation email to customer
-export async function sendOrderConfirmationToCustomer(order: any) {
+export async function sendOrderConfirmationToCustomer(order: Order) {
   try {
     console.log('Sending confirmation email to customer:', order.email);
     
@@ -33,7 +34,7 @@ export async function sendOrderConfirmationToCustomer(order: any) {
     });
 
     // Prepare order details for the email
-    const itemsList = order.items.map((item: any) => {
+    const itemsList = order.items.map((item: OrderItem) => {
       const imageUrl = getEmailImageUrl(item.image || '', item.name);
       
       return `
@@ -202,7 +203,7 @@ export async function sendOrderConfirmationToCustomer(order: any) {
   }
 }
 
-export async function sendOrderNotification(order: any) {
+export async function sendOrderNotification(order: Order) {
   try {
     console.log('Starting email notification process...');
     
@@ -237,7 +238,7 @@ export async function sendOrderNotification(order: any) {
     console.log('Gmail connection verified successfully');
 
     // Prepare order details for the email
-    const itemsList = order.items.map((item: any) => {
+    const itemsList = order.items.map((item: OrderItem) => {
       const imageUrl = getEmailImageUrl(item.image || '', item.name);
       
       console.log('Product image debug:', {
@@ -436,7 +437,7 @@ export async function sendOrderNotification(order: any) {
 }
 
 // Send order status update email to customer
-export async function sendOrderStatusUpdateEmail(order: any, oldStatus: string, newStatus: string) {
+export async function sendOrderStatusUpdateEmail(order: Order, oldStatus: string, newStatus: string) {
   try {
     console.log('=== STATUS UPDATE EMAIL FUNCTION START ===');
     console.log('Function parameters:', {

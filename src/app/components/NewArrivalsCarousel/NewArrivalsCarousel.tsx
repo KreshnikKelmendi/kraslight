@@ -5,9 +5,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import Link from 'next/link';
+import Image from 'next/image';
 
 /* Add global CSS for the zoom-in-special animation */
-// @ts-ignore
 <style jsx global>{`
   .zoom-in-special {
     opacity: 1 !important;
@@ -54,9 +54,7 @@ interface Product {
 const NewArrivalsCarousel: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  // Removed unused: currentIndex, isAutoPlaying, carouselRef
   const [isMobile, setIsMobile] = useState(false);
   const { ref: sectionRef, inView: titleInView } = useInView({ threshold: 0.3, triggerOnce: true });
 
@@ -90,36 +88,7 @@ const NewArrivalsCarousel: React.FC = () => {
     fetchNewArrivals();
   }, []);
 
-  // Auto-play functionality
-  useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-
-    const interval = setInterval(() => {
-      // Move by 1 product at a time
-      const maxIndex = Math.max(0, products.length - (isMobile ? 2 : 3));
-      setCurrentIndex((prevIndex) => (prevIndex + 1) > maxIndex ? 0 : prevIndex + 1);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length, isMobile]);
-
-  // Pause auto-play on hover
-  const handleMouseEnter = () => setIsAutoPlaying(false);
-  const handleMouseLeave = () => setIsAutoPlaying(true);
-
-  const nextSlide = () => {
-    // Move by 1 product at a time
-    const numVisible = isMobile ? 2 : 3;
-    const maxIndex = Math.max(0, products.length - numVisible);
-    setCurrentIndex((prevIndex) => prevIndex >= maxIndex ? 0 : prevIndex + 1);
-  };
-
-  const prevSlide = () => {
-    // Move by 1 product at a time
-    const numVisible = isMobile ? 2 : 3;
-    const maxIndex = Math.max(0, products.length - numVisible);
-    setCurrentIndex((prevIndex) => prevIndex <= 0 ? maxIndex : prevIndex - 1);
-  };
+  // Removed all auto-play and slide logic; static grid only
 
   if (loading) {
     return (
@@ -222,15 +191,14 @@ const NewArrivalsCarousel: React.FC = () => {
             >
               {/* Products Grid */}
               <div className="grid grid-cols-3 gap-2">
-                {visibleProducts.map((product, index) => (
-                  <div
-                    key={product._id}
-                    className="flex items-center justify-center"
-                  >
+                {visibleProducts.map((product) => (
+                  <div key={product._id} className="flex items-center justify-center">
                     <Link href={`/products/${product._id}`} className="group relative w-full h-full">
-                      <img
+                      <Image
                         src={product.mainImage || product.image || (product.images && product.images[0]) || '/public/images/placeholder.jpg'}
                         alt={product.title}
+                        width={200}
+                        height={200}
                         className="aspect-square w-full h-auto object-cover shadow-md hover:shadow-xl transition-transform duration-300 hover:scale-105 cursor-pointer"
                       />
                       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

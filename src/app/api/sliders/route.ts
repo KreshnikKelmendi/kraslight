@@ -16,16 +16,6 @@ function isValidSlide(slide: unknown): slide is ISlide {
   );
 }
 
-// Helper function to validate URLs
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function GET() {
   try {
     await connectToDB();

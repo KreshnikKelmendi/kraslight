@@ -55,7 +55,6 @@ export default function CollectionPage() {
     subcategories: [],
   });
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -85,7 +84,7 @@ export default function CollectionPage() {
       
       // Extract unique categories
       const categories = Array.from(new Set(data.products.map((p: Product) => p.category).filter(Boolean)));
-      setAvailableCategories(categories as string[]);
+      // setAvailableCategories(categories as string[]); // Removed as per edit hint
       
       // Extract unique brands
       const brands = Array.from(new Set(data.products.map((p: Product) => p.brand).filter(Boolean)));
@@ -114,26 +113,7 @@ export default function CollectionPage() {
     }
   }
 
-  const handleTypeFilter = (type: string | null) => {
-    setFilters(prev => ({ ...prev, type }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handlePriceFilter = (type: 'min' | 'max', value: string) => {
-    const numValue = value === '' ? null : Number(value);
-    setFilters(prev => ({ ...prev, [type === 'min' ? 'minPrice' : 'maxPrice']: numValue }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCategoryFilter = (category: string) => {
-    setFilters(prev => ({
-      ...prev,
-      categories: prev.categories.includes(category)
-        ? prev.categories.filter(c => c !== category)
-        : [...prev.categories, category]
-    }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // Removed handleTypeFilter, handlePriceFilter, handleCategoryFilter
 
   const handleBrandFilter = (brand: string) => {
     setFilters(prev => ({
@@ -171,7 +151,7 @@ export default function CollectionPage() {
   const filteredAndSortedProducts = useMemo(() => {
     if (!collection) return [];
     
-    let filtered = collection.products.filter(product => {
+    const filtered = collection.products.filter(product => {
       const matchesType = !filters.type || product.category === filters.type;
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
       const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaEnvelope, FaUsers, FaTrash, FaEye } from 'react-icons/fa';
+import { FaEnvelope, FaUsers, FaEye } from 'react-icons/fa';
 
 interface Subscriber {
   _id: string;
@@ -38,7 +38,7 @@ const SubscribersPage = () => {
         setMessage('Gabim gjatë marrjes së abonuesve');
         setMessageType('error');
       }
-    } catch (error) {
+    } catch {
       setMessage('Gabim i lidhjes me serverin');
       setMessageType('error');
     } finally {
@@ -79,7 +79,7 @@ const SubscribersPage = () => {
         setMessage(data.error || 'Gabim gjatë dërgimit të email-it');
         setMessageType('error');
       }
-    } catch (error) {
+    } catch {
       setMessage('Gabim i lidhjes me serverin');
       setMessageType('error');
     } finally {

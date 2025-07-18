@@ -162,7 +162,7 @@ export default function CollectionsAdminPage() {
       } else {
         showErrorAlert("❌ Gabim gjatë shtimit të koleksionit!");
       }
-    } catch (error) {
+    } catch {
       showErrorAlert("❌ Gabim gjatë shtimit të koleksionit!");
     } finally {
       setLoading(false);
@@ -256,7 +256,7 @@ export default function CollectionsAdminPage() {
       } else {
         showErrorAlert("❌ Gabim gjatë përditësimit të koleksionit!");
       }
-    } catch (error) {
+    } catch {
       showErrorAlert("❌ Gabim gjatë përditësimit të koleksionit!");
     } finally {
       setEditLoading(false);
@@ -694,7 +694,7 @@ export default function CollectionsAdminPage() {
                           } else {
                             showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
                           }
-                        } catch (error) {
+                        } catch {
                           showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
                         }
                       }

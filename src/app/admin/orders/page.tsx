@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-// @ts-ignore
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import logo from '@/public/assets/logo/adidas-logo.png';
-import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineCalendar, HiOutlineUser, HiOutlineEnvelope, HiOutlinePhone, HiOutlineMapPin, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle } from 'react-icons/hi2';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PDFImage } from '@react-pdf/renderer';
+import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle } from 'react-icons/hi2';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
+import NextImage from 'next/image';
 
 interface OrderItem {
   id: string;
@@ -134,7 +133,7 @@ const InvoicePDFDocument: React.FC<InvoicePDFDocumentProps> = ({ order }) => (
   <Document>
     <Page size="A4" style={pdfStyles.body}>
       <View style={pdfStyles.header}>
-        <Image src="/assets/logo/adidas-logo.png" style={pdfStyles.logo} />
+        <PDFImage src="/assets/logo/adidas-logo.png" style={pdfStyles.logo} />
         <View style={pdfStyles.headerText}>
           <Text style={pdfStyles.title}>Runway Shop</Text>
           <Text style={pdfStyles.subtitle}>www.runwayshop.com</Text>
@@ -231,7 +230,6 @@ export default function OrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  // Check authentication on mount
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/signin');
@@ -294,7 +292,7 @@ export default function OrdersPage() {
           const data = await res.json();
           setOrders(data);
           setFilteredOrders(data);
-        } catch (err) {
+        } catch {
           setError('Nuk mund të ngarkohen porositë');
         } finally {
           setLoading(false);
@@ -526,8 +524,6 @@ export default function OrdersPage() {
         {!loading && !error && filteredOrders.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredOrders.map((order) => {
-              const itemsTotal = calculateItemsTotal(order.items);
-              const shipping = calculateShipping(order.country);
               const status = statusConfig[order.status] || statusConfig.pending;
               
               return (
@@ -561,12 +557,12 @@ export default function OrdersPage() {
                         pointerEvents: 'none',
                       }}
                     >
-                      <img
+                      <NextImage
                         src="/assets/logo/adidas-logo.png"
                         alt="Adidas Logo"
+                        width={140}
+                        height={140}
                         style={{
-                          width: '140px',
-                          height: '140px',
                           filter: 'grayscale(100%)',
                           userSelect: 'none',
                           opacity: 0.92,
@@ -632,9 +628,11 @@ export default function OrdersPage() {
                     <div className="flex flex-col gap-2 mt-1">
                       {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
                         <div key={idx} className="flex items-center gap-2 border border-slate-200 rounded-lg bg-slate-50 px-2 py-1">
-                          <img
+                          <NextImage
                             src={item.image || '/placeholder.jpg'}
                             alt={item.name}
+                            width={40}
+                            height={40}
                             className="w-10 h-10 object-cover rounded border border-slate-200 bg-white"
                           />
                           <div className="flex flex-col gap-0.5">
@@ -659,7 +657,7 @@ export default function OrdersPage() {
                         <HiOutlineTruck className="w-5 h-5 text-blue-600 inline-block" />
                         <span className="font-semibold">Transporti:</span>
                         <span className="font-semibold text-slate-900 text-[12px] underline flex items-center gap-1">
-                          <img src={getFlagUrl(order.country)} alt={order.country} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                          <NextImage src={getFlagUrl(order.country)} alt={order.country} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                           {order.country}
                         </span>
                         {calculateShipping(order.country) === 0 ? <span className="ml-1">Falas</span> : <span className="ml-1">€{calculateShipping(order.country).toFixed(2)}</span>}
@@ -669,7 +667,7 @@ export default function OrdersPage() {
                       <span className="font-bold underline underline-offset-2 text-blue-600">Adresa e dërgimit të porosisë</span>
                       <span className="">{order.address}</span>
                       <span className="font-bold flex items-center gap-1">{order.city},
-                        <img src={getFlagUrl(order.country)} alt={order.country} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                        <NextImage src={getFlagUrl(order.country)} alt={order.country} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                         {order.country}
                       </span>
                     </div>
@@ -832,7 +830,9 @@ export default function OrdersPage() {
                         <tr key={idx} style={{ background: idx % 2 === 0 ? '#fff' : '#f7f7f7' }}>
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>
                             {item.image ? (
-                              <img src={item.image} alt={item.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #e0e0e0', background: '#fafafa' }} />
+                              <View style={{ backgroundColor: '#fafafa', borderRadius: 6, border: '1 solid #e0e0e0', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <PDFImage src={item.image} style={{ width: 48, height: 48, borderRadius: 6 }} />
+                              </View>
                             ) : null}
                           </td>
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>{idx + 1}</td>

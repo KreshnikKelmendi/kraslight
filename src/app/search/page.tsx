@@ -45,12 +45,6 @@ export default function SearchPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high' | 'name'>('default');
 
-  useEffect(() => {
-    if (query) {
-      fetchSearchResults();
-    }
-  }, [query]);
-
   const fetchSearchResults = async () => {
     try {
       setLoading(true);
@@ -66,6 +60,12 @@ export default function SearchPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (query) {
+      fetchSearchResults();
+    }
+  }, [query, fetchSearchResults]);
 
   // Get unique brands and categories from products
   const uniqueBrands = useMemo(() => {
@@ -116,13 +116,6 @@ export default function SearchPage() {
 
     setFilteredProducts(filtered);
   }, [products, filters, sortBy]);
-
-  const handleFilterChange = (type: keyof Filters, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [type]: value
-    }));
-  };
 
   const clearFilters = () => {
     setFilters({
@@ -176,7 +169,7 @@ export default function SearchPage() {
               <div className="relative">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'default' | 'price-low' | 'price-high' | 'name')}
                   className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="default">Sort by</option>

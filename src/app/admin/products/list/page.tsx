@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaChevronDown, FaFilter, FaTimes, FaPercent, FaCheckSquare, FaRegSquare } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaChevronDown, FaFilter, FaTimes, FaPercent } from 'react-icons/fa';
 
 interface Product {
   _id: string;
@@ -103,8 +103,7 @@ export default function ProductsList() {
       const data = await response.json();
       console.log('Products data received:', data); // Debug log
       setProducts(data);
-    } catch (err) {
-      console.error('Error fetching products:', err); // Debug log
+    } catch {
       setError('Failed to fetch products');
     } finally {
       setIsLoading(false);
@@ -184,7 +183,7 @@ export default function ProductsList() {
       } else {
         setError('Dështoi fshirja e produkteve të zgjedhura');
       }
-    } catch (err) {
+    } catch {
       setError('Dështoi fshirja e produkteve të zgjedhura');
     } finally {
       setBulkDeleteLoading(false);
@@ -202,7 +201,7 @@ export default function ProductsList() {
         // Replace with your actual API endpoint
         await fetch(`/api/products/${id}`, { method: 'DELETE' });
         setProducts(products.filter(p => p._id !== id));
-      } catch (err) {
+      } catch {
         setError('Dështoi fshirja e produktit');
       } finally {
         setDeleteLoading(null);
@@ -359,7 +358,7 @@ export default function ProductsList() {
     }
   };
 
-  const handleFilterChange = (type: keyof Filters, value: any) => {
+  const handleFilterChange = (type: keyof Filters, value: string | number | boolean) => {
     setFilters(prev => ({
       ...prev,
       [type]: value
@@ -396,7 +395,7 @@ export default function ProductsList() {
     const pages = [];
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const endPage = Math.min(totalPages, Math.max(currentPage + 2, 5));
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);

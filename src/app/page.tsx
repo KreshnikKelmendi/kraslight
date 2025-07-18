@@ -1,7 +1,6 @@
 import Main from './components/Main/Main';
 import BrandShowcase from './components/BrandShowcase';
 import CollectionsShowcase from './components/Collections/CollectionsShowcase';
-import SecondBanner from './components/SecondBanner';
 import NewArrivalsCarousel from './components/NewArrivalsCarousel';
 import ShowRoom from './components/ShowRoom';
 

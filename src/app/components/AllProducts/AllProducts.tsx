@@ -106,7 +106,7 @@ export default function AllProducts() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Products Available</h3>
-            <p className="text-gray-500">We're currently updating our collection. Please check back soon.</p>
+            <p className="text-gray-500">We&apos;re currently updating our collection. Please check back soon.</p>
           </div>
         </div>
       )}

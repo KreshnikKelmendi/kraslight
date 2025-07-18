@@ -6,6 +6,7 @@ import { RootState } from '../../lib/store';
 import { removeFromCart, updateQuantity, clearCart } from '../../lib/cartSlice';
 import { FaTrash, FaArrowRight } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function CartPage() {
   const cart = useSelector((state: RootState) => state.cart.items);
@@ -49,7 +50,7 @@ export default function CartPage() {
                 <div key={item.id} className="bg-white rounded-2xl shadow-lg flex flex-col md:flex-row items-center gap-6 p-6 hover:shadow-2xl transition-shadow">
                   <div className="w-28 h-28 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center border border-gray-200">
                     {item.image && (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <Image src={item.image} alt={item.name} width={112} height={112} className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 w-full">
