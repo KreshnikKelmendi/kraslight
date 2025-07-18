@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
+import { uploadImage } from '@/app/lib/cloudinary';
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,12 +45,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Handle file uploads
-    const imagePaths = [];
+    // Handle file uploads to Cloudinary
+    const imageUrls = [];
     
     try {
-      // For production, you should implement proper file upload to cloud storage
-      // For now, we'll create placeholder paths and log file info
+      // Upload all image files to Cloudinary
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
@@ -61,23 +61,22 @@ export async function POST(req: NextRequest) {
           );
         }
         
-        // Create a placeholder path - in production, this would be the URL from cloud storage
-        const timestamp = Date.now();
-        const placeholderPath = `/uploads/products/product-${timestamp}-${i}.${file.name.split('.').pop()}`;
-        imagePaths.push(placeholderPath);
+        // Upload to Cloudinary
+        const imageUrl = await uploadImage(file, 'kraslight/products');
+        imageUrls.push(imageUrl);
         
-        console.log(`File ${i + 1}: ${file.name} (${file.size} bytes, ${file.type})`);
+        console.log(`✅ File ${i + 1} uploaded to Cloudinary: ${file.name} -> ${imageUrl}`);
       }
     } catch (fileError) {
-      console.error('File processing error:', fileError);
+      console.error('Cloudinary upload error:', fileError);
       return NextResponse.json(
-        { error: 'File processing failed. Please try again.' }, 
+        { error: 'Image upload failed. Please try again.' }, 
         { status: 500 }
       );
     }
 
     // Handle brand logo upload if present
-    let brandLogoPath = '';
+    let brandLogoUrl = '';
     if (brandLogoFile && brandLogoFile.size > 0) {
       try {
         if (!brandLogoFile.type.startsWith('image/')) {
@@ -87,11 +86,12 @@ export async function POST(req: NextRequest) {
           );
         }
         
-        const timestamp = Date.now();
-        brandLogoPath = `/uploads/brands/brand-${timestamp}.${brandLogoFile.name.split('.').pop()}`;
-        console.log(`Brand logo: ${brandLogoFile.name} (${brandLogoFile.size} bytes, ${brandLogoFile.type})`);
+        // Upload brand logo to Cloudinary
+        brandLogoUrl = await uploadImage(brandLogoFile, 'kraslight/brands');
+        
+        console.log(`✅ Brand logo uploaded to Cloudinary: ${brandLogoFile.name} -> ${brandLogoUrl}`);
       } catch (logoError) {
-        console.error('Brand logo processing error:', logoError);
+        console.error('Brand logo upload error:', logoError);
         // Continue without brand logo
       }
     }
@@ -108,11 +108,11 @@ export async function POST(req: NextRequest) {
       subcategory: subcategory || '',
       description: description || '',
       characteristics: characteristics ? JSON.parse(characteristics) : [],
-      images: imagePaths,
-      mainImage: imagePaths[0],
-      image: imagePaths[0], // Legacy field
+      images: imageUrls,
+      mainImage: imageUrls[0],
+      image: imageUrls[0], // Legacy field
       isNewArrival,
-      ...(brandLogoPath ? { brandLogo: brandLogoPath } : {})
+      ...(brandLogoUrl ? { brandLogo: brandLogoUrl } : {})
     };
 
     console.log('Creating product with data:', {
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       brand: productData.brand,
       category: productData.category,
       imagesCount: productData.images.length,
-      hasBrandLogo: !!brandLogoPath
+      hasBrandLogo: !!brandLogoUrl
     });
 
     // Create the product in database
@@ -162,6 +162,9 @@ export async function POST(req: NextRequest) {
         statusCode = 409;
       } else if (err.message.includes('MongoDB')) {
         errorMessage = 'Database connection error. Please try again.';
+        statusCode = 503;
+      } else if (err.message.includes('Cloudinary')) {
+        errorMessage = 'Image upload service error. Please try again.';
         statusCode = 503;
       } else {
         errorMessage = err.message;
