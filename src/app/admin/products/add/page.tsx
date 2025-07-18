@@ -174,10 +174,14 @@ export default function AddProduct() {
       } else {
         setMessage({ text: '❌ Dështoi shtimi i produktit', type: 'error' });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Product upload error:', err);
-      const errorMessage = err.response?.data?.error || err.message || '❌ Gabim gjatë ngarkimit';
-      setMessage({ text: errorMessage, type: 'error' });
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+        : '❌ Gabim gjatë ngarkimit';
+      setMessage({ text: errorMessage || '❌ Gabim gjatë ngarkimit', type: 'error' });
     } finally {
       setIsLoading(false);
     }
