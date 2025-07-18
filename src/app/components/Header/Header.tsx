@@ -112,20 +112,6 @@ const Header = () => {
     return `/shop/brand/${encodeURIComponent(brand.name.toLowerCase())}`;
   };
 
-  // Function to handle brand click and close dropdowns
-  const handleBrandClick = () => {
-    setIsBrendetMegaMenuOpen(false);
-    setIsMobileMenuOpen(false);
-    setIsDesktopBrandsOpen(false);
-  };
-
-  // Function to handle lighting product click and close dropdowns
-  const handleLightingClick = () => {
-    setIsProduktetNdricimitOpen(false);
-    setIsMobileProduktetNdricimitOpen(false);
-    setIsMobileMenuOpen(false);
-  };
-
   // Removed unused nextSlide and prevSlide
 
   return (

@@ -28,6 +28,8 @@ function isValidSlide(slide: unknown): slide is Slide {
   );
 }
 
+type ErrorWithMessage = { message: string };
+
 export default function Main() {
   const [slider, setSlider] = useState<Slider | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -75,8 +77,8 @@ export default function Main() {
         });
         setError(null);
       } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
-          console.error('Error fetching slider:', (err as any).message);
+        if (err && typeof err === 'object' && 'message' in err && typeof (err as ErrorWithMessage).message === 'string') {
+          console.error('Error fetching slider:', (err as ErrorWithMessage).message);
         } else {
           console.error('Error fetching slider:', err);
         }

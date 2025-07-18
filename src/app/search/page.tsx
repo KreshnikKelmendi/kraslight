@@ -45,27 +45,25 @@ export default function SearchPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high' | 'name'>('default');
 
-  const fetchSearchResults = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=100`);
-      if (!response.ok) throw new Error('Failed to fetch search results');
-      const data = await response.json();
-      setProducts(data);
-      setFilteredProducts(data);
-    } catch (error) {
-      console.error('Error fetching search results:', error);
-      setError('Failed to load search results. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (query) {
-      fetchSearchResults();
-    }
-  }, [query, fetchSearchResults]);
+    if (!query) return;
+    const fetchSearchResults = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=100`);
+        if (!response.ok) throw new Error('Failed to fetch search results');
+        const data = await response.json();
+        setProducts(data);
+        setFilteredProducts(data);
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        setError('Failed to load search results. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSearchResults();
+  }, [query]);
 
   // Get unique brands and categories from products
   const uniqueBrands = useMemo(() => {
@@ -160,7 +158,7 @@ export default function SearchPage() {
                 Search Results
               </h1>
               <p className="text-gray-600 mt-1">
-                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found for "{query}"
+                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found for &quot;{query}&quot;
               </p>
             </div>
             

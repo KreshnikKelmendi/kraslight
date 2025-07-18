@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { FaTimes, FaFilter } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { motion } from 'framer-motion';

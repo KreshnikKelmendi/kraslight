@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
-import { Document, Types } from 'mongoose';
 
 export async function GET(request: Request) {
   try {

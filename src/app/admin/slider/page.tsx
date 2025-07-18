@@ -13,11 +13,6 @@ interface Slide {
   link: string;
 }
 
-interface Slider {
-  _id: string;
-  slides: Slide[];
-}
-
 export default function SliderAdmin() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -63,8 +58,8 @@ export default function SliderAdmin() {
     const fetchCollections = async () => {
       try {
         const res = await fetch('/api/collections');
-        const data = await res.json();
-        // setCollections(data.map((c: { _id: string; name: string }) => ({ _id: c._id, name: c.name })));
+        // const data = await res.json(); // Remove this line since data is unused
+        // setCollections(data.map((c: { _id: string; name: string }) => ({ _id: c._id, name: c.name }))); // still commented out
       } catch {
         // ignore error
       }

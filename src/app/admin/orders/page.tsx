@@ -231,7 +231,7 @@ export default function OrdersPage() {
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isAuthenticated === false) {
       router.push('/signin');
     }
   }, [isAuthenticated, router]);
@@ -779,7 +779,7 @@ export default function OrdersPage() {
                 </div>
                 {/* Top Bar: Soft gray, logo, business name */}
                 <div style={{ display: 'flex', alignItems: 'center', background: '#ededed', color: '#222', padding: '18px 24px', borderBottom: '2px solid #cccccc' }}>
-                  <img src="/assets/logo/adidas-logo.png" alt="Logo" style={{ height: 48, marginRight: 20 }} />
+                  <NextImage src="/assets/logo/adidas-logo.png" alt="Logo" width={48} height={48} className="mr-5" />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase' }}>Runway Shop</div>
                     <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>www.runwayshop.com</div>

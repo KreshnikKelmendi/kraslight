@@ -23,6 +23,8 @@ interface Product {
 
 type SortOption = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
+type ErrorWithMessage = { message: string };
+
 export default function MaterialeElektrikePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,8 +62,8 @@ export default function MaterialeElektrikePage() {
           setPriceRange([minPrice, maxPrice]);
         }
       } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
-          setError((err as any).message);
+        if (err && typeof err === 'object' && 'message' in err && typeof (err as ErrorWithMessage).message === 'string') {
+          setError((err as ErrorWithMessage).message);
         } else {
           setError('Gabim gjatë marrjes së produkteve');
         }

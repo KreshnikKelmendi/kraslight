@@ -83,8 +83,6 @@ export default function CollectionPage() {
       setCollection(data);
       
       // Extract unique categories
-      const categories = Array.from(new Set(data.products.map((p: Product) => p.category).filter(Boolean)));
-      // setAvailableCategories(categories as string[]); // Removed as per edit hint
       
       // Extract unique brands
       const brands = Array.from(new Set(data.products.map((p: Product) => p.brand).filter(Boolean)));
