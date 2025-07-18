@@ -3,7 +3,10 @@ import { Collection } from '../../../models/Collection';
 import { Product } from '../../../models/Product';
 import { connectToDB } from '../../../lib/mongodb';
 
-export async function GET(req: Request, context: any) {
+export async function GET(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   const { id } = await context.params;
   await connectToDB();
   const collection = await Collection.findById(id).populate('products');
