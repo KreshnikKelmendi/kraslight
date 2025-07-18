@@ -20,14 +20,6 @@ interface CartState {
   items: CartItem[];
 }
 
-const loadCart = (): CartItem[] => {
-  if (typeof window !== 'undefined') {
-    const data = localStorage.getItem('cart');
-    return data ? JSON.parse(data) : [];
-  }
-  return [];
-};
-
 const initialState: CartState = {
   items: [], // Will be loaded in extraReducers or via useEffect in component
 };

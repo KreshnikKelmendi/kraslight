@@ -29,7 +29,7 @@ const UnsubscribePage = () => {
           setStatus('error');
           setMessage(data.error);
         }
-      } catch (error) {
+      } catch {
         setStatus('error');
         setMessage('Gabim i lidhjes me serverin');
       }

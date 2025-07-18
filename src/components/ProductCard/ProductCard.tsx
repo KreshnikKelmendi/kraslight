@@ -50,10 +50,8 @@ function formatProductTitle(title: string) {
 
 export default function ProductCard({ 
   product, 
-  variant = 'default',
-  className = '',
-  onWishlistClick,
-  isWishlisted = false
+  // removed unused props: variant, onWishlistClick, isWishlisted
+  className = ''
 }: ProductCardProps) {
   const {
     _id,

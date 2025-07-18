@@ -8,6 +8,8 @@ import { FaShoppingCart, FaSpinner, FaTruck, FaShieldAlt, FaUndo, FaInstagram } 
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
+import Link from 'next/link';
+import Image from 'next/image';
 
 // Default placeholder image
 const DEFAULT_IMAGE = '/images/placeholder.jpg';
@@ -69,8 +71,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         // Set the initial selected image
         const initialImage = transformedProduct.mainImage || availableImages[0] || DEFAULT_IMAGE;
         setSelectedImage(initialImage);
-      } catch (err) {
-        console.error('Error fetching product:', err);
+      } catch {
+        console.error('Error fetching product');
         setProduct(null);
       } finally {
         setLoading(false);
@@ -478,10 +480,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <p className="font-bwseidoround text-xs text-gray-700">
                     Porositë tona realizohen me postën
                   </p>
-                  <img 
+                  <Image 
                     src="/assets/logo/logposta-removebg-preview.png" 
                     alt="Adidas" 
-                    className="w-12 h-6 sm:w-16 sm:h-8 object-contain"
+                    width={64}
+                    height={32}
                   />
                 </div>
               </div>
@@ -500,7 +503,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </p>
             </div>
             <div className="flex justify-center">
-              <a 
+              <Link
                 href="https://www.instagram.com/runwayboutique_ks/" 
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -508,14 +511,16 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               >
                 <FaInstagram className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span>@runwayboutique_ks</span>
-              </a>
+              </Link>
             </div>
             <div className="grid grid-cols-3 gap-[2px] max-w-[220px] sm:max-w-[370px] mx-auto bg-[#fafafa] overflow-hidden">
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="relative aspect-square group">
-                  <img 
+                  <Image 
                     src={`/assets/logo/insta-${item}.png`}
                     alt={`Instagram post ${item}`}
+                    width={120}
+                    height={120}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">

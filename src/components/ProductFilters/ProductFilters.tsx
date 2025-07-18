@@ -30,7 +30,7 @@ export default function ProductFilters({
   onToggle,
   onClear
 }: ProductFiltersProps) {
-  const handleFilterChange = (type: keyof Filters, value: any) => {
+  const handleFilterChange = (type: keyof Filters, value: string | number | string[]) => {
     setFilters({
       ...filters,
       [type]: value

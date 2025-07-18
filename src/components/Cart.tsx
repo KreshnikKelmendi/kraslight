@@ -81,7 +81,7 @@ export default function Cart({ onClose }: { onClose?: () => void }) {
       setSuccess(true);
       dispatch(clearCart());
       setShowCheckout(false);
-    } catch (err) {
+    } catch {
       setError('Failed to place order');
     } finally {
       setLoading(false);
