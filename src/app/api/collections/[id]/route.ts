@@ -3,9 +3,9 @@ import { Collection } from '../../../models/Collection';
 import { Product } from '../../../models/Product';
 import { connectToDB } from '../../../lib/mongodb';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, context: { params: { id: string } }) {
   await connectToDB();
-  const collection = await Collection.findById(params.id).populate('products');
+  const collection = await Collection.findById(context.params.id).populate('products');
   if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   
   // If collection has categories, fetch products from those categories
@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json(collection);
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, context: { params: { id: string } }) {
   await connectToDB();
   const data = await req.json();
   
@@ -31,13 +31,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     data.products = categoryProducts.map(p => p._id);
   }
   
-  const collection = await Collection.findByIdAndUpdate(params.id, data, { new: true });
+  const collection = await Collection.findByIdAndUpdate(context.params.id, data, { new: true });
   if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(collection);
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, context: { params: { id: string } }) {
   await connectToDB();
-  await Collection.findByIdAndDelete(params.id);
+  await Collection.findByIdAndDelete(context.params.id);
   return NextResponse.json({ message: 'Collection deleted' });
 } 
