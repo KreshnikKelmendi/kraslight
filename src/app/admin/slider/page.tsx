@@ -57,7 +57,7 @@ export default function SliderAdmin() {
     // Fetch collections for the dropdown
     const fetchCollections = async () => {
       try {
-        const res = await fetch('/api/collections');
+        await fetch('/api/collections');
         // const data = await res.json(); // Remove this line since data is unused
         // setCollections(data.map((c: { _id: string; name: string }) => ({ _id: c._id, name: c.name }))); // still commented out
       } catch {
