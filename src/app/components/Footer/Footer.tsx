@@ -64,7 +64,7 @@ const Footer = () => {
             <Link href="/" className="block group">
               <Image
                 src="/assets/logo/kraslight-white.png"
-                alt="Kraslight Logo"
+                alt="Kraslight"
                 width={140}
                 height={50}
                 priority
