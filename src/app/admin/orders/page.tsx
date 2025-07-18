@@ -284,33 +284,22 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      async function fetchOrders() {
-        try {
-          const res = await fetch('/api/orders');
-          if (!res.ok) throw new Error('Failed to fetch orders');
-          const data = await res.json();
-          setOrders(data);
-          setFilteredOrders(data);
-        } catch {
-          setError('Nuk mund të ngarkohen porositë');
-        } finally {
-          setLoading(false);
-        }
+    if (!isAuthenticated) return;
+    async function fetchOrders() {
+      try {
+        const res = await fetch('/api/orders');
+        if (!res.ok) throw new Error('Failed to fetch orders');
+        const data = await res.json();
+        setOrders(data);
+        setFilteredOrders(data);
+      } catch {
+        setError('Nuk mund të ngarkohen porositë');
+      } finally {
+        setLoading(false);
       }
-      fetchOrders();
     }
+    fetchOrders();
   }, [isAuthenticated]);
-
-  // Show loading if not authenticated
-  const shouldShowLoading = !isAuthenticated;
-  if (shouldShowLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
 
   useEffect(() => {
     let filtered = orders;
@@ -360,6 +349,14 @@ export default function OrdersPage() {
 
     setFilteredOrders(filtered);
   }, [orders, searchTerm, statusFilter, dateFilter]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
