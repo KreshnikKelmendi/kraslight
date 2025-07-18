@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useAuth } from '../../lib/AuthContext';
 import { FiShoppingBag, FiList, FiHome, FiLogOut, FiImage, FiClipboard, FiMail } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import { FaGrin } from 'react-icons/fa';
 
 const Sidebar = () => {
   const { logout } = useAuth();
