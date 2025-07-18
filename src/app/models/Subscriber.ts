@@ -28,7 +28,4 @@ const SubscriberSchema = new Schema(
   { timestamps: true }
 );
 
-// Add index for email field for faster queries
-SubscriberSchema.index({ email: 1 });
-
 export const Subscriber = models.Subscriber || model('Subscriber', SubscriberSchema); 
