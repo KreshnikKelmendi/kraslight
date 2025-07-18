@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/AuthContext';
 import { FiUser, FiLock, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
@@ -11,7 +11,6 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const { login } = useAuth();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
