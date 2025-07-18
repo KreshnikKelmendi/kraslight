@@ -1,30 +1,52 @@
 // src/app/layout.tsx
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css'; // Make sure this imports your Tailwind CSS
-import Header from './components/Header/Header';
+'use client';
 
+import './globals.css';
+import { Inter } from 'next/font/google';
+import { AuthProvider } from './lib/AuthContext';
+import Header from './components/Header/Header';
+import Sidebar from './components/Sidebar/Sidebar';
+import Footer from './components/Footer/Footer';
+import WhatsAppButton from './components/WhatsAppButton/WhatsAppButton';
+import { usePathname } from 'next/navigation';
+import { Provider } from 'react-redux';
+import { store } from '../lib/store';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'My Next.js Shop',
-  description: 'A professional e-commerce platform built with Next.js and Tailwind CSS',
-};
+function RootLayoutContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith('/admin');
+  const isSignInRoute = pathname === '/signin';
+  const showHeader = !isAdminRoute && !isSignInRoute;
+
+  return (
+    <html lang="en">
+      <body className={`${inter.className} flex flex-col min-h-screen`}>
+        {showHeader && <Header />}
+        <div className={`flex flex-1 ${!showHeader ? 'pt-0' : ''}`}>
+          {isAdminRoute && <Sidebar />}
+          <main className={`flex-1 ${isAdminRoute ? 'ml-64' : ''}`}>
+            {children}
+          </main>
+        </div>
+        {showHeader && <Footer />}
+        {showHeader && <WhatsAppButton />}
+      </body>
+    </html>
+  );
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-gray-100 text-gray-900`}> {/* Added some body classes */}
-        <Header /> {/* Render your Header component here */}
-        <main className="container mx-auto p-4"> 
-          {children} 
-        </main>
-      </body>
-    </html>
+    <Provider store={store}>
+      <AuthProvider>
+        <RootLayoutContent>{children}</RootLayoutContent>
+      </AuthProvider>
+    </Provider>
   );
 }

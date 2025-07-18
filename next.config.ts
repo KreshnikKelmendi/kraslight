@@ -1,7 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['localhost'], // Add your Strapi domain here
+    unoptimized: true,
+    domains: ['redbikemarketing.com', 'localhost'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'redbikemarketing.com',
+        pathname: '/**',
+      },
+    ],
   },
 };
 

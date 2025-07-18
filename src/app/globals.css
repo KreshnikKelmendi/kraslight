@@ -1,24 +1,9 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* body{
+  background-color: #FFF6E7;
+} */
 
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-
-html, body {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
 /* Custom animation for mobile menu slide down */
 @keyframes slideDown {
@@ -34,4 +19,178 @@ html, body {
 
 .animate-slide-down {
   animation: slideDown 0.3s ease-out forwards;
+}
+
+/* Gradient animation for brand name */
+@keyframes gradient-x {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% auto;
+  animation: gradient-x 8s ease infinite;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in 0.3s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+/* Fade in up animation for carousel */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Slow bounce animation for title letters */
+@keyframes bounce-slow {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-15px) scale(1.1);
+  }
+  60% {
+    transform: translateY(-8px) scale(1.05);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
+/* Title glow animation */
+@keyframes title-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.4)) 
+            drop-shadow(0 0 15px rgba(147, 51, 234, 0.4)) 
+            drop-shadow(0 0 25px rgba(59, 130, 246, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(236, 72, 153, 0.8)) 
+            drop-shadow(0 0 30px rgba(147, 51, 234, 0.8)) 
+            drop-shadow(0 0 45px rgba(59, 130, 246, 0.8));
+  }
+}
+
+.animate-title-glow {
+  animation: title-glow 4s ease-in-out infinite;
+}
+
+/* Elegant shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.4), 
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Posh scale animation */
+@keyframes posh-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-posh-scale {
+  animation: posh-scale 2s ease-in-out infinite;
+}
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+@font-face {
+  font-family: 'BwSeidoRound';
+  src: url('../../public/fonts/BwSeidoRound-Medium.ttf');
+}
+
+.font-bwseidoround {
+  font-family: 'BwSeidoRound';
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}
+
+.scrollbar-track-gray-100::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+/* Header top bar smooth transition */
+.header-topbar-transition {
+  transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s, margin 0.4s;
 }
