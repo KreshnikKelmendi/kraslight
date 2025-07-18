@@ -3,9 +3,10 @@ import { Collection } from '../../../models/Collection';
 import { Product } from '../../../models/Product';
 import { connectToDB } from '../../../lib/mongodb';
 
-export async function GET(req: Request, context: { params: { id: string } }) {
+export async function GET(req: Request, context: any) {
+  const { id } = await context.params;
   await connectToDB();
-  const collection = await Collection.findById(context.params.id).populate('products');
+  const collection = await Collection.findById(id).populate('products');
   if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   
   // If collection has categories, fetch products from those categories
