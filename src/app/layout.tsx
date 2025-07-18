@@ -11,6 +11,7 @@ import WhatsAppButton from './components/WhatsAppButton/WhatsAppButton';
 import { usePathname } from 'next/navigation';
 import { Provider } from 'react-redux';
 import { store } from '../lib/store';
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,7 +28,9 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
         <div className={`flex flex-1 ${!showHeader ? 'pt-0' : ''}`}>
           {isAdminRoute && <Sidebar />}
           <main className={`flex-1 ${isAdminRoute ? 'ml-64' : ''}`}>
-            {children}
+            <Suspense fallback={null}>
+              {children}
+            </Suspense>
           </main>
         </div>
         {showHeader && <Footer />}
