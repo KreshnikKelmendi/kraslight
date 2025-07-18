@@ -2,7 +2,7 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    domains: ['redbikemarketing.com', 'localhost'],
+    domains: ['kraslight.vercel.app', 'localhost', 'res.cloudinary.com'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -12,10 +12,23 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'redbikemarketing.com',
+        hostname: 'kraslight.vercel.app',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
         pathname: '/**',
       },
     ],
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['cloudinary'],
+  },
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
   },
 };
 
