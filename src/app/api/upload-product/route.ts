@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     await connectToDB();
     const formData = await req.formData();
     
-    // Get and log all form data
+    // Get form data
     const title = formData.get('title') as string;
     const price = parseFloat(formData.get('price') as string);
     const stock = parseInt(formData.get('stock') as string);
@@ -22,52 +22,56 @@ export async function POST(req: NextRequest) {
     const files = formData.getAll('images') as File[];
     const brandLogoFile = formData.get('brandLogo') as File | null;
 
-    console.log('=== DEBUG: Form Data Received ===');
+    console.log('=== PRODUCT CREATION REQUEST ===');
     console.log('Title:', title);
     console.log('Price:', price);
     console.log('Stock:', stock);
     console.log('Brand:', brand);
-    console.log('Sizes:', sizes);
-    console.log('Gender:', gender);
     console.log('Category:', category);
-    console.log('Description:', description);
-    console.log('Is New Arrival:', isNewArrival);
-    console.log('Characteristics:', characteristics);
     console.log('Files count:', files?.length);
 
+    // Validate required fields
     if (!title || isNaN(price) || isNaN(stock) || !files.length) {
-      console.log('=== DEBUG: Validation Failed ===');
-      console.log('Missing or invalid fields:', {
+      console.log('Validation failed:', {
         title: !title,
         price: isNaN(price),
         stock: isNaN(stock),
         files: !files.length
       });
       return NextResponse.json(
-        { error: 'Missing or invalid fields' }, 
+        { error: 'Missing or invalid fields. Please check title, price, stock, and images.' }, 
         { status: 400 }
       );
     }
 
-    // Handle file uploads - for production, we'll use a placeholder approach
-    // In a real production app, you'd upload to a cloud storage service like AWS S3, Cloudinary, etc.
+    // Handle file uploads
     const imagePaths = [];
     
     try {
-      // For now, we'll create placeholder paths
-      // In production, you should implement proper file upload to cloud storage
+      // For production, you should implement proper file upload to cloud storage
+      // For now, we'll create placeholder paths and log file info
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          return NextResponse.json(
+            { error: `File ${file.name} is not an image. Please upload only image files.` }, 
+            { status: 400 }
+          );
+        }
+        
         // Create a placeholder path - in production, this would be the URL from cloud storage
-        const placeholderPath = `/uploads/products/placeholder-${Date.now()}-${i}.jpg`;
+        const timestamp = Date.now();
+        const placeholderPath = `/uploads/products/product-${timestamp}-${i}.${file.name.split('.').pop()}`;
         imagePaths.push(placeholderPath);
         
-        console.log(`File ${i + 1}: ${file.name} (${file.size} bytes)`);
+        console.log(`File ${i + 1}: ${file.name} (${file.size} bytes, ${file.type})`);
       }
     } catch (fileError) {
-      console.error('File upload error:', fileError);
+      console.error('File processing error:', fileError);
       return NextResponse.json(
-        { error: 'File upload failed. Please try again or contact support.' }, 
+        { error: 'File processing failed. Please try again.' }, 
         { status: 500 }
       );
     }
@@ -76,43 +80,58 @@ export async function POST(req: NextRequest) {
     let brandLogoPath = '';
     if (brandLogoFile && brandLogoFile.size > 0) {
       try {
-        // Create placeholder path for brand logo
-        brandLogoPath = `/uploads/brands/placeholder-logo-${Date.now()}.png`;
-        console.log(`Brand logo: ${brandLogoFile.name} (${brandLogoFile.size} bytes)`);
+        if (!brandLogoFile.type.startsWith('image/')) {
+          return NextResponse.json(
+            { error: 'Brand logo must be an image file.' }, 
+            { status: 400 }
+          );
+        }
+        
+        const timestamp = Date.now();
+        brandLogoPath = `/uploads/brands/brand-${timestamp}.${brandLogoFile.name.split('.').pop()}`;
+        console.log(`Brand logo: ${brandLogoFile.name} (${brandLogoFile.size} bytes, ${brandLogoFile.type})`);
       } catch (logoError) {
-        console.error('Brand logo upload error:', logoError);
+        console.error('Brand logo processing error:', logoError);
         // Continue without brand logo
       }
     }
     
-    // Create product with logging
-    console.log('=== DEBUG: Creating Product ===');
+    // Create product data
     const productData = {
-      title,
+      title: title.trim(),
       price,
       stock,
       brand: brand || 'Të tjera',
       sizes: sizes || '',
       gender: gender || 'Të Gjitha',
       category: category || 'Të tjera',
-      subcategory,
+      subcategory: subcategory || '',
       description: description || '',
       characteristics: characteristics ? JSON.parse(characteristics) : [],
       images: imagePaths,
       mainImage: imagePaths[0],
-      image: imagePaths[0],
+      image: imagePaths[0], // Legacy field
       isNewArrival,
       ...(brandLogoPath ? { brandLogo: brandLogoPath } : {})
     };
 
-    console.log('Product data:', productData);
+    console.log('Creating product with data:', {
+      title: productData.title,
+      price: productData.price,
+      stock: productData.stock,
+      brand: productData.brand,
+      category: productData.category,
+      imagesCount: productData.images.length,
+      hasBrandLogo: !!brandLogoPath
+    });
 
+    // Create the product in database
     const newProduct = await Product.create(productData);
 
-    console.log('=== DEBUG: Product Created ===');
-    console.log('New product ID:', newProduct._id);
+    console.log('✅ Product created successfully with ID:', newProduct._id);
 
     return NextResponse.json({ 
+      success: true,
       message: 'Product added successfully', 
       product: {
         _id: newProduct._id,
@@ -122,71 +141,40 @@ export async function POST(req: NextRequest) {
         brand: newProduct.brand,
         category: newProduct.category,
         isNewArrival: newProduct.isNewArrival,
+        images: newProduct.images,
         createdAt: newProduct.createdAt
       }
     });
-  } catch (err) {
-    console.error('=== DEBUG: Error in Product Creation ===');
-    console.error('Error details:', err);
     
-    // Provide more specific error messages
-    let errorMessage = 'Upload failed';
+  } catch (err) {
+    console.error('❌ Error in product creation:', err);
+    
+    // Provide specific error messages
+    let errorMessage = 'Product creation failed';
+    let statusCode = 500;
+    
     if (err instanceof Error) {
       if (err.message.includes('validation failed')) {
-        errorMessage = 'Invalid product data. Please check all fields.';
+        errorMessage = 'Invalid product data. Please check all required fields.';
+        statusCode = 400;
       } else if (err.message.includes('duplicate key')) {
-        errorMessage = 'A product with this title already exists.';
+        errorMessage = 'A product with this title already exists. Please use a different title.';
+        statusCode = 409;
+      } else if (err.message.includes('MongoDB')) {
+        errorMessage = 'Database connection error. Please try again.';
+        statusCode = 503;
       } else {
         errorMessage = err.message;
       }
     }
     
     return NextResponse.json(
-      { error: errorMessage, details: err instanceof Error ? err.message : 'Unknown error' }, 
-      { status: 500 }
+      { 
+        success: false,
+        error: errorMessage, 
+        details: err instanceof Error ? err.message : 'Unknown error' 
+      }, 
+      { status: statusCode }
     );
   }
-}
-
-export async function GET() {
-  try {
-    await connectToDB();
-    
-    // Update existing products to have isNewArrival field if it doesn't exist
-    const updateResult = await Product.updateMany(
-      { isNewArrival: { $exists: false } },
-      { $set: { isNewArrival: false } }
-    );
-    
-    // Get all products
-    const products = await Product.find({});
-    
-    // Get counts
-    const totalProducts = await Product.countDocuments();
-    const zeroStockProducts = await Product.countDocuments({ stock: { $lte: 0 } });
-    const newArrivalsCount = await Product.countDocuments({ isNewArrival: true });
-    
-    return NextResponse.json({
-      message: 'Database query completed successfully.',
-      stats: {
-        totalProducts,
-        zeroStockProducts,
-        newArrivalsCount,
-        updatedProducts: updateResult.modifiedCount
-      },
-      products: products.map(p => ({
-        id: p._id,
-        title: p.title,
-        stock: p.stock,
-        isNewArrival: p.isNewArrival
-      }))
-    });
-    
-  } catch (error) {
-    console.error('Error querying database:', error);
-    return NextResponse.json(
-      { error: 'Failed to query database', details: (error as Error)?.message },
-      { status: 500 }
-    );
-  }
-}
+} 

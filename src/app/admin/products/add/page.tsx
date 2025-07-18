@@ -153,8 +153,8 @@ export default function AddProduct() {
     }
 
     try {
-      const res = await axios.post('/api/test-insert', formData);
-      if (res.status === 200) {
+      const res = await axios.post('/api/upload-product', formData);
+      if (res.status === 200 && res.data.success) {
         setMessage({ text: '✅ Produkti u shtua me sukses!', type: 'success' });
         // Clear form
         setTitle('');
@@ -174,9 +174,10 @@ export default function AddProduct() {
       } else {
         setMessage({ text: '❌ Dështoi shtimi i produktit', type: 'error' });
       }
-    } catch (err) {
-      console.error(err);
-      setMessage({ text: '❌ Gabim gjatë ngarkimit', type: 'error' });
+    } catch (err: any) {
+      console.error('Product upload error:', err);
+      const errorMessage = err.response?.data?.error || err.message || '❌ Gabim gjatë ngarkimit';
+      setMessage({ text: errorMessage, type: 'error' });
     } finally {
       setIsLoading(false);
     }
