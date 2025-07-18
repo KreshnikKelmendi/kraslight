@@ -43,7 +43,11 @@ const ITEMS_PER_PAGE = 12;
 
 function getValidImage(...candidates: (string | undefined)[]) {
   return candidates.find(
-    (img) => typeof img === 'string' && img.trim().startsWith('/') && img.trim().length > 1
+    (img) => typeof img === 'string' && img.trim().length > 1 && (
+      img.trim().startsWith('/') || 
+      img.trim().startsWith('http://') || 
+      img.trim().startsWith('https://')
+    )
   ) || '/images/placeholder.jpg';
 }
 

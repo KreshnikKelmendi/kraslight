@@ -57,7 +57,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         const availableImages = [
           ...(productData.images || []),
           ...(productData.image ? [productData.image] : [])
-        ].filter((img): img is string => Boolean(img) && img.startsWith('/'));
+        ].filter((img): img is string => Boolean(img) && (
+          img.startsWith('/') || 
+          img.startsWith('http://') || 
+          img.startsWith('https://')
+        ));
 
         // Set the product with transformed image data
         const transformedProduct = {
