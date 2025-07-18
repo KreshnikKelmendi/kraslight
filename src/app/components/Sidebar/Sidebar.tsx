@@ -87,14 +87,6 @@ const Sidebar = () => {
           </Link>
 
           <Link
-            href="/admin/total-look"
-            className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200 group"
-          >
-            <FaGrin className="w-5 h-5 group-hover:text-yellow-400 transition-colors" />
-            <span className="font-medium">Menaxho Total Look</span>
-          </Link>
-
-          <Link
             href="/admin/subscribers"
             className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200 group"
           >

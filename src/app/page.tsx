@@ -5,8 +5,6 @@ import NewArrivalsCarousel from './components/NewArrivalsCarousel';
 import ShowRoom from './components/ShowRoom';
 
 
-// import TotalLookShowcase from './components/TotalLookShowcase/TotalLookShowcase';
-
 export default function Home() {
   return (
     <main className="min-h-screen">
