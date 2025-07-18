@@ -5,12 +5,13 @@ import { sendOrderStatusUpdateEmail } from '../../../lib/email';
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDB();
     const body = await request.json();
     const { status } = body;
+    const { id } = await context.params;
 
     if (!status) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function PUT(
     }
 
     // Find the order first to get the old status
-    const existingOrder = await Order.findById(context.params.id);
+    const existingOrder = await Order.findById(id);
     if (!existingOrder) {
       return NextResponse.json(
         { error: 'Order not found' },
@@ -32,7 +33,7 @@ export async function PUT(
 
     // Update the order status
     const updatedOrder = await Order.findByIdAndUpdate(
-      context.params.id,
+      id,
       { status },
       { new: true }
     );
@@ -83,11 +84,12 @@ export async function PUT(
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDB();
-    const order = await Order.findById(context.params.id);
+    const { id } = await context.params;
+    const order = await Order.findById(id);
     
     if (!order) {
       return NextResponse.json(
