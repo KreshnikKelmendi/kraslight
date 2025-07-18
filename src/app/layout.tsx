@@ -2,7 +2,6 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import ClientProviders from './components/ClientProviders';
 import Header from './components/Header/Header';
-import Sidebar from './components/Sidebar/Sidebar';
 import Footer from './components/Footer/Footer';
 import WhatsAppButton from './components/WhatsAppButton/WhatsAppButton';
 import { Suspense } from 'react';
@@ -16,8 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ClientProviders>
           <Header />
           <div className="flex flex-1 pt-0">
-            <Sidebar />
-            <main className="flex-1 ml-64">
+            <main className="flex-1">
               <Suspense fallback={null}>
                 {children}
               </Suspense>
