@@ -153,7 +153,7 @@ export default function AddProduct() {
     }
 
     try {
-      const res = await axios.post('/api/test-insert', formData);
+      const res = await axios.post('/api/upload-product', formData);
       if (res.status === 200 && res.data.success) {
         setMessage({ text: '✅ Produkti u shtua me sukses!', type: 'success' });
         // Clear form
