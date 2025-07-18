@@ -4,14 +4,14 @@ import { connectToDB } from '../../../lib/mongodb';
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     await connectToDB();
     const body = await req.json();
     
     const updatedLook = await TotalLook.findByIdAndUpdate(
-      params.id,
+      context.params.id,
       body,
       { new: true, runValidators: true }
     ).populate('products');

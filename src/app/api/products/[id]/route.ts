@@ -7,10 +7,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = context.params;
     
     if (!id) {
       return NextResponse.json(
@@ -41,12 +41,12 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     await connectToDB();
     
-    const product = await Product.findById(params.id);
+    const product = await Product.findById(context.params.id);
     
     if (!product) {
       return NextResponse.json(
@@ -67,7 +67,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     await connectToDB();
@@ -98,7 +98,7 @@ export async function PUT(
     }
 
     // Find the existing product
-    const product = await Product.findById(params.id);
+    const product = await Product.findById(context.params.id);
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
