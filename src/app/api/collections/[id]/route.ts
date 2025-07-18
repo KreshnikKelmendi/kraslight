@@ -23,10 +23,11 @@ export async function GET(
   return NextResponse.json(collection);
 }
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   await connectToDB();
   const data = await req.json();
-  
+  const { id } = await context.params;
+
   // If categories are provided, fetch products from those categories
   if (data.categories && data.categories.length > 0) {
     const categoryProducts = await Product.find({
@@ -34,14 +35,15 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
     });
     data.products = categoryProducts.map(p => p._id);
   }
-  
-  const collection = await Collection.findByIdAndUpdate(context.params.id, data, { new: true });
+
+  const collection = await Collection.findByIdAndUpdate(id, data, { new: true });
   if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(collection);
 }
 
-export async function DELETE(req: Request, context: { params: { id: string } }) {
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
   await connectToDB();
-  await Collection.findByIdAndDelete(context.params.id);
+  const { id } = await context.params;
+  await Collection.findByIdAndDelete(id);
   return NextResponse.json({ message: 'Collection deleted' });
 } 
