@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 'use client';
 
 import './globals.css';
@@ -40,11 +39,7 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <AuthProvider>
