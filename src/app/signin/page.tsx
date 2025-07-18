@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/AuthContext';
 import { FiUser, FiLock, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
@@ -13,6 +13,8 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +22,9 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      const success = await login(username, password);
+      const success = await login(username, password, from || undefined);
       if (success) {
-        router.push('/admin/products/list');
+        // No need to push here, AuthProvider handles redirect
       } else {
         setError('Invalid username or password');
       }
