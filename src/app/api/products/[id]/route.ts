@@ -8,10 +8,10 @@ import { v4 as uuidv4 } from 'uuid';
 // DELETE /api/orders/[id]
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -34,11 +34,11 @@ export async function DELETE(
 // GET /api/orders/[id]
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDB();
-    const { id } = context.params;
+    const { id } = await context.params;
 
     const product = await Product.findById(id);
 
@@ -56,11 +56,11 @@ export async function GET(
 // PUT /api/orders/[id]
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDB();
-    const { id } = context.params;
+    const { id } = await context.params;
     const formData = await request.formData();
 
     const title = formData.get('title') as string;
