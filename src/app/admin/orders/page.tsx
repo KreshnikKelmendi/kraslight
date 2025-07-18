@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import ReactToPdf from 'react-to-pdf';
+// @ts-ignore
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import logo from '@/public/assets/logo/adidas-logo.png';
 import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineCalendar, HiOutlineUser, HiOutlineEnvelope, HiOutlinePhone, HiOutlineMapPin, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle } from 'react-icons/hi2';
 import { useAuth } from '../../lib/AuthContext';
@@ -124,6 +125,96 @@ function getFlagUrl(country: string) {
   const code = countryToCode[country] || 'un';
   return `https://flagcdn.com/16x12/${code}.png`;
 }
+
+// Add InvoicePDFDocument component with types
+interface InvoicePDFDocumentProps {
+  order: Order;
+}
+const InvoicePDFDocument: React.FC<InvoicePDFDocumentProps> = ({ order }) => (
+  <Document>
+    <Page size="A4" style={pdfStyles.body}>
+      <View style={pdfStyles.header}>
+        <Image src="/assets/logo/adidas-logo.png" style={pdfStyles.logo} />
+        <View style={pdfStyles.headerText}>
+          <Text style={pdfStyles.title}>Runway Shop</Text>
+          <Text style={pdfStyles.subtitle}>www.runwayshop.com</Text>
+        </View>
+        <View style={pdfStyles.headerDate}>
+          <Text>Data: {new Date(order.createdAt).toLocaleDateString('sq-AL')}</Text>
+        </View>
+      </View>
+      <Text style={pdfStyles.invoiceTitle}>FATURË</Text>
+      <Text style={pdfStyles.invoiceNumber}>Nr. Porosisë: #{order._id.slice(-8)}</Text>
+      <View style={pdfStyles.infoRow}>
+        <View style={pdfStyles.infoBox}>
+          <Text style={pdfStyles.infoTitle}>Të dhënat e klientit</Text>
+          <Text>Emri: {order.firstName} {order.lastName}</Text>
+          <Text>Email: {order.email}</Text>
+          <Text>Telefon: {order.phone}</Text>
+        </View>
+        <View style={pdfStyles.infoBox}>
+          <Text style={pdfStyles.infoTitle}>Adresa e dërgesës</Text>
+          <Text>Adresa: {order.address}</Text>
+          <Text>Qyteti: {order.city || '-'}</Text>
+          <Text>Shteti: {order.country}</Text>
+          <Text>Kodi Postal: {order.postalCode}</Text>
+        </View>
+      </View>
+      <Text style={pdfStyles.productsTitle}>Produktet</Text>
+      <View style={pdfStyles.tableHeader}>
+        <Text style={pdfStyles.tableCellHeader}>#</Text>
+        <Text style={pdfStyles.tableCellHeader}>Emri</Text>
+        <Text style={pdfStyles.tableCellHeader}>Sasia</Text>
+        <Text style={pdfStyles.tableCellHeader}>Çmimi</Text>
+        <Text style={pdfStyles.tableCellHeader}>Totali</Text>
+      </View>
+      {order.items.map((item: OrderItem, idx: number) => (
+        <View style={pdfStyles.tableRow} key={idx}>
+          <Text style={pdfStyles.tableCell}>{idx + 1}</Text>
+          <Text style={pdfStyles.tableCell}>{item.name}</Text>
+          <Text style={pdfStyles.tableCell}>{item.quantity}</Text>
+          <Text style={pdfStyles.tableCell}>€{item.price.toFixed(2)}</Text>
+          <Text style={pdfStyles.tableCell}>€{(item.price * item.quantity).toFixed(2)}</Text>
+        </View>
+      ))}
+      <View style={pdfStyles.summaryBox}>
+        <Text>Nëntotali: €{calculateItemsTotal(order.items).toFixed(2)}</Text>
+        <Text>Transporti: {calculateShipping(order.country) === 0 ? 'Falas' : `€${calculateShipping(order.country).toFixed(2)}`}</Text>
+        <Text style={pdfStyles.total}>Totali: €{order.total.toFixed(2)}</Text>
+      </View>
+      <Text style={pdfStyles.payment}>Mënyra e Pagesës: {paymentMethodLabels[order.paymentMethod] || order.paymentMethod}</Text>
+      {order.notes && <Text style={pdfStyles.notes}>Shënim: {order.notes}</Text>}
+      <Text style={pdfStyles.footer}>Faleminderit për besimin dhe blerjen tuaj!</Text>
+      <Text style={pdfStyles.footerSmall}>Faturë e gjeneruar automatikisht nga Runway Shop • www.runwayshop.com</Text>
+    </Page>
+  </Document>
+);
+
+const pdfStyles = StyleSheet.create({
+  body: { padding: 24, fontFamily: 'Helvetica' },
+  header: { flexDirection: 'row', alignItems: 'center', borderBottom: '1 solid #ccc', marginBottom: 12 },
+  logo: { width: 48, height: 48, marginRight: 16 },
+  headerText: { flex: 1 },
+  title: { fontSize: 22, fontWeight: 'bold' },
+  subtitle: { fontSize: 10, color: '#888' },
+  headerDate: { textAlign: 'right', fontSize: 10, color: '#888' },
+  invoiceTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 12 },
+  invoiceNumber: { fontSize: 12, color: '#888', marginBottom: 12 },
+  infoRow: { flexDirection: 'row', gap: 16, marginBottom: 12 },
+  infoBox: { flex: 1, backgroundColor: '#f7f7f7', border: '1 solid #e0e0e0', borderRadius: 6, padding: 8 },
+  infoTitle: { fontSize: 12, fontWeight: 'bold', marginBottom: 4 },
+  productsTitle: { fontSize: 14, fontWeight: 'bold', marginTop: 8, marginBottom: 4 },
+  tableHeader: { flexDirection: 'row', borderBottom: '1 solid #ccc', fontWeight: 'bold', fontSize: 10 },
+  tableCellHeader: { flex: 1, padding: 4, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', fontSize: 10 },
+  tableCell: { flex: 1, padding: 4 },
+  summaryBox: { marginTop: 8, marginBottom: 8, alignItems: 'flex-end' },
+  total: { fontWeight: 'bold', fontSize: 12, marginTop: 4 },
+  payment: { fontSize: 10, marginTop: 8 },
+  notes: { fontSize: 10, marginTop: 4, color: '#7a6a00' },
+  footer: { fontSize: 12, textAlign: 'center', marginTop: 16, fontWeight: 'bold' },
+  footerSmall: { fontSize: 8, textAlign: 'center', color: '#888', marginTop: 2 },
+});
 
 export default function OrdersPage() {
   const { isAuthenticated } = useAuth();
@@ -626,26 +717,19 @@ export default function OrdersPage() {
               </div>
 
               {/* PDF Download Button */}
-              <div className="flex justify-end px-8 pt-4">
-                <ReactToPdf
-                  targetRef={invoiceRef}
-                  filename={`invoice-${selectedOrder._id.slice(-8)}.pdf`}
-                  options={{ orientation: 'portrait', unit: 'px'}}
-                  x={0}
-                  y={0}
-                  scale={0.8}
-                >
-                  {({ toPdf }: any) => (
-                    <button
-                      onClick={toPdf}
-                      className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-medium rounded-xl shadow-lg hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
-                    >
-                      <HiOutlineDocumentArrowDown className="w-5 h-5" />
-                      Shkarko Faturën PDF
-                    </button>
-                  )}
-                </ReactToPdf>
-              </div>
+              {selectedOrder && (
+                <div className="flex justify-end px-8 pt-4">
+                  <PDFDownloadLink
+                    document={<InvoicePDFDocument order={selectedOrder} />}
+                    fileName={`invoice-${selectedOrder._id.slice(-8)}.pdf`}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-medium rounded-xl shadow-lg hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+                  >
+                    {({ loading }: { loading: boolean }) =>
+                      loading ? 'Duke gjeneruar PDF...' : <><HiOutlineDocumentArrowDown className="w-5 h-5" /> Shkarko Faturën PDF</>
+                    }
+                  </PDFDownloadLink>
+                </div>
+              )}
 
               {/* Invoice Content for PDF */}
               <div
@@ -744,7 +828,7 @@ export default function OrdersPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOrder.items.map((item, idx) => (
+                      {selectedOrder.items.map((item: OrderItem, idx: number) => (
                         <tr key={idx} style={{ background: idx % 2 === 0 ? '#fff' : '#f7f7f7' }}>
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>
                             {item.image ? (
