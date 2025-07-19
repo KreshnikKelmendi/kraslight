@@ -51,12 +51,12 @@ export async function POST() {
 
     // Send test email
     const mailOptions = {
-      from: `"Runway Shop Test" <${emailUser}>`,
+      from: `"Kraslight Test" <${emailUser}>`,
       to: 'kreshnik.kelmendi1994@gmail.com',
-      subject: 'Test Email - Runway Shop Email System',
+      subject: 'Test Email - Kraslight Email System',
       text: 'Ky është një email test për të verifikuar konfigurimin e Gmail për sistemin e porosive.',
       html: `
-        <h2>Test Email - Runway Shop</h2>
+        <h2>Test Email - Kraslight</h2>
         <p>Ky është një email test për të verifikuar konfigurimin e Gmail për sistemin e porosive.</p>
         <p><strong>Data:</strong> ${new Date().toLocaleString('sq-AL')}</p>
         <p><strong>Status:</strong> ✅ Email system is working!</p>

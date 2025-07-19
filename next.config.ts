@@ -22,13 +22,9 @@ const nextConfig = {
       },
     ],
   },
+  serverExternalPackages: ['cloudinary'],
   experimental: {
-    serverComponentsExternalPackages: ['cloudinary'],
-  },
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
+    // Remove deprecated serverComponentsExternalPackages
   },
 };
 

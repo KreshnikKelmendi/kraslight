@@ -6,7 +6,7 @@ The admin panel is now properly secured with authentication. Here's how to confi
 
 ### 1. Environment Variables
 
-Create a `.env.local` file in the `runway-frontend` directory with the following variables:
+Create a `.env.local` file in the `kraslight-frontend` directory with the following variables:
 
 ```env
 # Admin Authentication Credentials

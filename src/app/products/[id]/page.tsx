@@ -514,13 +514,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </div>
             <div className="flex justify-center">
               <Link
-                href="https://www.instagram.com/runwayboutique_ks/" 
+                href="https://www.instagram.com/kraslight_ks/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 sm:px-8 py-2 sm:py-4 font-bwseidoround font-semibold transition-all duration-300 hover:from-purple-600 hover:to-pink-600 text-base sm:text-lg"
               >
                 <FaInstagram className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span>@runwayboutique_ks</span>
+                <span>@kraslight_ks</span>
               </Link>
             </div>
             <div className="grid grid-cols-3 gap-[2px] max-w-[220px] sm:max-w-[370px] mx-auto bg-[#fafafa] overflow-hidden">

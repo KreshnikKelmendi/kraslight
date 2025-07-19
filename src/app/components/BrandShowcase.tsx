@@ -58,7 +58,7 @@ const BrandShowcase = () => {
   }
 
   return (
-    <section className="py-20">
+    <section className="pb-20 lg:pb-32 lg:pt-10">
       <div className="px-4 lg:px-10 mx-auto">
         {/* Header */}
         <motion.div

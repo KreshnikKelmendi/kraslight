@@ -93,7 +93,7 @@ const SecondBanner = () => {
             className="block text-3xl lg:text-7xl font-bold font-bwseidoround leading-tight mt-1"
           >
             with {' '}
-            <span className="text-black italic font-extrabold">RUNWAY.</span>
+                            <span className="text-black italic font-extrabold">KRASLIGHT.</span>
           </motion.span>
         </div>
       </div>

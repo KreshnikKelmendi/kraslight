@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PDFImage } from '@react-pdf/renderer';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PdfImage } from '@react-pdf/renderer';
 import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle } from 'react-icons/hi2';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -133,34 +133,59 @@ const InvoicePDFDocument: React.FC<InvoicePDFDocumentProps> = ({ order }) => (
   <Document>
     <Page size="A4" style={pdfStyles.body}>
       <View style={pdfStyles.header}>
-        <PDFImage src="/assets/logo/adidas-logo.png" style={pdfStyles.logo} />
+        <PdfImage src="/assets/logo/kraslight-logo.png" style={pdfStyles.logo} />
         <View style={pdfStyles.headerText}>
-          <Text style={pdfStyles.title}>Runway Shop</Text>
-          <Text style={pdfStyles.subtitle}>www.runwayshop.com</Text>
+          <Text style={pdfStyles.title}>Kraslight</Text>
+          <Text style={pdfStyles.subtitle}>www.kraslight.com</Text>
         </View>
         <View style={pdfStyles.headerDate}>
           <Text>Data: {new Date(order.createdAt).toLocaleDateString('sq-AL')}</Text>
         </View>
       </View>
+      
       <Text style={pdfStyles.invoiceTitle}>FATURË</Text>
       <Text style={pdfStyles.invoiceNumber}>Nr. Porosisë: #{order._id.slice(-8)}</Text>
+      
       <View style={pdfStyles.infoRow}>
         <View style={pdfStyles.infoBox}>
           <Text style={pdfStyles.infoTitle}>Të dhënat e klientit</Text>
-          <Text>Emri: {order.firstName} {order.lastName}</Text>
-          <Text>Email: {order.email}</Text>
-          <Text>Telefon: {order.phone}</Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Emri: </Text>
+            {order.firstName} {order.lastName}
+          </Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Email: </Text>
+            {order.email}
+          </Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Telefon: </Text>
+            {order.phone}
+          </Text>
         </View>
         <View style={pdfStyles.infoBox}>
           <Text style={pdfStyles.infoTitle}>Adresa e dërgesës</Text>
-          <Text>Adresa: {order.address}</Text>
-          <Text>Qyteti: {order.city || '-'}</Text>
-          <Text>Shteti: {order.country}</Text>
-          <Text>Kodi Postal: {order.postalCode}</Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Adresa: </Text>
+            {order.address}
+          </Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Qyteti: </Text>
+            {order.city || '-'}
+          </Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Shteti: </Text>
+            {order.country}
+          </Text>
+          <Text style={pdfStyles.infoText}>
+            <Text style={pdfStyles.infoLabel}>Kodi Postal: </Text>
+            {order.postalCode}
+          </Text>
         </View>
       </View>
+      
       <Text style={pdfStyles.productsTitle}>Produktet</Text>
       <View style={pdfStyles.tableHeader}>
+        <Text style={pdfStyles.tableCellHeader}>Foto</Text>
         <Text style={pdfStyles.tableCellHeader}>#</Text>
         <Text style={pdfStyles.tableCellHeader}>Emri</Text>
         <Text style={pdfStyles.tableCellHeader}>Sasia</Text>
@@ -169,6 +194,14 @@ const InvoicePDFDocument: React.FC<InvoicePDFDocumentProps> = ({ order }) => (
       </View>
       {order.items.map((item: OrderItem, idx: number) => (
         <View style={pdfStyles.tableRow} key={idx}>
+          <View style={pdfStyles.imageCell}>
+            {item.image && (
+              <PdfImage 
+                src={item.image} 
+                style={pdfStyles.productImage}
+              />
+            )}
+          </View>
           <Text style={pdfStyles.tableCell}>{idx + 1}</Text>
           <Text style={pdfStyles.tableCell}>{item.name}</Text>
           <Text style={pdfStyles.tableCell}>{item.quantity}</Text>
@@ -176,43 +209,208 @@ const InvoicePDFDocument: React.FC<InvoicePDFDocumentProps> = ({ order }) => (
           <Text style={pdfStyles.tableCell}>€{(item.price * item.quantity).toFixed(2)}</Text>
         </View>
       ))}
+      
       <View style={pdfStyles.summaryBox}>
-        <Text>Nëntotali: €{calculateItemsTotal(order.items).toFixed(2)}</Text>
-        <Text>Transporti: {calculateShipping(order.country) === 0 ? 'Falas' : `€${calculateShipping(order.country).toFixed(2)}`}</Text>
+        <Text style={pdfStyles.summaryText}>Nëntotali: €{calculateItemsTotal(order.items).toFixed(2)}</Text>
+        <Text style={pdfStyles.summaryText}>Transporti: {calculateShipping(order.country) === 0 ? 'Falas' : `€${calculateShipping(order.country).toFixed(2)}`}</Text>
         <Text style={pdfStyles.total}>Totali: €{order.total.toFixed(2)}</Text>
       </View>
+      
       <Text style={pdfStyles.payment}>Mënyra e Pagesës: {paymentMethodLabels[order.paymentMethod] || order.paymentMethod}</Text>
       {order.notes && <Text style={pdfStyles.notes}>Shënim: {order.notes}</Text>}
       <Text style={pdfStyles.footer}>Faleminderit për besimin dhe blerjen tuaj!</Text>
-      <Text style={pdfStyles.footerSmall}>Faturë e gjeneruar automatikisht nga Runway Shop • www.runwayshop.com</Text>
+      <Text style={pdfStyles.footerSmall}>Faturë e gjeneruar automatikisht nga Kraslight • www.kraslight.com</Text>
     </Page>
   </Document>
 );
 
 const pdfStyles = StyleSheet.create({
-  body: { padding: 24, fontFamily: 'Helvetica' },
-  header: { flexDirection: 'row', alignItems: 'center', borderBottom: '1 solid #ccc', marginBottom: 12 },
-  logo: { width: 48, height: 48, marginRight: 16 },
-  headerText: { flex: 1 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  subtitle: { fontSize: 10, color: '#888' },
-  headerDate: { textAlign: 'right', fontSize: 10, color: '#888' },
-  invoiceTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 12 },
-  invoiceNumber: { fontSize: 12, color: '#888', marginBottom: 12 },
-  infoRow: { flexDirection: 'row', gap: 16, marginBottom: 12 },
-  infoBox: { flex: 1, backgroundColor: '#f7f7f7', border: '1 solid #e0e0e0', borderRadius: 6, padding: 8 },
-  infoTitle: { fontSize: 12, fontWeight: 'bold', marginBottom: 4 },
-  productsTitle: { fontSize: 14, fontWeight: 'bold', marginTop: 8, marginBottom: 4 },
-  tableHeader: { flexDirection: 'row', borderBottom: '1 solid #ccc', fontWeight: 'bold', fontSize: 10 },
-  tableCellHeader: { flex: 1, padding: 4, fontWeight: 'bold' },
-  tableRow: { flexDirection: 'row', fontSize: 10 },
-  tableCell: { flex: 1, padding: 4 },
-  summaryBox: { marginTop: 8, marginBottom: 8, alignItems: 'flex-end' },
-  total: { fontWeight: 'bold', fontSize: 12, marginTop: 4 },
-  payment: { fontSize: 10, marginTop: 8 },
-  notes: { fontSize: 10, marginTop: 4, color: '#7a6a00' },
-  footer: { fontSize: 12, textAlign: 'center', marginTop: 16, fontWeight: 'bold' },
-  footerSmall: { fontSize: 8, textAlign: 'center', color: '#888', marginTop: 2 },
+  body: { 
+    padding: 20, 
+    fontFamily: 'Helvetica',
+    backgroundColor: '#ffffff',
+    color: '#2c3e50'
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    borderBottom: '2 solid #28a745', 
+    marginBottom: 15,
+    paddingBottom: 12,
+    paddingTop: 8
+  },
+  logo: { 
+    width: 60, 
+    height: 60, 
+    borderRadius: 8,
+    border: '2 solid #28a745',
+    padding: 6,
+    backgroundColor: '#ffffff',
+    shadow: '0 2px 8px rgba(40, 167, 69, 0.2)',
+    objectFit: 'contain'
+  },
+  headerText: { 
+    flex: 1,
+    textAlign: 'left'
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+    letterSpacing: 0.5
+  },
+  subtitle: { 
+    fontSize: 11, 
+    color: '#7f8c8d',
+    fontWeight: 'normal',
+    letterSpacing: 0.3
+  },
+  headerDate: { 
+    textAlign: 'right', 
+    fontSize: 10, 
+    color: '#7f8c8d',
+    fontWeight: 'normal'
+  },
+  invoiceTitle: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginTop: 15,
+    marginBottom: 6,
+    color: '#2c3e50',
+    textAlign: 'center'
+  },
+  invoiceNumber: { 
+    fontSize: 12, 
+    color: '#7f8c8d', 
+    marginBottom: 15,
+    textAlign: 'center',
+    fontWeight: 'normal'
+  },
+  infoRow: { 
+    flexDirection: 'row', 
+    gap: 15, 
+    marginBottom: 15 
+  },
+  infoBox: { 
+    flex: 1, 
+    border: '1 solid #e0e0e0', 
+    padding: 10, 
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa'
+  },
+  infoTitle: { 
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    marginBottom: 6,
+    color: '#2c3e50'
+  },
+  infoText: {
+    fontSize: 9,
+    marginBottom: 3,
+    color: '#2c3e50',
+    lineHeight: 1.3
+  },
+  infoLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#7f8c8d'
+  },
+  productsTitle: { 
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    marginTop: 15, 
+    marginBottom: 8,
+    color: '#2c3e50'
+  },
+  tableHeader: { 
+    flexDirection: 'row', 
+    backgroundColor: '#28a745', 
+    padding: 6, 
+    marginBottom: 3,
+    borderRadius: 4
+  },
+  tableCellHeader: { 
+    flex: 1, 
+    fontSize: 10, 
+    fontWeight: 'bold', 
+    textAlign: 'center',
+    color: '#ffffff'
+  },
+  tableRow: { 
+    flexDirection: 'row', 
+    padding: 5, 
+    borderBottom: '1 solid #e0e0e0',
+    backgroundColor: '#ffffff'
+  },
+  tableCell: { 
+    flex: 1, 
+    fontSize: 9, 
+    textAlign: 'center',
+    color: '#2c3e50'
+  },
+  imageCell: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2
+  },
+  productImage: {
+    width: 25,
+    height: 25,
+    borderRadius: 3,
+    objectFit: 'cover'
+  },
+  summaryBox: { 
+    border: '2 solid #28a745', 
+    padding: 10, 
+    marginTop: 15, 
+    borderRadius: 6,
+    backgroundColor: '#d4edda'
+  },
+  summaryText: {
+    fontSize: 10,
+    marginBottom: 3,
+    color: '#2c3e50'
+  },
+  total: { 
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    marginTop: 6,
+    color: '#2c3e50'
+  },
+  payment: { 
+    fontSize: 11, 
+    marginTop: 8,
+    color: '#2c3e50',
+    fontWeight: 'normal'
+  },
+  notes: { 
+    fontSize: 10, 
+    color: '#155724', 
+    marginTop: 8, 
+    fontStyle: 'italic',
+    backgroundColor: '#d4edda',
+    padding: 8,
+    borderRadius: 4,
+    border: '1 solid #c3e6cb'
+  },
+  footer: { 
+    fontSize: 11, 
+    textAlign: 'center', 
+    marginTop: 12, 
+    color: '#2c3e50',
+    fontWeight: 'bold'
+  },
+  footerSmall: { 
+    fontSize: 8, 
+    textAlign: 'center', 
+    marginTop: 6, 
+    color: '#7f8c8d',
+    fontWeight: 'normal'
+  },
 });
 
 export default function OrdersPage() {
@@ -556,8 +754,8 @@ export default function OrdersPage() {
                       }}
                     >
                       <NextImage
-                        src="/assets/logo/adidas-logo.png"
-                        alt="Adidas Logo"
+                        src="/assets/logo/kraslight-logo.png"
+                        alt="Kraslight Logo"
                         width={140}
                         height={140}
                         style={{
@@ -655,7 +853,7 @@ export default function OrdersPage() {
                         <HiOutlineTruck className="w-5 h-5 text-blue-600 inline-block" />
                         <span className="font-semibold">Transporti:</span>
                         <span className="font-semibold text-slate-900 text-[12px] underline flex items-center gap-1">
-                          <NextImage src={getFlagUrl(order.country)} alt={order.country} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                          <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                           {order.country}
                         </span>
                         {calculateShipping(order.country) === 0 ? <span className="ml-1">Falas</span> : <span className="ml-1">€{calculateShipping(order.country).toFixed(2)}</span>}
@@ -665,7 +863,7 @@ export default function OrdersPage() {
                       <span className="font-bold underline underline-offset-2 text-blue-600">Adresa e dërgimit të porosisë</span>
                       <span className="">{order.address}</span>
                       <span className="font-bold flex items-center gap-1">{order.city},
-                        <NextImage src={getFlagUrl(order.country)} alt={order.country} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                        <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                         {order.country}
                       </span>
                     </div>
@@ -772,15 +970,15 @@ export default function OrdersPage() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    RUNWAY
+                    KRASLIGHT
                   </span>
                 </div>
                 {/* Top Bar: Soft gray, logo, business name */}
                 <div style={{ display: 'flex', alignItems: 'center', background: '#ededed', color: '#222', padding: '18px 24px', borderBottom: '2px solid #cccccc' }}>
-                  <NextImage src="/assets/logo/adidas-logo.png" alt="Logo" width={48} height={48} className="mr-5" />
+                  <NextImage src="/assets/logo/kraslight-logo.png" alt="Kraslight Logo" width={48} height={48} className="mr-5" />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase' }}>Runway Shop</div>
-                    <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>www.runwayshop.com</div>
+                                      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase' }}>Kraslight</div>
+                  <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>www.kraslight.com</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 13, color: '#888' }}>
                     <div><b>Data:</b> {new Date(selectedOrder.createdAt).toLocaleDateString('sq-AL')}</div>
@@ -828,9 +1026,9 @@ export default function OrdersPage() {
                         <tr key={idx} style={{ background: idx % 2 === 0 ? '#fff' : '#f7f7f7' }}>
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>
                             {item.image ? (
-                              <View style={{ backgroundColor: '#fafafa', borderRadius: 6, border: '1 solid #e0e0e0', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <PDFImage src={item.image} style={{ width: 48, height: 48, borderRadius: 6 }} />
-                              </View>
+                              <div style={{ backgroundColor: '#fafafa', borderRadius: 6, border: '1px solid #e0e0e0', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <NextImage src={item.image} alt={item.name} width={48} height={48} style={{ borderRadius: 6 }} />
+                              </div>
                             ) : null}
                           </td>
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>{idx + 1}</td>
@@ -883,7 +1081,7 @@ export default function OrdersPage() {
                   Faleminderit për besimin dhe blerjen tuaj!
                 </div>
                 <div style={{ width: '100%', fontSize: 12, color: '#888', textAlign: 'center', background: '#fff', letterSpacing: 1, padding: '4px 24px 8px 24px' }}>
-                  Faturë e gjeneruar automatikisht nga Runway Shop • www.runwayshop.com
+                  Faturë e gjeneruar automatikisht nga Kraslight • www.kraslight.com
                 </div>
               </div>
             </div>

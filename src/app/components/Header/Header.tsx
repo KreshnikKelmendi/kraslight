@@ -12,8 +12,6 @@ import { RootState } from '../../../lib/store';
 import Cart from '../../../components/Cart';
 import SearchModal from '../Search/SearchModal';
 
-const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
@@ -30,6 +28,11 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const cartCount = useSelector((state: RootState) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsMobileMenuOpen(false);
+  };
 
   // Lighting product images for slides
   const ndricimBrendshemImages = [
@@ -675,7 +678,7 @@ const Header = () => {
                     <Link 
                       href="/signin" 
                       className="block py-4 px-4 text-xl font-bold text-gray-800 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      onClick={scrollToTop}
                     >
                       SIGN IN TO GET REWARDS
                     </Link>
@@ -683,7 +686,7 @@ const Header = () => {
                     <button
                       onClick={() => {
                         logout();
-                        setIsMobileMenuOpen(false);
+                        scrollToTop();
                       }}
                       className="w-full text-left py-4 px-4 text-xl font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-200"
                     >

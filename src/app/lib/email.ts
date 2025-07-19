@@ -68,24 +68,24 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
     }).join('');
 
     const mailOptions = {
-      from: `"Runway Shop" <${emailUser}>`,
+      from: `"Kraslight" <${emailUser}>`,
       to: order.email,
       replyTo: emailUser,
-      subject: `Konfirmimi i porosisë suaj - Runway Shop`,
+      subject: `Konfirmimi i porosisë suaj - Kraslight`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Konfirmimi i Porosisë - Runway Shop</title>
+          <title>Konfirmimi i Porosisë - Kraslight</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 300;">RUNWAY SHOP</h1>
+              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 300;">KRASLIGHT</h1>
               <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">Faleminderit për porosinë tuaj!</p>
             </div>
 
@@ -171,7 +171,7 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
               <div style="background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; text-align: center;">
                 <h3 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Na Kontaktoni</h3>
                 <p style="margin: 0; color: #e65100; font-size: 14px;">
-                  Nëse keni pyetje, na kontaktoni në: <strong>info@runwayshop.com</strong>
+                  Nëse keni pyetje, na kontaktoni në: <strong>info@kraslight.com</strong>
                 </p>
               </div>
 
@@ -180,10 +180,10 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
             <!-- Footer -->
             <div style="background-color: #2c3e50; padding: 20px; text-align: center;">
               <p style="margin: 0; color: rgba(255, 255, 255, 0.8); font-size: 12px;">
-                © 2024 Runway Shop. Të gjitha të drejtat e rezervuara.
+                © 2024 Kraslight. Të gjitha të drejtat e rezervuara.
               </p>
               <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.6); font-size: 11px;">
-                Faleminderit që zgjodhët Runway Shop!
+                Faleminderit që zgjodhët Kraslight!
               </p>
             </div>
 
@@ -278,9 +278,9 @@ export async function sendOrderNotification(order: Order) {
     }).join('');
 
     const mailOptions = {
-      from: `"Runway Shop - Admin" <${emailUser}>`,
+      from: `"Kraslight - Admin" <${emailUser}>`,
       to: 'kreshnik.kelmendi1994@gmail.com',
-      subject: `Njoftim: Porosi e re nga ${order.firstName} ${order.lastName} - Runway Shop`,
+      subject: `Njoftim: Porosi e re nga ${order.firstName} ${order.lastName} - Kraslight`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -294,7 +294,7 @@ export async function sendOrderNotification(order: Order) {
             
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); padding: 30px; text-align: center;">
-              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 300;">RUNWAY SHOP</h1>
+              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 300;">KRASLIGHT</h1>
               <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">Njoftim për porosi të re</p>
             </div>
 
@@ -386,7 +386,7 @@ export async function sendOrderNotification(order: Order) {
             <!-- Footer -->
             <div style="background-color: #2c3e50; padding: 20px; text-align: center;">
               <p style="margin: 0; color: rgba(255, 255, 255, 0.8); font-size: 12px;">
-                © 2024 Runway Shop. Të gjitha të drejtat e rezervuara.
+                © 2024 Kraslight. Të gjitha të drejtat e rezervuara.
               </p>
               <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.6); font-size: 11px;">
                 Ky email u dërgua automatikisht nga sistemi i porosive për administratorët.
@@ -490,24 +490,24 @@ export async function sendOrderStatusUpdateEmail(order: Order, oldStatus: string
     const newStatusInfo = getStatusInfo(newStatus);
 
     const mailOptions = {
-      from: `"Runway Shop" <${emailUser}>`,
+      from: `"Kraslight" <${emailUser}>`,
       to: order.email,
       replyTo: emailUser,
-      subject: `Përditësimi i statusit të porosisë - Runway Shop`,
+      subject: `Përditësimi i statusit të porosisë - Kraslight`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Përditësimi i Statusit - Runway Shop</title>
+          <title>Përditësimi i Statusit - Kraslight</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 300;">RUNWAY SHOP</h1>
+              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 300;">KRASLIGHT</h1>
               <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">Përditësimi i statusit të porosisë</p>
             </div>
 
@@ -573,7 +573,7 @@ export async function sendOrderStatusUpdateEmail(order: Order, oldStatus: string
                 ` : newStatus === 'delivered' ? `
                   <ul style="margin: 0; padding-left: 20px; color: #0369a1; font-size: 14px;">
                     <li style="margin-bottom: 8px;">Porosia juaj u dorëzua me sukses!</li>
-                    <li style="margin-bottom: 8px;">Faleminderit që zgjodhët Runway Shop</li>
+                    <li style="margin-bottom: 8px;">Faleminderit që zgjodhët Kraslight</li>
                     <li style="margin-bottom: 0;">Shpresojmë të ju shërbejmë përsëri</li>
                   </ul>
                 ` : newStatus === 'cancelled' ? `
@@ -593,7 +593,7 @@ export async function sendOrderStatusUpdateEmail(order: Order, oldStatus: string
               <div style="background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; text-align: center;">
                 <h3 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Na Kontaktoni</h3>
                 <p style="margin: 0; color: #e65100; font-size: 14px;">
-                  Nëse keni pyetje, na kontaktoni në: <strong>info@runwayshop.com</strong>
+                  Nëse keni pyetje, na kontaktoni në: <strong>info@kraslight.com</strong>
                 </p>
               </div>
 
@@ -602,7 +602,7 @@ export async function sendOrderStatusUpdateEmail(order: Order, oldStatus: string
             <!-- Footer -->
             <div style="background-color: #2c3e50; padding: 20px; text-align: center;">
               <p style="margin: 0; color: rgba(255, 255, 255, 0.8); font-size: 12px;">
-                © 2024 Runway Shop. Të gjitha të drejtat e rezervuara.
+                © Kraslight. Të gjitha të drejtat e rezervuara.
               </p>
               <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.6); font-size: 11px;">
                 Ky email u dërgua automatikisht për të ju informuar për statusin e porosisë.
@@ -654,7 +654,7 @@ export async function sendEmailToSubscribers(email: string, subject: string, mes
     });
 
     const mailOptions = {
-      from: `"Runway Boutique" <${emailUser}>`,
+      from: `"Kraslight" <${emailUser}>`,
       to: email,
       replyTo: emailUser,
       subject: subject,
@@ -664,7 +664,7 @@ export async function sendEmailToSubscribers(email: string, subject: string, mes
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Runway Boutique Newsletter</title>
+          <title>Kraslight Newsletter</title>
           <style>
             body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; }
             .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
@@ -698,7 +698,7 @@ export async function sendEmailToSubscribers(email: string, subject: string, mes
           <div class="container">
             <!-- Header -->
             <div class="header">
-              <div class="logo">RUNWAY BOUTIQUE</div>
+              <div class="logo">KRASLIGHT</div>
               <p class="subtitle">Përditësimet e fundit dhe ofertat ekskluzive</p>
             </div>
 
@@ -720,7 +720,7 @@ export async function sendEmailToSubscribers(email: string, subject: string, mes
 
               <!-- Call to Action -->
               <div class="cta-section">
-                <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://runwayboutique-ks.com'}" class="cta-button">
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://kraslight.com'}" class="cta-button">
                   Shiko Koleksionin Tani
                 </a>
               </div>
@@ -729,7 +729,7 @@ export async function sendEmailToSubscribers(email: string, subject: string, mes
               <div class="contact-section">
                 <h3 class="contact-title">Na Kontaktoni</h3>
                 <div class="contact-info">
-                  <strong>Email:</strong> info@runwayboutique-ks.com<br>
+                  <strong>Email:</strong> info@kraslight.com<br>
                   <strong>Telefon:</strong> 049 666 678<br>
                   <strong>Adresa:</strong> Rruga Tirana C4/3 & Prishtina MALL, Prishtinë, Kosovë
                 </div>
@@ -738,9 +738,9 @@ export async function sendEmailToSubscribers(email: string, subject: string, mes
 
             <!-- Footer -->
             <div class="footer">
-              <p class="footer-text">© 2024 Runway Boutique. Të gjitha të drejtat e rezervuara.</p>
+              <p class="footer-text">© 2024 Kraslight. Të gjitha të drejtat e rezervuara.</p>
               <p class="footer-text">Ky email u dërgua për shkak se jeni abonuar në newsletter-in tonë.</p>
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://runwayboutique-ks.com'}/unsubscribe?email=${email}" class="unsubscribe-link">
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://kraslight.com'}/unsubscribe?email=${email}" class="unsubscribe-link">
                 Çabonohu nga newsletter-i
               </a>
             </div>
