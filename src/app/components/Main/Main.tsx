@@ -176,7 +176,7 @@ export default function Main() {
               >
                 <Link
                   href={currentSlideContent.link}
-                  className="inline-block px-8 sm:px-16 py-2 sm:py-3 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white font-semibold hover:from-[#0a9945] hover:to-gray-700 transition-all transform hover:scale-105 shadow-lg text-base sm:text-lg font-bwseidoround border-none"
+                  className="inline-block px-8 sm:px-16 py-2 sm:py-3 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white font-semibold rounded-xl hover:from-[#0a9945] hover:to-gray-700 transition-all transform hover:scale-105 shadow-lg text-base sm:text-lg font-bwseidoround border-none"
                   style={{ borderRadius: 0 }}
                   onClick={() => {
                     if (typeof window !== 'undefined') {
@@ -254,7 +254,7 @@ export default function Main() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1 }}
-        className="absolute bottom-2 sm:bottom-8 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-3"
+        className="absolute bottom-2 sm:bottom-8 left-1/2 -translate-x-1/2 flex space-x-2 sm:space-x-4"
       >
         {slider?.slides.map((_, index) => (
           <button

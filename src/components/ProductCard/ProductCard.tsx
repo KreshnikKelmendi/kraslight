@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaEye } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 
 interface Product {
   _id: string;
@@ -78,14 +79,17 @@ export default function ProductCard({
     : price;
 
   return (
-    <div 
-      className={`group relative bg-white border border-gray-100 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:border-[#0a9945]/30 hover:-translate-y-1 cursor-pointer ${className}`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`group relative bg-white border border-gray-100 rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:border-[#0a9945]/30 cursor-pointer ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Product Image Container */}
       <Link href={`/products/${_id}`} className="block">
-        <div className="relative aspect-[3/4] lg:aspect-auto lg:h-[50vh] overflow-hidden bg-gray-50">
+        <div className="relative aspect-[3/4] lg:aspect-auto lg:h-[42vh] overflow-hidden bg-gray-50">
           <Image
             src={displayImage}
             alt={title}
@@ -95,8 +99,8 @@ export default function ProductCard({
             priority={false}
           />
         
-        {/* Subtle overlay on hover */}
-        <div className={`absolute inset-0 bg-black/5 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+                  {/* Subtle overlay on hover */}
+          <div className={`absolute inset-0 bg-black/5 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
         
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -128,7 +132,7 @@ export default function ProductCard({
         <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
           <div className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-lg font-medium shadow-lg hover:bg-white transition-all duration-300">
             <div className="flex items-center gap-2">
-              <span className="text-sm">Quick View</span>
+              <span className="text-sm">Shiko më shumë</span>
               <FaEye className="text-xs" />
             </div>
           </div>
@@ -185,6 +189,6 @@ export default function ProductCard({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 

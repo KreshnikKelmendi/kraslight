@@ -1,37 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-// import ProductCard from '../../../components/ProductCard/ProductCard';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import Link from 'next/link';
 import Image from 'next/image';
-
-/* Add global CSS for the zoom-in-special animation */
-<style jsx global>{`
-  .zoom-in-special {
-    opacity: 1 !important;
-    transform: scale(1) !important;
-    animation: zoomInSpecial 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  @keyframes zoomInSpecial {
-    0% {
-      opacity: 0;
-      transform: scale(0.5) rotate(-10deg);
-      filter: blur(2px);
-    }
-    60% {
-      opacity: 1;
-      transform: scale(1.1) rotate(2deg);
-      filter: blur(0);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1) rotate(0deg);
-      filter: blur(0);
-    }
-  }
-`}</style>
+import { FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 interface Product {
   _id: string;
@@ -49,19 +23,40 @@ interface Product {
   description: string;
   images?: string[];
   mainImage?: string;
+  subcategory?: string;
+}
+
+function getValidImage(...candidates: (string | undefined)[]) {
+  return candidates.find(
+    (img) => typeof img === 'string' && img.trim().length > 1 && (
+      img.trim().startsWith('/') || 
+      img.trim().startsWith('http://') || 
+      img.trim().startsWith('https://')
+    )
+  ) || '/images/placeholder.jpg';
+}
+
+function formatProductTitle(title: string) {
+  return title
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 const NewArrivalsCarousel: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  // Removed unused: currentIndex, isAutoPlaying, carouselRef
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const { ref: sectionRef, inView: titleInView } = useInView({ threshold: 0.3, triggerOnce: true });
 
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
     };
 
     checkMobile();
@@ -88,7 +83,18 @@ const NewArrivalsCarousel: React.FC = () => {
     fetchNewArrivals();
   }, []);
 
-  // Removed all auto-play and slide logic; static grid only
+  const productsPerView = isMobile ? 2 : 5;
+  const maxIndex = Math.max(0, products.length - productsPerView);
+
+  const nextSlide = () => {
+    setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex(prev => Math.max(prev - 1, 0));
+  };
+
+  const visibleProducts = products.slice(currentIndex, currentIndex + productsPerView);
 
   if (loading) {
     return (
@@ -107,124 +113,238 @@ const NewArrivalsCarousel: React.FC = () => {
     return null;
   }
 
-  // Always show 9 images if available
-  const visibleProducts = products.slice(0, 9);
+  return (
+    <section className="py-12 lg:py-20" ref={sectionRef}>
+      <div className=" mx-auto px-4 sm:px-6 lg:px-10">
+        {/* Section Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-12">
+          {/* Left Side - Title */}
+          <div className="text-left mb-6 lg:mb-0">
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              animate={titleInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6 }}
+              className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4 font-bwseidoround"
+            >
+              Arritjet e Reja
+            </motion.h2>
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={titleInView ? { opacity: 1, scaleX: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="w-24 h-1 bg-gradient-to-r from-[#0a9945] to-gray-800 mb-6 rounded-full"
+            />
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={titleInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-lg text-gray-600 max-w-2xl font-bwseidoround"
+            >
+              Zbuloni koleksionet më të fundit dhe produktet e reja që sapo kanë mbërritur në Kraslight
+            </motion.p>
+          </div>
+          
+          {/* Right Side - Button */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={titleInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex justify-center lg:justify-end w-full lg:w-auto"
+          >
+            <Link
+              href="/shop/new-arrivals"
+              className="w-full lg:w-auto inline-flex items-center justify-center bg-gradient-to-r from-[#0a9945] to-gray-800 text-white px-8 py-3 rounded-xl hover:from-gray-800 hover:to-[#0a9945] transition-all duration-300 shadow-lg hover:shadow-xl group"
+            >
+              <span className="mr-2 font-bwseidoround">Shiko Të Gjitha</span>
+              <FaChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Carousel Container */}
+        <div className="relative">
+          {/* Navigation Arrows */}
+          {currentIndex > 0 && (
+            <button
+              onClick={prevSlide}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white group"
+            >
+              <FaChevronLeft className="w-6 h-6 text-gray-700 group-hover:text-[#0a9945] transition-colors" />
+            </button>
+          )}
+          
+          {currentIndex < maxIndex && (
+            <button
+              onClick={nextSlide}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white group"
+            >
+              <FaChevronRight className="w-6 h-6 text-gray-700 group-hover:text-[#0a9945] transition-colors" />
+            </button>
+          )}
+
+          {/* Products Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
+            {visibleProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+
+          {/* Dots Indicator */}
+          {products.length > productsPerView && (
+            <div className="flex justify-center mt-8 gap-2">
+              {Array.from({ length: Math.ceil(products.length / productsPerView) }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index * productsPerView)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === Math.floor(currentIndex / productsPerView)
+                      ? 'bg-[#0a9945] scale-125'
+                      : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        
+      </div>
+    </section>
+  );
+};
+
+// Product Card Component
+const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const {
+    _id,
+    title,
+    price,
+    originalPrice,
+    discountPercentage,
+    stock,
+    brand
+  } = product;
+
+  const displayImage = getValidImage(product.mainImage, product.images?.[0], product.image);
+  const discountPrice = originalPrice && discountPercentage
+    ? originalPrice * (1 - discountPercentage / 100)
+    : price;
 
   return (
-    <section className="overflow-hidden relative pt-8 pb-2 lg:pb-12 px-4 lg:px-10 mt-6 lg:mt-12 animate-fade-in-up" ref={sectionRef}>
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="w-2/3 h-2/3 bg-gradient-to-tr from-pink-200/40 via-purple-100/30 to-white rounded-full blur-3xl absolute -top-16 -left-24"></div>
-        <div className="w-1/2 h-1/2 bg-gradient-to-br from-purple-200/40 via-pink-100/30 to-white rounded-full blur-2xl absolute bottom-0 right-0"></div>
-      </div>
-      <div className=" relative z-10">
-        {/* Flex Layout Container */}
-        <div className="flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-16">
-          {/* Left Side - Text Content */}
-          <div className="w-full lg:w-1/2 lg:sticky lg:top-8">
-            {/* Title wrapper */}
-            <div className="text-left px-0 lg:px-0">
-              {/* Title */}
-              <h2 className="font-bwseidoround text-5xl md:text-7xl lg:text-7xl font-extrabold mb-4 lg:mb-6 tracking-tight leading-tight flex flex-col items-center lg:items-start min-h-[5rem] lg:min-h-[7.5rem] relative">
-                {/* Mobile: Arritjet (gradient, bold, animated), e reja (block, different gradient/shadow, fade-in), both centered and larger */}
-                <span className="block lg:hidden w-full text-center ">
-                  <span className=" text-5xl font-extrabold text-transparent bg-clip-text bg-black animate-pulse">Arritjet </span>
-                  <span className=" text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-[#0a9945] mt-2 animate-fade-in">e reja</span>
-                </span>
-                {/* Desktop: original style */}
-                <span className="hidden lg:inline-flex items-center gap-3">
-                  <span className="inline-block bg-gradient-to-tr from-green-400 to-green-800 p-2 rounded-full shadow-lg animate-bounce">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v18m9-9H3" /></svg>
-                  </span>
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.3, y: 60, rotate: -8, filter: 'blur(4px)' }}
-                    animate={titleInView ? { opacity: 1, scale: 1.08, y: 0, rotate: 0, filter: 'blur(0)', textShadow: '0 8px 32px rgba(180, 100, 255, 0.25)' } : {}}
-                    transition={{ duration: 0.9, delay: 0.1, type: 'spring', bounce: 0.55 }}
-                    className="inline-block drop-shadow-lg"
-                  >
-                    Arritjet
-                  </motion.span>
-                </span>
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.3, y: 60, rotate: 8, filter: 'blur(4px)' }}
-                  animate={titleInView ? { opacity: 1, scale: 1.08, y: 0, rotate: 0, filter: 'blur(0)', textShadow: '0 8px 32px rgba(255, 100, 180, 0.25)' } : {}}
-                  transition={{ duration: 0.9, delay: 0.7, type: 'spring', bounce: 0.55 }}
-                  className="hidden lg:inline-block drop-shadow-lg text-transparent bg-clip-text bg-gradient-to-r from-[#0a9945] to-gray-800"
-                >
-                  e reja
-                </motion.span>
-              </h2>
-              {/* Divider */}
-              <div className="w-24 lg:w-32 h-1 bg-gradient-to-r from-[#0a9945] to-gray-800 mx-auto lg:mx-0 mb-6 lg:mb-8 rounded-full shadow-lg animate-pulse"></div>
-              {/* Description */}
-              <p className="text-base lg:text-lg font-bwseidoround text-gray-700 font-light tracking-wide leading-relaxed mb-6 lg:mb-8 px-2 lg:px-0">
-                Zbuloni koleksionet më të fundit dhe produktet e reja që sapo kanë mbërritur në Kraslight
-              </p>
-              {/* Stats */}
-              <div className="flex flex-wrap justify-center lg:justify-start gap-4 lg:gap-6 mb-6 lg:mb-8">
-                <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-gray-900 drop-shadow-md">{products.length}</div>
-                  <div className="text-xs lg:text-sm text-gray-600">Produkte të Reja</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-gray-900 drop-shadow-md">{Math.ceil(products.length / (isMobile ? 2 : 3))}</div>
-                  <div className="text-xs lg:text-sm text-gray-600">Koleksione</div>
-                </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="group relative bg-white border border-gray-100 rounded-xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:border-[#0a9945]/30 hover:-translate-y-1 cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Product Image Container */}
+      <Link href={`/products/${_id}`} className="block">
+        <div className="relative aspect-[3/4] lg:aspect-auto lg:h-[42vh] overflow-hidden bg-gray-50">
+          <Image
+            src={displayImage}
+            alt={title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 20vw, 20vw"
+            className="object-cover object-center transition-all duration-500"
+            priority={false}
+          />
+        
+          {/* Subtle overlay on hover */}
+          <div className={`absolute inset-0 bg-black/5 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+          
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {/* Discount Badge */}
+            {discountPercentage && discountPercentage > 0 && (
+              <div className="bg-red-500 text-white font-medium px-1.5 py-0.5 rounded text-xs shadow-sm">
+                -{discountPercentage}%
               </div>
-              {/* View All Button - Hidden on mobile, shown on desktop */}
-              <div className="hidden lg:block">
-                <a
-                  href="/shop/new-arrivals"
-                  className="group inline-flex items-center bg-gradient-to-r from-[#0a9945] to-gray-800 cursor-pointer hover:from-gray-800 hover:to-[#0a9945] font-bwseidoround text-white px-14 py-3 text-lg shadow-xl hover:shadow-2xl transition-all z-10 border-0 uppercase tracking-wide w-[90%] lg:w-fit animate-fade-in"
-                >
-                  <span className="mr-3 tracking-wide">Shiko Të Gjitha</span>
-                  <svg className="w-7 h-7 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
+            )}
+            
+            {/* New Arrivals Badge */}
+            {product.isNewArrival && (
+              <div className="bg-gradient-to-l from-[#0a9945] to-gray-800 font-bwseidoround text-white font-medium px-1.5 py-0.5 rounded text-xs shadow-sm">
+                NEW
               </div>
-            </div>
+            )}
           </div>
-          {/* Right Side - Carousel */}
-          <div className="w-full lg:w-1/2 px-0 lg:px-0">
-            <div 
-              className="relative overflow-visible"
-            >
-              {/* Products Grid */}
-              <div className="grid grid-cols-3 gap-2">
-                {visibleProducts.map((product) => (
-                  <div key={product._id} className="flex items-center justify-center">
-                    <Link href={`/products/${product._id}`} className="group relative w-full h-full">
-                      <Image
-                        src={product.mainImage || product.image || (product.images && product.images[0]) || '/public/images/placeholder.jpg'}
-                        alt={product.title}
-                        width={200}
-                        height={200}
-                        className="aspect-square w-full h-auto object-cover shadow-md hover:shadow-xl transition-transform duration-300 hover:scale-105 cursor-pointer"
-                      />
-                      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <span className="text-white text-lg font-bold text-center px-2 drop-shadow">{product.title}</span>
-                      </div>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-              {/* View All Button - Shown on mobile, hidden on desktop */}
-              <div className="lg:hidden flex justify-center mt-6 lg:mt-8 w-full">
-                <a
-                  href="/shop/new-arrivals"
-                  className="group flex justify-center items-center bg-gradient-to-r from-[#0a9945] to-gray-800 cursor-pointer hover:from-gray-800 hover:to-[#0a9945] font-bwseidoround text-white px-12 py-3 text-base shadow-lg hover:shadow-2xl transition-all z-10 border-0 uppercase tracking-wide w-full animate-fade-in text-center"
-                >
-                  <span className="w-full text-center flex justify-center">Shiko Të Gjitha</span>
-                  <svg className="w-5 h-5 lg:w-6 lg:h-6 transition-transform duration-300 group-hover:translate-x-1 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
+
+          {/* Stock Status */}
+          {stock !== undefined && stock > 0 && (
+            <div className="absolute bottom-2 left-2">
+              <span className="bg-white/90 backdrop-blur-sm text-green-600 font-bwseidoround px-1.5 py-0.5 rounded text-xs font-medium shadow-sm">
+                In Stock
+              </span>
+            </div>
+          )}
+
+          {/* Quick View Button */}
+          <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-lg font-medium shadow-lg hover:bg-white transition-all duration-300">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bwseidoround">Shiko më shumë</span>
+                <FaEye className="text-xs" />
               </div>
             </div>
           </div>
         </div>
+      </Link>
+
+      {/* Product Info */}
+      <div className="p-4">
+        {/* Brand */}
+        <div className="mb-2">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide font-bwseidoround">
+            {brand}
+          </span>
+        </div>
+
+        {/* Title */}
+        <Link href={`/products/${_id}`} className="block">
+          <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1 group-hover:text-gray-700 transition-colors leading-tight font-bwseidoround">
+            {formatProductTitle(title)}
+          </h3>
+        </Link>
+
+        {/* Subcategory Badge */}
+        {product.subcategory && (
+          <div className="inline-block mb-2 px-2 py-0.5 bg-slate-100 text-gray-500 text-xs rounded-xl font-bwseidoround">
+            {product.subcategory}
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="flex items-center justify-between font-bwseidoround">
+          <div className="flex items-center gap-2">
+            {discountPercentage && discountPercentage > 0 ? (
+              <>
+                <span className="text-lg text-gray-900">
+                  €{discountPrice.toFixed(2)}
+                </span>
+                <span className="text-sm line-through text-gray-400">
+                  €{originalPrice?.toFixed(2)}
+                </span>
+              </>
+            ) : (
+              <span className="text-lg text-gray-900">
+                €{price.toFixed(2)}
+              </span>
+            )}
+          </div>
+
+          {/* Subtle arrow indicator */}
+          <div className={`w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 ${isHovered ? 'bg-gray-200' : ''}`}>
+            <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
       </div>
-    </section>
+    </motion.div>
   );
 };
 

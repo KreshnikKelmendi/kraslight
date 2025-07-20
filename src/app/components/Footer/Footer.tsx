@@ -53,7 +53,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="w-full bg-gradient-to-r from-[#0a9945] to-gray-800 text-white font-bwseidoround relative overflow-hidden">
+    <footer className="w-full bg-gradient-to-r from-[#0a9945] to-gray-800 text-white font-bwseidoround relative overflow-hidden font-bwseidoround">
       
       <div className="max-w-[1920px] mx-auto px-4 lg:px-10 py-16 relative z-10">
         {/* Main Footer Content */}
@@ -84,7 +84,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <BsShieldCheck className="text-white text-lg" />
-                <span className="text-gray-300">Garantia 2 Vite</span>
+                <span className="text-gray-300">Garancia 2 Vite</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <BsTruck className="text-white text-lg" />
@@ -117,7 +117,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-[#0a9945]">
+            <h3 className="text-xl text-white">
               Lidhje të Shpejta
             </h3>
             <ul className="space-y-3">
@@ -156,7 +156,7 @@ const Footer = () => {
 
           {/* Contact Information */}
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-[#0a9945]">
+            <h3 className="text-xl text-white">
               Na Kontaktoni
             </h3>
             <div className="space-y-4">
@@ -203,12 +203,10 @@ const Footer = () => {
           {/* Newsletter Section */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-xl font-semibold text-[#0a9945]">
+              <h3 className="text-xl text-white">
                 Mbani Lidhje
               </h3>
-              <div className="text-2xl font-bold text-[#0a9945] mt-2">
-                KRASLIGHT
-              </div>
+              
             </div>
             <p className="text-gray-300 text-sm">
               Abonohuni për përditësimet e fundit dhe ofertat ekskluzive për produkte elektronike.
@@ -261,19 +259,18 @@ const Footer = () => {
 
         {/* Bottom Section */}
         <div className="pt-8 border-t border-gray-800">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-6 text-gray-400 text-xs">
-              <span>© {new Date().getFullYear()} Kraslight. Të gjitha të drejtat e rezervuara.</span>
-              <span>•</span>
-              <span>Developed by Sync Code</span>
+          <div className="space-y-4 md:space-y-0">
+            {/* Copyright Section */}
+            <div className="text-center md:text-left lg:flex lg:justify-between lg:items-center">
+              <div className="text-gray-400 text-xs leading-relaxed">
+                <span>© {new Date().getFullYear()} Kraslight. Të gjitha të drejtat e rezervuara.</span>
+                <br className="md:hidden" />
+                <span className="hidden md:inline md:mx-3">•</span>
+                <span>Developed by Sync Code</span>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-gray-400 text-xs">
-              <Link href="/privacy" className="hover:text-white transition-colors">Privatësia</Link>
-              <span>•</span>
-              <Link href="/terms" className="hover:text-white transition-colors">Kushtet</Link>
-              <span>•</span>
-              <Link href="/cookies" className="hover:text-white transition-colors">Cookies</Link>
-            </div>
+            
+
           </div>
         </div>
       </div>

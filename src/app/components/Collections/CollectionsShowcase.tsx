@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
 interface Collection {
   _id: string;
@@ -12,6 +14,10 @@ interface Collection {
 export default function CollectionsShowcase() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const router = useRouter();
+  const [ref, inView] = useInView({
+    triggerOnce: true,
+    threshold: 0.1,
+  });
 
   useEffect(() => {
     fetchCollections();
@@ -30,17 +36,52 @@ export default function CollectionsShowcase() {
     }
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 50,
+      scale: 0.95
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+      },
+    },
+  };
+
   return (
-    <div className="bg-white py-10 px-4 lg:px-10">
+    <div className="bg-white py-12 px-4 lg:px-10">
       {/* Original Grid Layout */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        {collections.map(collection => (
-          <div
+      <motion.div 
+        ref={ref}
+        variants={containerVariants}
+        initial="hidden"
+        animate={inView ? "visible" : "hidden"}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
+      >
+        {collections.map((collection, index) => (
+          <motion.div
             key={collection._id}
+            variants={cardVariants}
             className="cursor-pointer group transition-all duration-300 hover:shadow-2xl"
             onClick={() => handleClick(collection._id)}
           >
-            <div className="relative w-full h-[37vh] lg:h-[77vh] overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl">
+            <div className="relative w-full h-[31vh] lg:h-[66vh] rounded-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl">
               {collection.image && (
                 <Image
                   src={collection.image}
@@ -53,7 +94,7 @@ export default function CollectionsShowcase() {
               {/* Always visible text overlay */}
               <div className="absolute inset-0 flex items-end justify-start pointer-events-none">
                 <div className="w-full bg-gradient-to-t from-black/80 via-black/40 to-transparent h-full flex flex-col items-start justify-end pl-4 lg:pl-6 pb-6 transition-all duration-300 group-hover:from-black/90 group-hover:via-black/60">
-                    <p className="text-white bg-gradient-to-r from-[#0a9945] to-gray-800 px-3 lg:px-4 py-0.5 lg:py-1 text-xs lg:text-base font-bwseidoround font-semibold drop-shadow-sm mb-2 transition-all duration-300 group-hover:text-yellow-300 group-hover:scale-105">
+                    <p className="text-white rounded-xl bg-gradient-to-l from-[#0a9945] to-gray-800 px-3 lg:px-4 py-0.5 lg:py-1 text-xs lg:text-base font-bwseidoround drop-shadow-sm mb-2 transition-all duration-300 group-hover:text-gray-300 group-hover:scale-105">
                     {collection.name}
                   </p>
                   <div className="flex items-center space-x-2 transition-all duration-300 group-hover:text-gray-200">
@@ -74,9 +115,9 @@ export default function CollectionsShowcase() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 } 

@@ -118,7 +118,7 @@ const Header = () => {
   // Removed unused nextSlide and prevSlide
 
   return (
-    <header className={`sticky top-0 left-0 right-0 z-40 transition-all duration-300 ${
+    <header className={`sticky top-0 left-0 right-0 z-40 transition-all duration-300 font-bwseidoround ${
       isScrolled 
         ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
         : 'bg-white shadow-sm'
@@ -405,7 +405,7 @@ const Header = () => {
                 >
                   <span className="relative">
                     Arritjet e reja
-                    <span className="absolute -top-2 -right-9 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-[8px] px-2 py-1">
+                    <span className="absolute -top-2 -right-9 font-bwseidoround bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-[8px] px-2 py-1">
                       NEW
                     </span>
                   </span>
@@ -669,7 +669,7 @@ const Header = () => {
                 <Link href="/shop/new-arrivals" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={scrollToTop}>
                   <span className="flex items-center gap-3">
                     ARRITJET E REJA
-                    <span className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-xs px-2 py-1 font-bold">NEW</span>
+                    <span className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-xs px-2 py-1 font-bwseidoround">NEW</span>
                   </span>
                 </Link>
                 {/* Account section */}

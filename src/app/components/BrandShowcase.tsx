@@ -47,7 +47,7 @@ const BrandShowcase = () => {
             <div className="h-12 bg-gray-200 rounded-lg w-64 mx-auto mb-4 animate-pulse" />
             <div className="h-6 bg-gray-200 rounded w-96 mx-auto animate-pulse" />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {[...Array(12)].map((_, i) => (
               <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
             ))}
@@ -58,7 +58,7 @@ const BrandShowcase = () => {
   }
 
   return (
-    <section className="pb-20 lg:pb-32 lg:pt-10">
+    <section className="pb-28 pt-16 lg:pb-32 lg:pt-20">
       <div className="px-4 lg:px-10 mx-auto">
         {/* Header */}
         <motion.div
@@ -67,7 +67,7 @@ const BrandShowcase = () => {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="text-center mb-12"
         >
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-3">
+          <h2 className="text-2xl md:text-3xl font-bwseidoround text-gray-800 mb-3">
             Brendet Tona
           </h2>
           <p className="text-gray-500 text-sm md:text-base max-w-lg mx-auto">

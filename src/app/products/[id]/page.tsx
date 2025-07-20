@@ -138,13 +138,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     <div className="min-h-screen bg-white">
       {/* Notification - Positioned at bottom left */}
       {alert && (
-        <div className={`fixed bottom-6 left-6 bg-white border px-6 py-3 z-50 animate-slide-in font-bwseidoround max-w-sm ${
+        <div className={`fixed bottom-6 left-6 bg-white border px-6 py-3 z-50 animate-slide-in font-bwseidoround max-w-sm rounded-xl ${
           alertType === 'success' 
             ? 'border-green-200 text-green-800' 
             : 'border-blue-200 text-blue-800'
         }`}>
           <div className="flex items-center space-x-3">
-            <div className={`w-2 h-2 ${
+            <div className={`w-2 h-2 rounded-full ${
               alertType === 'success' ? 'bg-green-500' : 'bg-blue-500'
             }`}></div>
             <span className="text-sm font-medium">{alert}</span>
@@ -157,11 +157,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {/* Product Images */}
           <div className="space-y-3 sm:space-y-6">
             {/* Main Image */}
-            <div className="relative aspect-square w-full max-w-xs sm:max-w-full mx-auto overflow-hidden bg-gray-50">
+            <div className="relative aspect-square w-full sm:max-w-full mx-auto overflow-hidden bg-gray-50 rounded-xl">
               <Image
                 src={currentImage}
                 alt={product.title}
-                className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-xl"
                 onError={handleImageError}
                 width={600}
                 height={600}
@@ -169,13 +169,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               />
               {/* Discount Badge */}
               {product.discountPercentage && (
-                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-bwseidoround font-bold text-xs">
+                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-bwseidoround font-bold text-xs rounded-xl">
                   -{product.discountPercentage}%
                 </div>
               )}
               {/* New Arrivals Badge */}
               {product.isNewArrival && (
-                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-green-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-bwseidoround font-bold text-xs">
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-green-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-bwseidoround font-bold text-xs rounded-xl">
                   NEW
                 </div>
               )}
@@ -187,7 +187,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <button
                     key={index}
                     onClick={() => setSelectedImage(image)}
-                    className={`relative aspect-square w-14 h-14 sm:w-auto sm:h-auto overflow-hidden transition-all duration-300 ${
+                    className={`relative aspect-square w-14 h-14 sm:w-auto sm:h-auto overflow-hidden transition-all duration-300 rounded-xl ${
                       selectedImage === image 
                         ? 'ring-2 ring-gray-900' 
                         : 'hover:ring-1 hover:ring-gray-300'
@@ -196,7 +196,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     <Image
                       src={image}
                       alt={`${product.title} - Image ${index + 1}`}
-                      className="object-cover w-full h-full"
+                      className="object-cover w-full h-full rounded-xl"
                       onError={handleImageError}
                       width={100}
                       height={100}
@@ -208,9 +208,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             )}
             {/* Technical Specifications Table - Hidden on mobile, shown below on mobile */}
             {product.characteristics && product.characteristics.length > 0 && (
-              <div className="bg-gray-50 p-2 sm:p-4 hidden lg:block">
+              <div className="bg-gray-50 p-2 sm:p-4 hidden lg:block rounded-xl">
                 <h2 className="font-bwseidoround text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Specifikimet Teknike</h2>
-                <div className="bg-white border border-gray-200 overflow-hidden shadow-sm">
+                <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl">
                   <table className="w-full">
                     <tbody>
                       {product.characteristics.map((char, index) => (
@@ -240,7 +240,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </h1>
             </div>
             {/* Price Section */}
-            <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100">
+            <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                 <div className="flex items-center space-x-2 sm:space-x-4">
                   {product.originalPrice ? (
@@ -251,7 +251,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                       <span className="font-bwseidoround text-sm sm:text-lg text-gray-400 line-through">
                         €{product.originalPrice.toFixed(2)}
                       </span>
-                      <div className="bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold">
+                      <div className="bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold rounded-xl">
                         -{product.discountPercentage}%
                       </div>
                     </>
@@ -263,8 +263,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 </div>
                 {/* Stock Status */}
                 {product.stock > 0 && (
-                  <div className="flex items-center space-x-2 text-green-600 font-bwseidoround bg-green-50 px-2 sm:px-3 py-1 sm:py-2 mt-1 sm:mt-0">
-                    <div className="w-2 h-2 bg-green-500"></div>
+                  <div className="flex items-center space-x-2 text-green-600 font-bwseidoround bg-green-50 px-2 sm:px-3 py-1 sm:py-2 mt-1 sm:mt-0 rounded-xl">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="font-semibold text-xs sm:text-sm">{product.stock} në stok</span>
                   </div>
                 )}
@@ -272,9 +272,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </div>
             {/* Description */}
             {product.description && (
-              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
                 <h2 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3"></div>
+                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
                   Përshkrimi
                 </h2>
                 <div className="space-y-2 sm:space-y-3">
@@ -289,7 +289,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   {product.description.length > 250 && (
                     <button
                       onClick={() => setShowFullDescription(!showFullDescription)}
-                      className="text-[#0a9945] hover:text-gray-800 font-bwseidoround font-semibold text-xs sm:text-sm transition-colors duration-300"
+                      className="text-[#0a9945] hover:text-gray-800 font-bwseidoround font-semibold text-xs sm:text-sm transition-colors duration-300 rounded-xl"
                     >
                       {showFullDescription ? 'Më pak' : 'Më shumë'}
                     </button>
@@ -299,9 +299,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             )}
             {/* Size Selection */}
             {hasSizes && sizes.length > 0 && (
-              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
                 <h3 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3"></div>
+                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
                   Zgjidhni Madhësinë
                 </h3>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
@@ -309,7 +309,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`font-bwseidoround relative px-2 sm:px-4 py-2 sm:py-3 border-2 text-xs sm:text-sm font-semibold transition-all duration-300 ${
+                      className={`font-bwseidoround relative px-2 sm:px-4 py-2 sm:py-3 border-2 text-xs sm:text-sm font-semibold transition-all duration-300 rounded-xl ${
                         selectedSize === size
                           ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white border-transparent shadow-lg transform scale-105'
                           : 'border-gray-200 text-gray-700 hover:border-[#0a9945] hover:bg-gray-50 hover:shadow-md'
@@ -322,18 +322,18 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
             )}
             {/* Quantity & Add to Cart */}
-            <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100">
+            <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
               <div className="space-y-2 sm:space-y-4">
                 {/* Quantity Selector */}
                 <div className="flex items-center justify-between">
                   <h3 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                    <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3"></div>
+                    <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
                     Sasia
                   </h3>
-                  <div className="flex items-center bg-white border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="flex items-center bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold"
+                      className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold rounded-l-xl"
                     >
                       -
                     </button>
@@ -342,7 +342,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </span>
                     <button
                       onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                      className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold"
+                      className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold rounded-r-xl"
                     >
                       +
                     </button>
@@ -350,7 +350,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 </div>
                 {/* Add to Cart Button */}
                 <button
-                  className={`w-full py-3 sm:py-4 px-4 sm:px-6 font-bwseidoround cursor-pointer text-base sm:text-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 shadow-lg ${
+                  className={`w-full py-3 sm:py-4 px-4 sm:px-6 font-bwseidoround cursor-pointer text-base sm:text-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 shadow-lg rounded-xl ${
                     canAddToCart
                       ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white hover:from-[#0a8a3d] hover:to-gray-700 hover:shadow-xl'
                       : 'bg-gray-300 text-gray-500 cursor-pointer'
@@ -416,9 +416,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </div>
             {/* Technical Specifications Table - Mobile version as stacked rows */}
             {product.characteristics && product.characteristics.length > 0 && (
-              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 lg:hidden">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 lg:hidden rounded-xl">
                 <h2 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3"></div>
+                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
                   Specifikimet Teknike
                 </h2>
                 <dl className="divide-y divide-gray-200">
@@ -433,33 +433,33 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             )}
             {/* Features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 pt-2 sm:pt-6">
-              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600 rounded-xl">
+                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800 rounded-xl">
                   <FaTruck className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
                 <span className="font-bwseidoround text-xs sm:text-sm font-medium">Transport i sigurtë</span>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600 rounded-xl">
+                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800 rounded-xl">
                   <FaShieldAlt className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
                 <span className="font-bwseidoround text-xs sm:text-sm font-medium">Garancion</span>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600 rounded-xl">
+                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800 rounded-xl">
                   <FaUndo className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
                 <span className="font-bwseidoround text-xs sm:text-sm font-medium">Kthim i lehtë</span>
               </div>
             </div>
             {/* Payment Method */}
-            <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100">
+            <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
                               <h3 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3"></div>
+                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
                   Mënyra e Pagesës
                 </h3>
-              <div className="flex items-center space-x-2 sm:space-x-4 p-2 sm:p-4 bg-white border border-gray-200 shadow-sm">
-                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-[#0a9945] to-gray-800 flex items-center justify-center">
+              <div className="flex items-center space-x-2 sm:space-x-4 p-2 sm:p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-[#0a9945] to-gray-800 flex items-center justify-center rounded-xl">
                   <span className="font-bwseidoround text-white font-bold text-base sm:text-lg">€</span>
                 </div>
                 <div>
@@ -469,7 +469,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
             </div>
             {/* Additional Info */}
-            <div className="bg-gray-50 p-3 sm:p-6">
+            <div className="bg-gray-50 p-3 sm:p-6 rounded-xl">
               <div className="space-y-2 sm:space-y-4">
                 <div className="space-y-1 sm:space-y-2">
                   <p className="font-bwseidoround text-xs text-gray-700 leading-relaxed">
@@ -495,6 +495,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     alt="Adidas" 
                     width={64}
                     height={32}
+                    className="rounded-xl"
                   />
                 </div>
               </div>
@@ -517,13 +518,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 href="https://www.instagram.com/kraslight_ks/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 sm:px-8 py-2 sm:py-4 font-bwseidoround font-semibold transition-all duration-300 hover:from-purple-600 hover:to-pink-600 text-base sm:text-lg"
+                className="inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 sm:px-8 py-2 sm:py-4 font-bwseidoround font-semibold transition-all duration-300 hover:from-purple-600 hover:to-pink-600 text-base sm:text-lg rounded-xl"
               >
                 <FaInstagram className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span>@kraslight_ks</span>
               </Link>
             </div>
-            <div className="grid grid-cols-3 gap-[2px] max-w-[220px] sm:max-w-[370px] mx-auto bg-[#fafafa] overflow-hidden">
+            <div className="grid grid-cols-3 gap-[2px] max-w-[220px] sm:max-w-[370px] mx-auto bg-[#fafafa] overflow-hidden rounded-xl">
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="relative aspect-square group">
                   <Image 
@@ -531,9 +532,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     alt={`Instagram post ${item}`}
                     width={120}
                     height={120}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-xl"
                   />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 rounded-xl">
                     <FaInstagram className="text-white text-xl sm:text-3xl" />
                   </div>
                 </div>
