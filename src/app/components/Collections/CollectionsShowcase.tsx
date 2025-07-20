@@ -74,7 +74,7 @@ export default function CollectionsShowcase() {
         animate={inView ? "visible" : "hidden"}
         className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
       >
-        {collections.map((collection, index) => (
+        {collections.map((collection) => (
           <motion.div
             key={collection._id}
             variants={cardVariants}
