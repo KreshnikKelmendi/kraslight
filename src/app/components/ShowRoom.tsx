@@ -63,7 +63,7 @@ const ShowRoom = () => {
           Ejani dhe na vizitoni
         </motion.h2>
         <p className="text-gray-600 text-base lg:text-lg text-left font-light mb-5 font-bwseidoround" style={{textShadow:'0 1px 6px #f3f4f6'}}>
-          Mirësevini në showroom-in tonë! Eksploroni koleksionet më të fundit të ndriçimit dhe dizajnit modern për hapësirën tuaj.
+          Mirësevini në showroom-in tonë! <br />Eksploroni koleksionet më të fundit të ndriçimit dhe dizajnit modern për hapësirën tuaj.
         </p>
         {/* Location Card */}
         <div className="flex flex-col items-start py-5 w-full max-w-md gap-2">

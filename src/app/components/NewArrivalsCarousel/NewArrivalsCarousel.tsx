@@ -49,12 +49,21 @@ function formatProductTitle(title: string) {
 const NewArrivalsCarousel: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { ref: sectionRef, inView: titleInView } = useInView({ threshold: 0.3, triggerOnce: true });
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check if device is mobile
   useEffect(() => {
+    if (!mounted) return;
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
@@ -62,12 +71,13 @@ const NewArrivalsCarousel: React.FC = () => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [mounted]);
 
   // Fetch new arrivals products
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
+        setError(null);
         const response = await fetch('/api/products');
         if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
@@ -75,6 +85,7 @@ const NewArrivalsCarousel: React.FC = () => {
         setProducts(newArrivalsProducts);
       } catch (error) {
         console.error('Error fetching new arrivals:', error);
+        setError('Failed to load new arrivals');
       } finally {
         setLoading(false);
       }
@@ -83,7 +94,7 @@ const NewArrivalsCarousel: React.FC = () => {
     fetchNewArrivals();
   }, []);
 
-  const productsPerView = isMobile ? 2 : 5;
+  const productsPerView = mounted && isMobile ? 2 : 5;
   const maxIndex = Math.max(0, products.length - productsPerView);
 
   const nextSlide = () => {
@@ -109,7 +120,19 @@ const NewArrivalsCarousel: React.FC = () => {
     );
   }
 
-  if (products.length === 0) {
+  if (error) {
+    return (
+      <div className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-lg text-red-600 font-light tracking-wide">Gabim në ngarkimin e produkteve. Ju lutem provoni përsëri.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (products.length === 0 && !loading) {
     return null;
   }
 
@@ -145,12 +168,7 @@ const NewArrivalsCarousel: React.FC = () => {
           </div>
           
           {/* Right Side - Button */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={titleInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex justify-center lg:justify-end w-full lg:w-auto"
-          >
+          <div className="flex justify-center lg:justify-end w-full lg:w-auto">
             <Link
               href="/shop/new-arrivals"
               className="w-full lg:w-auto inline-flex items-center justify-center bg-gradient-to-r from-[#0a9945] to-gray-800 text-white px-8 py-3 rounded-xl hover:from-gray-800 hover:to-[#0a9945] transition-all duration-300 shadow-lg hover:shadow-xl group"
@@ -158,7 +176,7 @@ const NewArrivalsCarousel: React.FC = () => {
               <span className="mr-2 font-bwseidoround">Shiko Të Gjitha</span>
               <FaChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
             </Link>
-          </motion.div>
+          </div>
         </div>
 
         {/* Carousel Container */}
@@ -251,6 +269,10 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 20vw, 20vw"
             className="object-cover object-center transition-all duration-500"
             priority={false}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/images/placeholder.jpg';
+            }}
           />
         
           {/* Subtle overlay on hover */}
