@@ -21,7 +21,7 @@ interface Product {
   subcategory?: string;
 }
 
-type SortOption = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
+type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
 type ErrorWithMessage = { message: string };
 
@@ -35,7 +35,7 @@ export default function MaterialeElektrikePage() {
     brands: [] as string[],
     subcategories: [] as string[],
   });
-  const [sortBy, setSortBy] = useState<SortOption>('price-asc');
+  const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [minAvailablePrice, setMinAvailablePrice] = useState(0);

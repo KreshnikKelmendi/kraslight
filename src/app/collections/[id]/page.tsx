@@ -38,7 +38,7 @@ interface Filters {
   subcategories: string[];
 }
 
-type SortOption = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
+type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
 export default function CollectionPage() {
   const params = useParams();
@@ -54,7 +54,7 @@ export default function CollectionPage() {
     brands: [],
     subcategories: [],
   });
-  const [sortBy, setSortBy] = useState<SortOption>('price-asc');
+  const [sortBy, setSortBy] = useState<SortOption>('default');
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);

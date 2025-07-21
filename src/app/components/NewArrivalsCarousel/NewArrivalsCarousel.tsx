@@ -53,6 +53,7 @@ const NewArrivalsCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false); // NEW
   const { ref: sectionRef, inView: titleInView } = useInView({ threshold: 0.3, triggerOnce: true });
 
   // Handle hydration
@@ -98,12 +99,28 @@ const NewArrivalsCarousel: React.FC = () => {
   const maxIndex = Math.max(0, products.length - productsPerView);
 
   const nextSlide = () => {
-    setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
+    setCurrentIndex(prev => {
+      if (prev >= maxIndex) return 0; // Loop to start
+      return Math.min(prev + 1, maxIndex);
+    });
   };
 
   const prevSlide = () => {
     setCurrentIndex(prev => Math.max(prev - 1, 0));
   };
+
+  // Auto-slide effect
+  useEffect(() => {
+    if (products.length <= productsPerView) return; // No need to auto-slide
+    if (isCarouselHovered) return; // Pause on hover
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => {
+        if (prev >= maxIndex) return 0;
+        return prev + 1;
+      });
+    }, 3000); // 3 seconds
+    return () => clearInterval(interval);
+  }, [products.length, productsPerView, maxIndex, isCarouselHovered]);
 
   const visibleProducts = products.slice(currentIndex, currentIndex + productsPerView);
 
@@ -137,7 +154,10 @@ const NewArrivalsCarousel: React.FC = () => {
   }
 
   return (
-    <section className="py-12 lg:py-20" ref={sectionRef}>
+    <section className="py-12 lg:py-20" ref={sectionRef}
+      onMouseEnter={() => setIsCarouselHovered(true)}
+      onMouseLeave={() => setIsCarouselHovered(false)}
+    >
       <div className=" mx-auto px-4 sm:px-6 lg:px-10">
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-12">
@@ -147,21 +167,16 @@ const NewArrivalsCarousel: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={titleInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
-              className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4 font-bwseidoround"
+              className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 font-bwseidoround"
             >
-              Arritjet e Reja
+              Arritjet e reja
             </motion.h2>
-            <motion.div
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={titleInView ? { opacity: 1, scaleX: 1 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="w-24 h-1 bg-gradient-to-r from-[#0a9945] to-gray-800 mb-6 rounded-full"
-            />
+          
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={titleInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-lg text-gray-600 max-w-2xl font-bwseidoround"
+              className="text-sm lg:text-base text-gray-600 max-w-2xl font-bwseidoround"
             >
               Zbuloni koleksionet më të fundit dhe produktet e reja që sapo kanë mbërritur në Kraslight
             </motion.p>

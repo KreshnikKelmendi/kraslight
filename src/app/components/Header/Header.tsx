@@ -10,7 +10,15 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../lib/store';
 import Cart from '../../../components/Cart';
-import SearchModal from '../Search/SearchModal';
+import Searchbar from '../Search/Searchbar';
+
+// Add Collection type for dynamic collections dropdown
+interface Collection {
+  _id: string;
+  name: string;
+  description?: string;
+  image: string;
+}
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -23,6 +31,8 @@ const Header = () => {
   // Update brands state to array of objects
   const [brands, setBrands] = useState<{ name: string; logo: string }[]>([]);
   const [isLoadingBrands, setIsLoadingBrands] = useState(true);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [isLoadingCollections, setIsLoadingCollections] = useState(true);
   const [showCart, setShowCart] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -94,6 +104,22 @@ const Header = () => {
     };
 
     fetchBrands();
+  }, []);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const response = await fetch('/api/collections');
+        if (!response.ok) throw new Error('Failed to fetch collections');
+        const data = await response.json();
+        setCollections(data);
+      } catch (error) {
+        console.error('Error fetching collections:', error);
+      } finally {
+        setIsLoadingCollections(false);
+      }
+    };
+    fetchCollections();
   }, []);
 
   useEffect(() => {
@@ -249,7 +275,7 @@ const Header = () => {
                   </div>
                 </div>
 
-                {/* Produktet e Ndricimit dropdown */}
+                {/* Produktet e Ndricimit dropdown (dynamic collections) */}
                 <div className="relative group">
                   <button 
                     className="text-gray-800 hover:text-gray-600 font-medium transition-colors duration-200 flex items-center space-x-1 relative"
@@ -259,11 +285,8 @@ const Header = () => {
                     <FiChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-800 transition-all duration-200 group-hover:w-full"></span>
                   </button>
-                  
-                  {/* Mega menu */}
                   <div
-                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-[600px] bg-white border border-gray-200 rounded-lg shadow-xl
-                               transition-all duration-300 ease-in-out origin-top
+                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl transition-all duration-300 ease-in-out origin-top z-50
                                ${isProduktetNdricimitOpen 
                                  ? 'opacity-100 visible scale-100 translate-y-0' 
                                  : 'opacity-0 invisible scale-95 -translate-y-2'
@@ -271,119 +294,40 @@ const Header = () => {
                     onMouseEnter={() => setIsProduktetNdricimitOpen(true)}
                     onMouseLeave={() => setIsProduktetNdricimitOpen(false)}
                   >
-                    <div className="p-4">
-                      {/* Header Section */}
-                      <div className="text-center mb-4 pb-3 border-b border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-800 mb-1">Produktet e Ndriçimit</h2>
-                        <p className="text-gray-600 text-xs">Zbuloni koleksionet tona të ndriçimit</p>
-                      </div>
-                      
-                      {/* Content Blocks */}
-                      <div className="space-y-3">
-                        {/* Ndriçim i Brendshëm */}
-                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-3 border border-gray-100 shadow-sm">
-                          <div className="flex items-start space-x-3">
-                            {/* Image Section */}
-                            <div className="relative w-32 h-24 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
-                              <Image
-                                src={ndricimBrendshemImages[currentBrendshemSlide]}
-                                alt="Ndriçim i Brendshëm"
-                                fill
-                                className="object-cover transition-all duration-500"
-                              />
-                              {/* Slide indicators */}
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                {ndricimBrendshemImages.map((_, index) => (
-                                  <div
-                                    key={index}
-                                    className={`w-1 h-1 rounded-full transition-all duration-300 ${
-                                      index === currentBrendshemSlide ? 'bg-white' : 'bg-white/50'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                    <div className="py-2 divide-y divide-gray-100">
+                      {isLoadingCollections ? (
+                        <div className="flex flex-col gap-3 px-4 py-6">
+                          {[...Array(4)].map((_, i) => (
+                            <div key={i} className="flex items-center gap-3 animate-pulse">
+                              <div className="w-10 h-10 bg-gray-200 rounded-lg" />
+                              <div className="flex-1 h-4 bg-gray-200 rounded" />
                             </div>
-                            
-                            {/* Content Section */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-bold text-gray-800 mb-1">Ndriçim i Brendshëm</h3>
-                              <p className="text-gray-600 text-xs mb-2 leading-tight">
-                                Koleksion i ndriçimit të brendshëm me dizajne moderne.
-                              </p>
-                              <div className="space-y-0.5 mb-2">
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-green-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Llambat e tavolinës dhe dyshemesë</span>
-                                </div>
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-green-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Lustrat dhe ndriçim i tavanit</span>
-                                </div>
-                              </div>
-                              <Link 
-                                href="/collections/685ffbb0bf9f854bf7948a02" 
-                                onClick={scrollToTop}
-                                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200 shadow-sm"
-                              >
-                                Shiko Produktet
-                                <FiChevronRight size={12} className="ml-1" />
-                              </Link>
-                            </div>
-                          </div>
+                          ))}
                         </div>
-
-                        {/* Ndriçim i Jashtëm */}
-                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-3 border border-gray-100 shadow-sm">
-                          <div className="flex items-start space-x-3">
-                            {/* Image Section */}
-                            <div className="relative w-32 h-24 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
-                              <Image
-                                src={ndricimJashtemImages[currentJashtemSlide]}
-                                alt="Ndriçim i Jashtëm"
-                                fill
-                                className="object-cover transition-all duration-500"
-                              />
-                              {/* Slide indicators */}
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                {ndricimJashtemImages.map((_, index) => (
-                                  <div
-                                    key={index}
-                                    className={`w-1 h-1 rounded-full transition-all duration-300 ${
-                                      index === currentJashtemSlide ? 'bg-white' : 'bg-white/50'
-                                    }`}
-                                  />
-                                ))}
+                      ) : collections.length > 0 ? (
+                        <div className="flex flex-col">
+                          {collections.map((col) => (
+                            <Link
+                              key={col._id}
+                              href={`/collections/${col._id}`}
+                              onClick={scrollToTop}
+                              className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+                            >
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} width={40} height={40} className="object-cover w-full h-full" />
                               </div>
-                            </div>
-                            
-                            {/* Content Section */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-bold text-gray-800 mb-1">Ndriçim i Jashtëm</h3>
-                              <p className="text-gray-600 text-xs mb-2 leading-tight">
-                                Transformoni hapësirat e jashtme me ndriçimin tonë modern.
-                              </p>
-                              <div className="space-y-0.5 mb-2">
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-blue-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Ndriçim i oborrit dhe kopshtit</span>
-                                </div>
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-blue-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Llambat e murit dhe tavanit</span>
-                                </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{col.name}</span>
                               </div>
-                              <Link 
-                                href="/collections/68601f21bf9f854bf7948a47" 
-                                onClick={scrollToTop}
-                                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200 shadow-sm"
-                              >
-                                Shiko Produktet
-                                <FiChevronRight size={12} className="ml-1" />
-                              </Link>
-                            </div>
-                          </div>
+                              <span className="ml-auto text-gray-400 group-hover:text-[#0a9945] text-lg"><FiChevronRight /></span>
+                            </Link>
+                          ))}
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <p className="text-gray-500 text-base font-semibold">Nuk ka koleksione të disponueshme</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -417,11 +361,16 @@ const Header = () => {
               <div className="flex items-center space-x-2">
                 {/* Search */}
                 <button 
-                  onClick={() => setShowSearch(true)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+                  onClick={() => setShowSearch((prev) => !prev)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer relative"
                 >
                   <FiSearch size={20} className="text-gray-600 hover:text-gray-800" />
                 </button>
+                {showSearch && (
+                  <div className="absolute left-0 right-0 top-full z-50 w-full flex justify-center">
+                    <Searchbar isOpen={showSearch} onClose={() => setShowSearch(false)} />
+                  </div>
+                )}
 
                 {/* User account */}
                 <div className="relative hidden lg:block">
@@ -544,7 +493,7 @@ const Header = () => {
                     </div>
                   </div>
                 </div>
-                {/* Produktet e Ndricimit dropdown in mobile menu */}
+                {/* Produktet e Ndricimit dropdown in mobile menu (dynamic collections) */}
                 <div>
                   <button
                     onClick={() => setIsMobileProduktetNdricimitOpen(!isMobileProduktetNdricimitOpen)}
@@ -554,112 +503,40 @@ const Header = () => {
                     <FiChevronDown className={`transition-transform duration-200 ${isMobileProduktetNdricimitOpen ? 'rotate-180' : ''}`} size={20} />
                   </button>
                   <div className={`overflow-hidden transition-all duration-300 ${isMobileProduktetNdricimitOpen ? 'max-h-[70vh] opacity-100' : 'max-h-0 opacity-0'}`}> 
-                    <div className="mt-3 space-y-3">
-                      {/* Ndriçim i Brendshëm */}
-                      <div className="mx-3">
-                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-md overflow-hidden border border-gray-100">
-                          <div className="flex">
-                            {/* Image Section */}
-                            <div className="relative w-24 h-20 flex-shrink-0">
-                              <Image
-                                src={ndricimBrendshemImages[currentBrendshemSlide]}
-                                alt="Ndriçim i Brendshëm"
-                                fill
-                                className="object-cover transition-all duration-500"
-                              />
-                              {/* Slide indicators */}
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                {ndricimBrendshemImages.map((_, index) => (
-                                  <div
-                                    key={index}
-                                    className={`w-1 h-1 rounded-full transition-all duration-300 ${
-                                      index === currentBrendshemSlide ? 'bg-white' : 'bg-white/50'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                    <div className="mt-3 space-y-2">
+                      {isLoadingCollections ? (
+                        <div className="flex flex-col gap-3 px-4 py-6">
+                          {[...Array(4)].map((_, i) => (
+                            <div key={i} className="flex items-center gap-3 animate-pulse">
+                              <div className="w-10 h-10 bg-gray-200 rounded-lg" />
+                              <div className="flex-1 h-4 bg-gray-200 rounded" />
                             </div>
-                            
-                            {/* Content Section */}
-                            <div className="flex-1 p-3">
-                              <h4 className="text-sm font-bold text-gray-800 mb-1">Ndriçim i Brendshëm</h4>
-                              <p className="text-gray-600 text-xs mb-2 leading-tight">
-                                Koleksion i ndriçimit të brendshëm me dizajne moderne.
-                              </p>
-                              <div className="space-y-0.5 mb-2">
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-green-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Llambat e tavolinës</span>
-                                </div>
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-green-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Lustrat dhe ndriçim i tavanit</span>
-                                </div>
-                              </div>
-                              <Link 
-                                href="/collections/685ffbb0bf9f854bf7948a02" 
-                                onClick={scrollToTop}
-                                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200"
-                              >
-                                Shiko
-                              </Link>
-                            </div>
-                          </div>
+                          ))}
                         </div>
-                      </div>
-
-                      {/* Ndriçim i Jashtëm */}
-                      <div className="mx-3">
-                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-md overflow-hidden border border-gray-100">
-                          <div className="flex">
-                            {/* Image Section */}
-                            <div className="relative w-24 h-20 flex-shrink-0">
-                              <Image
-                                src={ndricimJashtemImages[currentJashtemSlide]}
-                                alt="Ndriçim i Jashtëm"
-                                fill
-                                className="object-cover transition-all duration-500"
-                              />
-                              {/* Slide indicators */}
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                {ndricimJashtemImages.map((_, index) => (
-                                  <div
-                                    key={index}
-                                    className={`w-1 h-1 rounded-full transition-all duration-300 ${
-                                      index === currentJashtemSlide ? 'bg-white' : 'bg-white/50'
-                                    }`}
-                                  />
-                                ))}
+                      ) : collections.length > 0 ? (
+                        <div className="flex flex-col">
+                          {collections.map((col) => (
+                            <Link
+                              key={col._id}
+                              href={`/collections/${col._id}`}
+                              onClick={scrollToTop}
+                              className="flex items-center gap-3 px-5 py-3 rounded-xl hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+                            >
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} width={40} height={40} className="object-cover w-full h-full" />
                               </div>
-                            </div>
-                            
-                            {/* Content Section */}
-                            <div className="flex-1 p-3">
-                              <h4 className="text-sm font-bold text-gray-800 mb-1">Ndriçim i Jashtëm</h4>
-                              <p className="text-gray-600 text-xs mb-2 leading-tight">
-                                Transformoni hapësirat e jashtme me ndriçimin tonë modern.
-                              </p>
-                              <div className="space-y-0.5 mb-2">
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-blue-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Ndriçim i oborrit</span>
-                                </div>
-                                <div className="flex items-center text-xs text-gray-700">
-                                  <span className="w-1 h-1 bg-blue-500 rounded-full mr-1.5 flex-shrink-0"></span>
-                                  <span>Llambat e murit dhe tavanit</span>
-                                </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{col.name}</span>
                               </div>
-                              <Link 
-                                href="/collections/68601f21bf9f854bf7948a47" 
-                                onClick={scrollToTop}
-                                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded text-xs font-medium hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all duration-200"
-                              >
-                                Shiko
-                              </Link>
-                            </div>
-                          </div>
+                              <span className="ml-auto text-gray-400 group-hover:text-[#0a9945] text-lg"><FiChevronRight /></span>
+                            </Link>
+                          ))}
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <p className="text-gray-500 text-base font-semibold">Nuk ka koleksione të disponueshme</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -706,7 +583,6 @@ const Header = () => {
       )}
 
       {/* Search modal */}
-      <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} />
     </header>
   );
 };

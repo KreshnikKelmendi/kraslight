@@ -152,7 +152,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         </div>
       )}
 
-      <div className="mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16">
           {/* Product Images */}
           <div className="space-y-3 sm:space-y-6">
@@ -502,46 +502,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
         </div>
-        {/* Instagram Social Media Section */}
-        <div className="mt-8 sm:mt-16 pt-8 sm:pt-16 border-t border-gray-200">
-          <div className="text-center space-y-3 sm:space-y-6">
-            <div className="space-y-1 sm:space-y-3">
-              <h2 className="font-bwseidoround text-lg sm:text-2xl font-bold text-gray-900">
-                Na ndiqni në Instagram
-              </h2>
-              <p className="font-bwseidoround text-xs sm:text-base text-gray-600 max-w-xs sm:max-w-md mx-auto">
-                Për më shumë gjithashtu mund të na shkruani në rrjetin social Instagram
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <Link
-                href="https://www.instagram.com/kraslight_ks/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 sm:px-8 py-2 sm:py-4 font-bwseidoround font-semibold transition-all duration-300 hover:from-purple-600 hover:to-pink-600 text-base sm:text-lg rounded-xl"
-              >
-                <FaInstagram className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span>@kraslight_ks</span>
-              </Link>
-            </div>
-            <div className="grid grid-cols-3 gap-[2px] max-w-[220px] sm:max-w-[370px] mx-auto bg-[#fafafa] overflow-hidden rounded-xl">
-              {[1, 2, 3, 4, 5, 6].map((item) => (
-                <div key={item} className="relative aspect-square group">
-                  <Image 
-                    src={`/assets/logo/insta-${item}.png`}
-                    alt={`Instagram post ${item}`}
-                    width={120}
-                    height={120}
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 rounded-xl">
-                    <FaInstagram className="text-white text-xl sm:text-3xl" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+     
       </div>
     </div>
   );

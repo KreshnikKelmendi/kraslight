@@ -52,7 +52,7 @@ const ShowRoom = () => {
           variants={textAnimationVariants}
           initial="hidden"
           animate={textInView ? "visible" : "hidden"}
-          className="text-3xl md:text-5xl lg:text-5xl font-bwseidoround 2xl:text-7xl lg:tracking-[1px] font-black mb-3 text-center lg:text-left tracking-tight leading-tight relative overflow-hidden"
+          className="text-3xl lg:text-4xl font-bwseidoround 2xl:text-7xl lg:tracking-[1px] font-black mb-3 text-center lg:text-left tracking-tight leading-tight relative overflow-hidden"
           style={{
             background: 'linear-gradient(90deg, #0a9945 0%, #111 100%)',
             WebkitBackgroundClip: 'text',
@@ -62,7 +62,7 @@ const ShowRoom = () => {
         >
           Ejani dhe na vizitoni
         </motion.h2>
-        <p className="text-gray-600 text-base lg:text-lg text-left font-light mb-5 font-bwseidoround" style={{textShadow:'0 1px 6px #f3f4f6'}}>
+        <p className="text-gray-600 text-sm lg:text-base text-left font-light mb-5 font-bwseidoround" style={{textShadow:'0 1px 6px #f3f4f6'}}>
           Mirësevini në showroom-in tonë! <br />Eksploroni koleksionet më të fundit të ndriçimit dhe dizajnit modern për hapësirën tuaj.
         </p>
         {/* Location Card */}

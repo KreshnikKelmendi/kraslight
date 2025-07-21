@@ -65,13 +65,13 @@ const BrandShowcase = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="text-center mb-12"
+          className="text-left mb-12"
         >
-          <h2 className="text-2xl md:text-3xl font-bwseidoround text-gray-800 mb-3">
-            Brendet Tona
+          <h2 className="text-3xl lg:text-4xl font-bwseidoround text-gray-800 mb-3">
+            Brendet tona
           </h2>
-          <p className="text-gray-500 text-sm md:text-base max-w-lg mx-auto">
-            Zbuloni koleksionin tonë të brendeve më të njohura
+          <p className="text-gray-500 text-sm md:text-base max-w-2xl text-left">
+            Brendet më të njohura, të përzgjedhura nga Kraslight për ju. <br/>Zgjidhni cilësinë dhe stilin që i përshtatet më së miri nevojave tuaja.
           </p>
         </motion.div>
 
@@ -82,7 +82,7 @@ const BrandShowcase = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"
         >
-          {brands.map((brand, index) => (
+          {brands.slice(0, 10).map((brand, index) => (
             <motion.div
               key={brand.name}
               initial={{ opacity: 0, scale: 0.8 }}
