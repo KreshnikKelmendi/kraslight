@@ -428,6 +428,19 @@ export default function OrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
+  // Add pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ORDERS_PER_PAGE = 12;
+
+  // Calculate paginated orders
+  const totalPages = Math.ceil(filteredOrders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
+
+  // Scroll to top on page change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   useEffect(() => {
     if (isAuthenticated === false) {
       router.push('/signin');
@@ -718,166 +731,184 @@ export default function OrdersPage() {
 
         {/* Orders Grid */}
         {!loading && !error && filteredOrders.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredOrders.map((order) => {
-              const status = statusConfig[order.status] || statusConfig.pending;
-              
-              return (
-                <div 
-                  key={order._id} 
-                  className="bg-white shadow-sm border border-slate-400 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group relative flex flex-col min-h-[180px]"
-                  onClick={() => {
-                    setSelectedOrder(order);
-                    setShowOrderDetails(true);
-                  }}
-                >
-                  {/* Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%) rotate(-5deg)',
-                        width: '220px',
-                        height: '220px',
-                        borderRadius: '0',
-                        background: 'rgba(30, 144, 255, 0.07)',
-                        border: '5px solid #2563eb',
-                        boxShadow: '0 0 24px 4px rgba(37,99,235,0.10)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0.09,
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      <NextImage
-                        src="/assets/logo/kraslight-logo.png"
-                        alt="Kraslight Logo"
-                        width={140}
-                        height={140}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedOrders.map((order) => {
+                const status = statusConfig[order.status] || statusConfig.pending;
+                
+                return (
+                  <div 
+                    key={order._id} 
+                    className="bg-white shadow-sm border border-slate-400 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group relative flex flex-col min-h-[180px]"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setShowOrderDetails(true);
+                    }}
+                  >
+                    {/* Watermark */}
+                    <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
+                      <div
                         style={{
-                          filter: 'grayscale(100%)',
-                          userSelect: 'none',
-                          opacity: 0.92,
-                        }}
-                      />
-                      <span
-                        style={{
-                          marginTop: 8,
-                          fontSize: 22,
-                          fontWeight: 700,
-                          color: '#2563eb',
-                          letterSpacing: 1,
-                          textShadow: '0 1px 4px #fff',
-                          userSelect: 'none',
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%) rotate(-5deg)',
+                          width: '220px',
+                          height: '220px',
+                          borderRadius: '0',
+                          background: 'rgba(30, 144, 255, 0.07)',
+                          border: '5px solid #2563eb',
+                          boxShadow: '0 0 24px 4px rgba(37,99,235,0.10)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0.09,
+                          pointerEvents: 'none',
                         }}
                       >
-                        Porosi e re
-                      </span>
-                    </div>
-                  </div>
-                  <div className="relative z-10 flex flex-col gap-3 p-3 text-[15px] text-slate-800">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-extrabold text-lg text-blue-900 tracking-tight truncate drop-shadow-sm">{order.firstName} {order.lastName}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${status.bgColor} ${status.color}`}>{status.label}</span>
-                        <select
-                          value=""
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              updateOrderStatus(order._id, e.target.value);
-                            }
+                        <NextImage
+                          src="/assets/logo/kraslight-logo.png"
+                          alt="Kraslight Logo"
+                          width={140}
+                          height={140}
+                          style={{
+                            filter: 'grayscale(100%)',
+                            userSelect: 'none',
+                            opacity: 0.92,
                           }}
-                          onClick={(e) => e.stopPropagation()}
-                          disabled={updatingStatus === order._id}
-                          className="text-xs bg-slate-100 border border-slate-300 text-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-200 transition-colors"
+                        />
+                        <span
+                          style={{
+                            marginTop: 8,
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: '#2563eb',
+                            letterSpacing: 1,
+                            textShadow: '0 1px 4px #fff',
+                            userSelect: 'none',
+                          }}
                         >
-                          <option value="">Ndrysho statusin e porosisë</option>
-                          {getStatusOptions(order.status).map((status) => (
-                            <option key={status.value} value={status.value} className="text-slate-900">
-                              {status.emoji} {status.label}
-                            </option>
-                          ))}
-                        </select>
-                        {updatingStatus === order._id && (
-                          <div className="ml-2 inline-block align-middle">
-                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-300 border-t-slate-600"></div>
-                          </div>
-                        )}
+                          Porosi e re
+                        </span>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 text-xs text-slate-500">
-                      <span>{order.email}</span>
-                      <span>{order.phone}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                      <span>{new Date(order.createdAt).toLocaleDateString('sq-AL', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                      <span>•</span>
-                      <span>Produkte: {order.items.length}</span>
-                      <span>•</span>
-                      <span className='font-bold text-black'>Totali: <span className="font-bold text-slate-900 bg-gray-200 p-1">{order.total.toFixed(2)} €</span></span>
-                    </div>
-                    {/* Product Images Preview */}
-                    <div className="flex flex-col gap-2 mt-1">
-                      {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
-                        <div key={idx} className="flex items-center gap-2 border border-slate-200 rounded-lg bg-slate-50 px-2 py-1">
-                          <NextImage
-                            src={item.image || '/placeholder.jpg'}
-                            alt={item.name}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 object-cover rounded border border-slate-200 bg-white"
-                          />
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-semibold text-xs truncate max-w-[120px]">{item.name}</span>
-                            <div className="flex flex-wrap items-center gap-1">
-                              {item.brand && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[10px]">{item.brand}</span>}
-                              {item.size && <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">{item.size}</span>}
-                              <span className="text-slate-500 text-[10px]">x{item.quantity}</span>
-                              <span className="text-emerald-700 font-bold text-xs ml-2">{item.price.toFixed(2)} €</span>
+                    <div className="relative z-10 flex flex-col gap-3 p-3 text-[15px] text-slate-800">
+                      <div className="flex flex-col gap-1">
+                        <div className="font-extrabold text-lg text-blue-900 tracking-tight truncate drop-shadow-sm">{order.firstName} {order.lastName}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${status.bgColor} ${status.color}`}>{status.label}</span>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                updateOrderStatus(order._id, e.target.value);
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            disabled={updatingStatus === order._id}
+                            className="text-xs bg-slate-100 border border-slate-300 text-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-200 transition-colors"
+                          >
+                            <option value="">Ndrysho statusin e porosisë</option>
+                            {getStatusOptions(order.status).map((status) => (
+                              <option key={status.value} value={status.value} className="text-slate-900">
+                                {status.emoji} {status.label}
+                              </option>
+                            ))}
+                          </select>
+                          {updatingStatus === order._id && (
+                            <div className="ml-2 inline-block align-middle">
+                              <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-300 border-t-slate-600"></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 text-xs text-slate-500">
+                        <span>{order.email}</span>
+                        <span>{order.phone}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                        <span>{new Date(order.createdAt).toLocaleDateString('sq-AL', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                        <span>•</span>
+                        <span>Produkte: {order.items.length}</span>
+                        <span>•</span>
+                        <span className='font-bold text-black'>Totali: <span className="font-bold text-slate-900 bg-gray-200 p-1">{order.total.toFixed(2)} €</span></span>
+                      </div>
+                      {/* Product Images Preview */}
+                      <div className="flex flex-col gap-2 mt-1">
+                        {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 border border-slate-200 rounded-lg bg-slate-50 px-2 py-1">
+                            <NextImage
+                              src={item.image || '/placeholder.jpg'}
+                              alt={item.name}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 object-cover rounded border border-slate-200 bg-white"
+                            />
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-semibold text-xs truncate max-w-[120px]">{item.name}</span>
+                              <div className="flex flex-wrap items-center gap-1">
+                                {item.brand && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[10px]">{item.brand}</span>}
+                                {item.size && <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">{item.size}</span>}
+                                <span className="text-slate-500 text-[10px]">x{item.quantity}</span>
+                                <span className="text-emerald-700 font-bold text-xs ml-2">{item.price.toFixed(2)} €</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                      {order.items.length > 3 && (
-                        <span className="text-xs text-slate-500">+{order.items.length - 3} më shumë</span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-[15px] text-slate-700 mt-1">
-                      <span>Pagesa: <span className="font-semibold">{paymentMethodLabels[order.paymentMethod] || order.paymentMethod}</span></span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <HiOutlineTruck className="w-5 h-5 text-blue-600 inline-block" />
-                        <span className="font-semibold">Transporti:</span>
-                        <span className="font-semibold text-slate-900 text-[12px] underline flex items-center gap-1">
+                        ))}
+                        {order.items.length > 3 && (
+                          <span className="text-xs text-slate-500">+{order.items.length - 3} më shumë</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-[15px] text-slate-700 mt-1">
+                        <span>Pagesa: <span className="font-semibold">{paymentMethodLabels[order.paymentMethod] || order.paymentMethod}</span></span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <HiOutlineTruck className="w-5 h-5 text-blue-600 inline-block" />
+                          <span className="font-semibold">Transporti:</span>
+                          <span className="font-semibold text-slate-900 text-[12px] underline flex items-center gap-1">
+                            <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                            {order.country}
+                          </span>
+                          {calculateShipping(order.country) === 0 ? <span className="ml-1">Falas</span> : <span className="ml-1">€{calculateShipping(order.country).toFixed(2)}</span>}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1 text-xs text-slate-700 mt-1">
+                        <span className="font-bold underline underline-offset-2 text-blue-600">Adresa e dërgimit të porosisë</span>
+                        <span className="">{order.address}</span>
+                        <span className="font-bold flex items-center gap-1">{order.city},
                           <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                           {order.country}
                         </span>
-                        {calculateShipping(order.country) === 0 ? <span className="ml-1">Falas</span> : <span className="ml-1">€{calculateShipping(order.country).toFixed(2)}</span>}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1 text-xs text-slate-700 mt-1">
-                      <span className="font-bold underline underline-offset-2 text-blue-600">Adresa e dërgimit të porosisë</span>
-                      <span className="">{order.address}</span>
-                      <span className="font-bold flex items-center gap-1">{order.city},
-                        <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
-                        {order.country}
-                      </span>
-                    </div>
-                    {/* Notes */}
-                    {order.notes && (
-                      <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-100 text-xs text-blue-900">
-                        <span className="font-medium">Shënim:</span> {order.notes.length > 40 ? `${order.notes.slice(0, 40)}...` : order.notes}
                       </div>
-                    )}
+                      {/* Notes */}
+                      {order.notes && (
+                        <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-100 text-xs text-blue-900">
+                          <span className="font-medium">Shënim:</span> {order.notes.length > 40 ? `${order.notes.slice(0, 40)}...` : order.notes}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <nav className="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1 ? 'z-10 bg-[#0a9945] border-[#0a9945] text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'} focus:z-20 focus:outline-none`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            )}
+          </>
         )}
 
         {/* Order Details Modal */}

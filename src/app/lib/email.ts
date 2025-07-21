@@ -1,16 +1,24 @@
+// .env.local setup for email images:
+// NEXT_PUBLIC_SITE_URL=http://localhost:3000 (or your deployed URL)
+// EMAIL_USER=your@email.com
+// EMAIL_PASS=yourpassword
+
 import nodemailer from 'nodemailer';
 import type { Order, OrderItem } from '../types/order';
 
 // Helper function to get the correct image URL for emails
 function getEmailImageUrl(imagePath: string, productName: string): string {
-  // If we have a site URL configured, use it
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return `${process.env.NEXT_PUBLIC_SITE_URL}${imagePath}`;
+  // Always use NEXT_PUBLIC_SITE_URL if set
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
+  let finalUrl = '';
+  if (imagePath && siteUrl) {
+    // Ensure no double slashes
+    finalUrl = `${siteUrl.replace(/\/$/, '')}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  } else {
+    finalUrl = `${siteUrl}/images/placeholder.jpg`;
   }
-  
-  // For development or when no site URL is configured, use a placeholder
-  const encodedName = encodeURIComponent(productName.substring(0, 15));
-  return `https://via.placeholder.com/100x100/667eea/ffffff?text=${encodedName}`;
+  console.log('[EMAIL IMAGE DEBUG]', { imagePath, siteUrl, finalUrl });
+  return finalUrl;
 }
 
 // Send confirmation email to customer
