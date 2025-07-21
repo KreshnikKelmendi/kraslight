@@ -7,7 +7,7 @@ import nodemailer from 'nodemailer';
 import type { Order, OrderItem } from '../types/order';
 
 // Helper function to get the correct image URL for emails
-function getEmailImageUrl(imagePath: string, productName: string): string {
+function getEmailImageUrl(imagePath: string): string {
   // Always use NEXT_PUBLIC_SITE_URL if set
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
   let finalUrl = '';
@@ -43,7 +43,7 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
 
     // Prepare order details for the email
     const itemsList = order.items.map((item: OrderItem) => {
-      const imageUrl = getEmailImageUrl(item.image || '', item.name);
+      const imageUrl = getEmailImageUrl(item.image || '');
       
       return `
         <tr>
@@ -247,7 +247,7 @@ export async function sendOrderNotification(order: Order) {
 
     // Prepare order details for the email
     const itemsList = order.items.map((item: OrderItem) => {
-      const imageUrl = getEmailImageUrl(item.image || '', item.name);
+      const imageUrl = getEmailImageUrl(item.image || '');
       
       console.log('Product image debug:', {
         productName: item.name,
