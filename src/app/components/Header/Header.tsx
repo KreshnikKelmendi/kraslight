@@ -44,23 +44,6 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Lighting product images for slides
-  const ndricimBrendshemImages = [
-    '/uploads/products/9b2e217f-8cbc-48e2-abb5-fd2842d3cc1d-lampada-da-terra-con-base-a-3-piedi-in-legno-e-paralume-in-tela-evette.jpg',
-    '/uploads/products/1cd4ac9f-39c7-4aba-a71a-7fb05c652b69-lampada-da-terra-con-base-a-3-piedi-in-legno-e-paralume-in-tela-evette.jpg',
-    '/uploads/products/58158ae3-26e2-49fb-a0aa-637c00f4d007-ambazhur-toke-55180cm.jpg',
-    '/uploads/products/0603d06b-37f6-4612-ad2a-c6407bb419f6-abazhur-25151-cm.jpg',
-    '/uploads/products/802548ef-e4b2-436f-80a5-a363087bad14-abazhur-25151-cm.jpg'
-  ];
-
-  const ndricimJashtemImages = [
-    '/uploads/slider/07719d9c-2a20-4491-9cb2-b1b025bd0092.jpg',
-    '/uploads/slider/09c25e9e-d381-4b52-93e2-fe8185ed6c36.jpg',
-    '/uploads/slider/5d4c7733-c952-415f-ae72-6722d0182622.png',
-    '/uploads/slider/90b75611-430d-470f-904a-c60fb657fbae.jpg',
-    '/uploads/slider/663ba52b-2836-43f2-ace2-13a4ef87f4f7.jpg'
-  ];
-
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
