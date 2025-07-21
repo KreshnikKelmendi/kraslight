@@ -4,11 +4,10 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import axios from 'axios';
 // import Image from 'next/image';
-import { FaShoppingCart, FaSpinner, FaTruck, FaShieldAlt, FaUndo, FaInstagram } from 'react-icons/fa';
+import { FaShoppingCart, FaSpinner, FaTruck, FaShieldAlt, FaUndo } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
-import Link from 'next/link';
 import Image from 'next/image';
 
 // Default placeholder image

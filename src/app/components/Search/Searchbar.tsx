@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiSearch, FiX, FiClock, FiTrendingUp } from 'react-icons/fi';
+import { FiSearch, FiX, FiClock } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,9 +27,6 @@ const Searchbar: React.FC<SearchbarProps> = ({ isOpen, onClose }) => {
   const [results, setResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [trendingSearches] = useState([
-    'Adidas', 'Nike', 'Çanta', 'Këpucë', 'T-shirt', 'Dres', 'Eyewear'
-  ]);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 

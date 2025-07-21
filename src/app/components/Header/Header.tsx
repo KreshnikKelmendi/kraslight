@@ -61,25 +61,6 @@ const Header = () => {
     '/uploads/slider/663ba52b-2836-43f2-ace2-13a4ef87f4f7.jpg'
   ];
 
-  const [currentBrendshemSlide, setCurrentBrendshemSlide] = useState(0);
-  const [currentJashtemSlide, setCurrentJashtemSlide] = useState(0);
-
-  // Auto-slide effect
-  useEffect(() => {
-    const brendshemInterval = setInterval(() => {
-      setCurrentBrendshemSlide((prev) => (prev + 1) % ndricimBrendshemImages.length);
-    }, 3000);
-
-    const jashtemInterval = setInterval(() => {
-      setCurrentJashtemSlide((prev) => (prev + 1) % ndricimJashtemImages.length);
-    }, 3000);
-
-    return () => {
-      clearInterval(brendshemInterval);
-      clearInterval(jashtemInterval);
-    };
-  }, [ndricimBrendshemImages.length, ndricimJashtemImages.length]);
-
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
