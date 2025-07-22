@@ -152,7 +152,7 @@ export default function CollectionPage() {
       setFilteredProducts([]);
       return;
     }
-    let filtered = collection.products.filter(product => {
+    const filtered = collection.products.filter(product => {
       const matchesType = !filters.type || product.category === filters.type;
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
       const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);

@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FiSearch, FiShoppingBag, FiUser, FiMenu, FiX, FiChevronDown, FiInstagram, FiFacebook, FiChevronRight } from 'react-icons/fi';
+import { FiSearch, FiShoppingBag, FiUser, FiMenu, FiX, FiChevronDown, FiInstagram, FiFacebook } from 'react-icons/fi';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
