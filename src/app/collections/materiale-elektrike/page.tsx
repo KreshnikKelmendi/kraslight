@@ -381,7 +381,6 @@ export default function MaterialeElektrikePage() {
             </div>
             {/* Sort Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Rendit:</span>
               <select
                 value={sortBy}
                 onChange={(e) => {
@@ -390,6 +389,7 @@ export default function MaterialeElektrikePage() {
                 }}
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0a9945] focus:border-transparent transition-all duration-200 bg-white"
               >
+                <option value="default" disabled>Rendit:</option>
                 <option value="price-asc">Çmimi: më i ulët</option>
                 <option value="price-desc">Çmimi: më i larti</option>
                 <option value="name-asc">Emri: A-Z</option>

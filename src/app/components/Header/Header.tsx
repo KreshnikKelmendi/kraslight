@@ -250,7 +250,7 @@ const Header = () => {
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-800 transition-all duration-200 group-hover:w-full"></span>
                   </button>
                   <div
-                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl transition-all duration-300 ease-in-out origin-top z-50
+                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-[85ch] bg-white border border-gray-200 rounded-xl shadow-xl transition-all duration-300 ease-in-out origin-top z-50
                                ${isProduktetNdricimitOpen 
                                  ? 'opacity-100 visible scale-100 translate-y-0' 
                                  : 'opacity-0 invisible scale-95 -translate-y-2'
@@ -258,9 +258,9 @@ const Header = () => {
                     onMouseEnter={() => setIsProduktetNdricimitOpen(true)}
                     onMouseLeave={() => setIsProduktetNdricimitOpen(false)}
                   >
-                    <div className="py-2 divide-y divide-gray-100">
+                    <div className="py-8">
                       {isLoadingCollections ? (
-                        <div className="flex flex-col gap-3 px-4 py-6">
+                        <div className="flex flex-col gap-3 px-8 py-10">
                           {[...Array(4)].map((_, i) => (
                             <div key={i} className="flex items-center gap-3 animate-pulse">
                               <div className="w-10 h-10 bg-gray-200 rounded-lg" />
@@ -269,21 +269,22 @@ const Header = () => {
                           ))}
                         </div>
                       ) : collections.length > 0 ? (
-                        <div className="flex flex-col">
+                        <div className="grid grid-cols-2 gap-8 px-8 py-4">
                           {collections.map((col) => (
                             <Link
                               key={col._id}
                               href={`/collections/${col._id}`}
                               onClick={scrollToTop}
-                              className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+                              className="group flex flex-row rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition bg-white border border-gray-100"
                             >
-                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} width={40} height={40} className="object-cover w-full h-full" />
+                              <div className="w-40 h-40 bg-gray-100 relative flex-shrink-0">
+                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{col.name}</span>
+                              <div className="flex flex-col justify-center pl-6 pr-4 py-4 flex-1">
+                                <span className="text-gray-900 font-bold text-base mb-1 text-left w-full">{col.name}</span>
+                                <div className="w-8 h-1 bg-[#0a9945] rounded-full mb-1"></div>
+                                <span className="text-xs text-[#0a9945] font-medium tracking-wider">Eksploroni koleksionin</span>
                               </div>
-                              <span className="ml-auto text-gray-400 group-hover:text-[#0a9945] text-lg"><FiChevronRight /></span>
                             </Link>
                           ))}
                         </div>
@@ -467,9 +468,9 @@ const Header = () => {
                     <FiChevronDown className={`transition-transform duration-200 ${isMobileProduktetNdricimitOpen ? 'rotate-180' : ''}`} size={20} />
                   </button>
                   <div className={`overflow-hidden transition-all duration-300 ${isMobileProduktetNdricimitOpen ? 'max-h-[70vh] opacity-100' : 'max-h-0 opacity-0'}`}> 
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-3 pb-4">
                       {isLoadingCollections ? (
-                        <div className="flex flex-col gap-3 px-4 py-6">
+                        <div className="flex flex-col gap-2 px-4 py-4">
                           {[...Array(4)].map((_, i) => (
                             <div key={i} className="flex items-center gap-3 animate-pulse">
                               <div className="w-10 h-10 bg-gray-200 rounded-lg" />
@@ -478,26 +479,27 @@ const Header = () => {
                           ))}
                         </div>
                       ) : collections.length > 0 ? (
-                        <div className="flex flex-col">
+                        <div className="grid grid-cols-1 gap-3 px-2 py-2">
                           {collections.map((col) => (
                             <Link
                               key={col._id}
                               href={`/collections/${col._id}`}
                               onClick={scrollToTop}
-                              className="flex items-center gap-3 px-5 py-3 rounded-xl hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+                              className="group flex flex-row rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white border border-gray-100 mb-2 p-2 items-center"
                             >
-                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} width={40} height={40} className="object-cover w-full h-full" />
+                              <div className="w-12 h-12 bg-gray-100 relative flex-shrink-0 mr-3 rounded-lg overflow-hidden">
+                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{col.name}</span>
+                              <div className="flex flex-col justify-center flex-1">
+                                <span className="text-gray-900 font-bold text-sm mb-1 text-left w-full">{col.name}</span>
+                                  <div className="w-6 h-1 bg-[#0a9945] rounded-full mb-1"></div>
+                                <span className="text-xs text-[#0a9945] tracking-wider">Eksploroni koleksionin</span>
                               </div>
-                              <span className="ml-auto text-gray-400 group-hover:text-[#0a9945] text-lg"><FiChevronRight /></span>
                             </Link>
                           ))}
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center py-8">
+                        <div className="flex flex-col items-center justify-center py-6">
                           <p className="text-gray-500 text-base font-semibold">Nuk ka koleksione të disponueshme</p>
                         </div>
                       )}

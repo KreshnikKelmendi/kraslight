@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
@@ -31,7 +31,7 @@ interface Filters {
   subcategories: string[];
 }
 
-type SortOption = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
+type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
 export default function BrandPage() {
   const params = useParams();
@@ -47,7 +47,7 @@ export default function BrandPage() {
     brands: [],
     subcategories: [],
   });
-  const [sortBy, setSortBy] = useState<SortOption>('price-asc');
+  const [sortBy, setSortBy] = useState<SortOption>('default');
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -56,6 +56,7 @@ export default function BrandPage() {
   const [maxAvailablePrice, setMaxAvailablePrice] = useState(1000);
   const [productCount, setProductCount] = useState(0);
   const [categoryCount, setCategoryCount] = useState(0);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     if (params?.brand) fetchBrandProducts(params.brand as string);
@@ -118,6 +119,38 @@ export default function BrandPage() {
       return () => clearInterval(timer);
     }
   }, [availableCategories.length]);
+
+  // Remove useMemo for filteredAndSortedProducts
+  useEffect(() => {
+    let filtered = products.filter(product => {
+      const matchesType = !filters.type || product.category === filters.type;
+      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+      const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);
+      const matchesBrand = filters.brands.length === 0 || filters.brands.includes(product.brand);
+      const matchesSubcategory = filters.subcategories.length === 0 || filters.subcategories.includes(product.subcategory || '');
+      return matchesType && matchesPrice && matchesCategory && matchesBrand && matchesSubcategory;
+    });
+    // Sort products
+    switch (sortBy) {
+      case 'price-asc':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-desc':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'name-asc':
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'name-desc':
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'default':
+      default:
+        // Do not sort, keep original order
+        break;
+    }
+    setFilteredProducts(filtered);
+  }, [products, filters, sortBy, priceRange]);
 
   async function fetchBrandProducts(brand: string) {
     try {
@@ -184,32 +217,7 @@ export default function BrandPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Filter and sort products
-  const filteredAndSortedProducts = useMemo(() => {
-    const filtered = products.filter(product => {
-      const matchesType = !filters.type || product.category === filters.type;
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-      const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);
-      const matchesBrand = filters.brands.length === 0 || filters.brands.includes(product.brand);
-      const matchesSubcategory = filters.subcategories.length === 0 || filters.subcategories.includes(product.subcategory || '');
-      return matchesType && matchesPrice && matchesCategory && matchesBrand && matchesSubcategory;
-    });
-
-    // Sort products
-    switch (sortBy) {
-      case 'price-asc':
-        return filtered.sort((a, b) => a.price - b.price);
-      case 'price-desc':
-        return filtered.sort((a, b) => b.price - a.price);
-      case 'name-asc':
-        return filtered.sort((a, b) => a.title.localeCompare(b.title));
-      case 'name-desc':
-        return filtered.sort((a, b) => b.title.localeCompare(a.title));
-      default:
-        return filtered;
-    }
-  }, [products, filters, sortBy, priceRange]);
-
+  // Replace filteredAndSortedProducts with filteredProducts in render
   const formatBrandName = (brand: string) => {
     const decodedBrand = decodeURIComponent(brand);
     return decodedBrand
@@ -503,13 +511,12 @@ export default function BrandPage() {
                 </div>
               </motion.div>
               <p className="text-gray-600 text-sm">
-                {filteredAndSortedProducts.length} produkte të gjetura
+                {filteredProducts.length} produkte të gjetura
               </p>
             </div>
             
             {/* Sort Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Rendit:</span>
               <select
                 value={sortBy}
                 onChange={(e) => {
@@ -518,6 +525,7 @@ export default function BrandPage() {
                 }}
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0a9945] focus:border-transparent transition-all duration-200 bg-white"
               >
+                <option value="default" disabled>Rendit:</option>
                 <option value="price-asc">Çmimi: më i ulët</option>
                 <option value="price-desc">Çmimi: më i larti</option>
                 <option value="name-asc">Emri: A-Z</option>
@@ -534,9 +542,9 @@ export default function BrandPage() {
                 <p className="text-sm text-gray-600">Duke filtruar produkte...</p>
               </div>
             </div>
-          ) : filteredAndSortedProducts.length > 0 ? (
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6">
-              {filteredAndSortedProducts.map((product) => (
+              {filteredProducts.map((product: Product) => (
                 <div key={product._id} className="group transform hover:scale-105 transition-all duration-300">
                   <ProductCard product={{...product, stock: undefined, description: product.description || ''}} />
                 </div>

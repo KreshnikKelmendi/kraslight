@@ -81,7 +81,7 @@ export default function CollectionsShowcase() {
             className="cursor-pointer group transition-all duration-300 hover:shadow-2xl"
             onClick={() => handleClick(collection._id)}
           >
-            <div className="relative w-full h-[31vh] lg:h-[66vh] rounded-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl">
+            <div className="relative w-full h-[35vh] lg:h-[63vh] rounded-t-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl">
               {collection.image && (
                 <Image
                   src={collection.image}
@@ -91,27 +91,25 @@ export default function CollectionsShowcase() {
                   priority={false}
                 />
               )}
-              {/* Always visible text overlay */}
-              <div className="absolute inset-0 flex items-end justify-start pointer-events-none">
-                <div className="w-full bg-gradient-to-t from-black/80 via-black/40 to-transparent h-full flex flex-col items-start justify-end pl-4 lg:pl-6 pb-6 transition-all duration-300 group-hover:from-black/90 group-hover:via-black/60">
-                    <p className="text-white rounded-xl bg-gradient-to-l from-[#0a9945] to-gray-800 px-3 lg:px-4 py-0.5 lg:py-1 text-xs lg:text-base font-bwseidoround drop-shadow-sm mb-2 transition-all duration-300 group-hover:text-gray-300 group-hover:scale-105">
-                    {collection.name}
-                  </p>
-                  <div className="flex items-center space-x-2 transition-all duration-300 group-hover:text-gray-200">
-                    <span className="text-white text-xs lg:text-sm font-bwseidoround drop-shadow-sm">
-                      Eksploroni koleksionin
-                    </span>
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors duration-300">
-                      <svg 
-                        className="w-3 h-3 text-white transform group-hover:translate-x-1 transition-transform duration-300" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </div>
+            </div>
+            {/* Text container visually unified with image */}
+            <div className="bg-slate-50 rounded-b-xl p-3 lg:p-4 flex flex-col items-start justify-end w-full">
+              <p className="text-black py-0.5 lg:py-1 text-[13px] lg:text-base 2xl:text-xl font-bwseidoround mb-1 lg:mb-0 uppercase transition-colors duration-200 group-hover:text-green-600">
+                {collection.name}
+              </p>
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-500 text-xs lg:text-sm font-bwseidoround transition-colors duration-200 group-hover:text-green-600">
+                  Eksploroni koleksionin
+                </span>
+                <div className="w-6 h-6 bg-black/10 rounded-full flex items-center justify-center">
+                  <svg 
+                    className="w-3 h-3 text-black transition-colors duration-200 group-hover:text-green-600" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
               </div>
             </div>

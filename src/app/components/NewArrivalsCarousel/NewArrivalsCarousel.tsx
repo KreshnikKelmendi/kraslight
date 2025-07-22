@@ -160,7 +160,7 @@ const NewArrivalsCarousel: React.FC = () => {
     >
       <div className=" mx-auto px-4 sm:px-6 lg:px-10">
         {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-0 lg:mb-12">
           {/* Left Side - Title */}
           <div className="text-left mb-6 lg:mb-0">
             <motion.h2
@@ -186,9 +186,9 @@ const NewArrivalsCarousel: React.FC = () => {
           <div className="flex justify-center lg:justify-end w-full lg:w-auto">
             <Link
               href="/shop/new-arrivals"
-              className="w-full lg:w-auto inline-flex items-center justify-center bg-gradient-to-r from-[#0a9945] to-gray-800 text-white px-8 py-3 rounded-xl hover:from-gray-800 hover:to-[#0a9945] transition-all duration-300 shadow-lg hover:shadow-xl group"
+              className="hidden lg:w-auto lg:inline-flex items-center lg:justify-center text-[#0a9945] lg:px-8 py-3 rounded-xl hover:from-gray-800 hover:to-[#0a9945] transition-all duration-300 hover:shadow-xl group"
             >
-              <span className="mr-2 font-bwseidoround">Shiko Të Gjitha</span>
+              <span className="mr-2 font-bwseidoround border-b-2">Shiko të gjitha</span>
               <FaChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
@@ -196,6 +196,16 @@ const NewArrivalsCarousel: React.FC = () => {
 
         {/* Carousel Container */}
         <div className="relative">
+          {/* Mobile Only: Button above images, right aligned */}
+          <div className="flex justify-end mb-2 lg:hidden">
+            <Link
+              href="/shop/new-arrivals"
+              className="inline-flex items-center text-[#0a9945] px-4 py-2 rounded-xl hover:from-gray-800 hover:to-[#0a9945] transition-all duration-300 hover:shadow-xl group"
+            >
+              <span className="mr-2 font-bwseidoround underline underline-offset-[5px]">Shiko të gjitha</span>
+              <FaChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
           {/* Navigation Arrows */}
           {currentIndex > 0 && (
             <button
