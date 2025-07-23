@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   
   // If categories are provided, fetch products from those categories
   if (data.categories && data.categories.length > 0) {
-    let categoryProducts: any[] = [];
+    let categoryProducts: unknown[] = [];
     // Handle virtual 'On Sale' category
     if (data.categories.includes('Produktet ne Zbritje')) {
       const onSaleProducts = await Product.find({
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       categoryProducts = categoryProducts.concat(onSaleProducts);
     }
     // Handle real categories (excluding the virtual one)
-    const realCategories = data.categories.filter((cat: any) => cat !== 'Produktet ne Zbritje');
+    const realCategories = data.categories.filter((cat: unknown) => cat !== 'Produktet ne Zbritje');
     if (realCategories.length > 0) {
       const realCategoryProducts = await Product.find({
         category: { $in: realCategories }
@@ -59,8 +59,8 @@ export async function POST(req: Request) {
       categoryProducts = categoryProducts.concat(realCategoryProducts);
     }
     // Remove duplicates by _id
-    const uniqueProducts = Array.from(new Map(categoryProducts.map(p => [p._id.toString(), p])).values());
-    data.products = uniqueProducts.map(p => p._id);
+    const uniqueProducts = Array.from(new Map((categoryProducts as any[]).map(p => [p._id.toString(), p])).values());
+    data.products = uniqueProducts.map((p: any) => p._id);
   }
   
   const collection = await Collection.create(data);

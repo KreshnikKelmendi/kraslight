@@ -122,12 +122,6 @@ const Header = () => {
     return `/shop/brand/${encodeURIComponent(brand.name.toLowerCase())}`;
   };
 
-  // Handler to close all dropdowns (desktop)
-  const closeAllDropdowns = () => {
-    setIsDesktopBrandsOpen(false);
-    setIsProduktetNdricimitOpen(false);
-  };
-
   // Handler to close all dropdowns and mobile menu (mobile)
   const closeAllMobileDropdowns = () => {
     setIsBrendetMegaMenuOpen(false);

@@ -14,7 +14,7 @@ export async function GET(
   
   // If collection has categories, fetch products from those categories
   if (collection.categories && collection.categories.length > 0) {
-    let categoryProducts: any[] = [];
+    let categoryProducts: unknown[] = [];
     // Handle virtual 'On Sale' category
     if (collection.categories.includes('Produktet ne Zbritje')) {
       const onSaleProducts = await Product.find({
@@ -26,7 +26,7 @@ export async function GET(
       categoryProducts = categoryProducts.concat(onSaleProducts);
     }
     // Handle real categories (excluding the virtual one)
-    const realCategories = collection.categories.filter((cat: any) => cat !== 'Produktet ne Zbritje');
+    const realCategories = collection.categories.filter((cat: unknown) => cat !== 'Produktet ne Zbritje');
     if (realCategories.length > 0) {
       const realCategoryProducts = await Product.find({
         category: { $in: realCategories }
@@ -34,7 +34,7 @@ export async function GET(
       categoryProducts = categoryProducts.concat(realCategoryProducts);
     }
     // Remove duplicates by _id
-    const uniqueProducts = Array.from(new Map(categoryProducts.map(p => [p._id.toString(), p])).values());
+    const uniqueProducts = Array.from(new Map((categoryProducts as any[]).map(p => [p._id.toString(), p])).values());
     collection.products = uniqueProducts;
   }
   

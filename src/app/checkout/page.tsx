@@ -20,7 +20,7 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
