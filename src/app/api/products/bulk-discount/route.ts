@@ -138,18 +138,32 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectToDB();
-    const productCount = await Product.countDocuments();
-    return NextResponse.json({
-      message: 'Bulk discount API is working',
-      productCount
-    });
+    // Find all products
+    const products = await Product.find({}, 'discountPercentage');
+    if (!products.length) {
+      return NextResponse.json({ isGlobalDiscount: false });
+    }
+    // Get the first product's discount
+    const firstDiscount = products[0].discountPercentage;
+    if (!firstDiscount || firstDiscount <= 0) {
+      return NextResponse.json({ isGlobalDiscount: false });
+    }
+    // Check if all products have the same discountPercentage
+    const allSame = products.every(
+      (p) => p.discountPercentage === firstDiscount
+    );
+    if (allSame) {
+      return NextResponse.json({ isGlobalDiscount: true, discountPercentage: firstDiscount });
+    } else {
+      return NextResponse.json({ isGlobalDiscount: false });
+    }
   } catch (error) {
-    console.error('GET test failed:', error);
+    console.error('Error checking global discount:', error);
     return NextResponse.json(
-      { error: 'API test failed' },
+      { error: 'Failed to check global discount', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

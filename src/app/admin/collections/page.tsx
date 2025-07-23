@@ -82,7 +82,7 @@ export default function CollectionsAdminPage() {
   }
 
   // Group products by category
-  const productsByCategory: CategoryGroup[] = products.reduce((acc, product) => {
+  let productsByCategory: CategoryGroup[] = products.reduce((acc, product) => {
     const existingCategory = acc.find(group => group.category === product.category);
     if (existingCategory) {
       existingCategory.products.push(product);
@@ -96,6 +96,18 @@ export default function CollectionsAdminPage() {
     }
     return acc;
   }, [] as CategoryGroup[]);
+
+  // Add virtual 'Produktet ne Zbritje' (On Sale) category
+  const onSaleProducts = products.filter(
+    p => (typeof p.discountPercentage === 'number' && p.discountPercentage > 0) ||
+         (typeof p.originalPrice === 'number' && p.price < p.originalPrice)
+  );
+  if (onSaleProducts.length > 0 && !productsByCategory.some(cg => cg.category === 'Produktet ne Zbritje')) {
+    productsByCategory = [
+      { category: 'Produktet ne Zbritje', productCount: onSaleProducts.length, products: onSaleProducts },
+      ...productsByCategory
+    ];
+  }
 
   async function fetchCollections() {
     const res = await fetch("/api/collections");
@@ -200,6 +212,9 @@ export default function CollectionsAdminPage() {
 
   // Start editing a collection
   const startEdit = (collection: Collection) => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setEditingCollection(collection);
     setEditName(collection.name);
     setEditDescription(collection.description || "");
@@ -264,7 +279,23 @@ export default function CollectionsAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur shadow-md border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Koleksionet</h1>
+            <p className="mt-1 text-gray-500 text-sm">Menaxho koleksionet e produkteve sipas kategorive</p>
+          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+          >
+            {showForm ? "Mbyll" : "Shto Koleksion"}
+          </button>
+        </div>
+      </header>
+
       {/* Alert */}
       {showAlert && (
         <div className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl transform transition-all duration-300 ${
@@ -279,23 +310,7 @@ export default function CollectionsAdminPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Koleksionet</h1>
-              <p className="mt-2 text-gray-600">Menaxho koleksionet e produkteve sipas kategorive</p>
-            </div>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-            >
-              {showForm ? "Mbyll" : "Shto Koleksion"}
-            </button>
-          </div>
-        </div>
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Add Collection Form */}
         {showForm && (
           <div className="mb-8 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -375,67 +390,27 @@ export default function CollectionsAdminPage() {
                 )}
 
                 <div className="bg-gray-50 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-                  {productsByCategory.map((categoryGroup) => (
-                    <div key={categoryGroup.category} className="border-b border-gray-200 last:border-b-0">
-                      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-10">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-lg text-gray-800">
-                              {categoryGroup.category}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {categoryGroup.productCount} produkte
-                            </p>
-                          </div>
-                          <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedCategories.includes(categoryGroup.category)}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  setSelectedCategories([...selectedCategories, categoryGroup.category]);
-                                } else {
-                                  setSelectedCategories(selectedCategories.filter(cat => cat !== categoryGroup.category));
-                                }
-                              }}
-                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <span className="text-sm font-medium text-gray-700">Zgjidh</span>
-                          </label>
-                        </div>
+                  <div className="grid grid-cols-2 gap-0">
+                    {productsByCategory.map((categoryGroup) => (
+                      <div key={categoryGroup.category} className="border-b border-gray-200 last:border-b-0">
+                        <label className="flex items-center justify-between px-4 py-3 cursor-pointer bg-white hover:bg-blue-50 transition-colors">
+                          <span className="font-semibold text-base text-gray-800">{categoryGroup.category}</span>
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.includes(categoryGroup.category)}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                setSelectedCategories([...selectedCategories, categoryGroup.category]);
+                              } else {
+                                setSelectedCategories(selectedCategories.filter(cat => cat !== categoryGroup.category));
+                              }
+                            }}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
                       </div>
-                      <div className="p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {categoryGroup.products.slice(0, 6).map(product => (
-                            <div key={product._id} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
-                              <div className="w-8 h-8 relative rounded overflow-hidden">
-                                {product.image ? (
-                                  <Image 
-                                    src={product.image} 
-                                    alt={product.title} 
-                                    fill 
-                                    className="object-cover" 
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                    <span className="text-xs text-gray-400">N/A</span>
-                                  </div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-gray-700 truncate">{product.title}</span>
-                            </div>
-                          ))}
-                          {categoryGroup.products.length > 6 && (
-                            <div className="flex items-center justify-center p-3 bg-gray-100 rounded-lg">
-                              <span className="text-sm text-gray-600">
-                                +{categoryGroup.products.length - 6} më shumë
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -560,67 +535,27 @@ export default function CollectionsAdminPage() {
                 )}
 
                 <div className="bg-gray-50 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-                  {productsByCategory.map((categoryGroup) => (
-                    <div key={categoryGroup.category} className="border-b border-gray-200 last:border-b-0">
-                      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-10">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-lg text-gray-800">
-                              {categoryGroup.category}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {categoryGroup.productCount} produkte
-                            </p>
-                          </div>
-                          <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={editSelectedCategories.includes(categoryGroup.category)}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  setEditSelectedCategories([...editSelectedCategories, categoryGroup.category]);
-                                } else {
-                                  setEditSelectedCategories(editSelectedCategories.filter(cat => cat !== categoryGroup.category));
-                                }
-                              }}
-                              className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                            />
-                            <span className="text-sm font-medium text-gray-700">Zgjidh</span>
-                          </label>
-                        </div>
+                  <div className="grid grid-cols-2 gap-0">
+                    {productsByCategory.map((categoryGroup) => (
+                      <div key={categoryGroup.category} className="border-b border-gray-200 last:border-b-0">
+                        <label className="flex items-center justify-between px-4 py-3 cursor-pointer bg-white hover:bg-green-50 transition-colors">
+                          <span className="font-semibold text-base text-gray-800">{categoryGroup.category}</span>
+                          <input
+                            type="checkbox"
+                            checked={editSelectedCategories.includes(categoryGroup.category)}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                setEditSelectedCategories([...editSelectedCategories, categoryGroup.category]);
+                              } else {
+                                setEditSelectedCategories(editSelectedCategories.filter(cat => cat !== categoryGroup.category));
+                              }
+                            }}
+                            className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                        </label>
                       </div>
-                      <div className="p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {categoryGroup.products.slice(0, 6).map(product => (
-                            <div key={product._id} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
-                              <div className="w-8 h-8 relative rounded overflow-hidden">
-                                {product.image ? (
-                                  <Image 
-                                    src={product.image} 
-                                    alt={product.title} 
-                                    fill 
-                                    className="object-cover" 
-                                  />
-                                ) : (
-                                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                    <span className="text-xs text-gray-400">N/A</span>
-                                  </div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-gray-700 truncate">{product.title}</span>
-                            </div>
-                          ))}
-                          {categoryGroup.products.length > 6 && (
-                            <div className="flex items-center justify-center p-3 bg-gray-100 rounded-lg">
-                              <span className="text-sm text-gray-600">
-                                +{categoryGroup.products.length - 6} më shumë
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -655,31 +590,29 @@ export default function CollectionsAdminPage() {
         )}
 
         {/* Collections Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {collections.map(collection => (
-            <div key={collection._id} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="relative">
-                <div className="relative w-full h-48">
-                  {collection.image ? (
-                    <Image 
-                      src={collection.image} 
-                      alt={collection.name} 
-                      fill 
-                      className="object-cover" 
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400">Nuk ka imazh</span>
-                    </div>
-                  )}
-                </div>
-                <div className="absolute top-3 right-3 flex gap-2">
+            <div key={collection._id} className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-transform duration-300 transform hover:-translate-y-1 group relative">
+              <div className="relative w-full h-52 bg-gradient-to-br from-blue-100 to-green-100">
+                {collection.image ? (
+                  <Image 
+                    src={collection.image} 
+                    alt={collection.name} 
+                    fill 
+                    className="object-cover rounded-t-3xl group-hover:scale-105 transition-transform duration-300" 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-400">Nuk ka imazh</span>
+                  </div>
+                )}
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={() => startEdit(collection)}
                     className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
                     title="Përditëso koleksionin"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
@@ -702,41 +635,38 @@ export default function CollectionsAdminPage() {
                     className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
                     title="Fshi koleksionin"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </div>
               </div>
-              
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{collection.name}</h3>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              <div className="p-7">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2 truncate">{collection.name}</h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
                     {collection.products.length} produkte
                   </span>
                   {collection.categories && collection.categories.length > 0 && (
-                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                      {collection.categories.length} kategoritë
+                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
+                      {collection.categories.length} kategori
                     </span>
                   )}
                 </div>
-                
                 {collection.categories && collection.categories.length > 0 && (
                   <div className="space-y-2 mb-4">
-                    <h4 className="text-sm font-medium text-gray-700">Kategoritë:</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kategoritë:</h4>
                     <div className="flex flex-wrap gap-2">
                       {collection.categories.map(category => (
-                        <span key={category} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-md">
+                        <span key={category} className={`px-2 py-1 rounded-md text-xs font-medium ${category === 'Produktet ne Zbritje' ? 'bg-yellow-200 text-yellow-900 border border-yellow-400' : 'bg-purple-100 text-purple-700'}`}>
                           {category}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
-                
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">Produktet:</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Produktet:</h4>
                   <div className="flex flex-wrap gap-2">
                     {collection.products.slice(0, 3).map(product => (
                       <span key={product._id} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-md">
@@ -767,13 +697,13 @@ export default function CollectionsAdminPage() {
             <p className="text-gray-600 mb-6">Krijo koleksionin tënd të parë për të filluar</p>
             <button
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+              className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200"
             >
               Shto Koleksion të Parë
             </button>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 } 

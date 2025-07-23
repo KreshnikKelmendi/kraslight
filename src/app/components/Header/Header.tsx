@@ -11,6 +11,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../lib/store';
 import Cart from '../../../components/Cart';
 import Searchbar from '../Search/Searchbar';
+import GlobalDiscountRibbon from './GlobalDiscountRibbon';
+
 
 // Add Collection type for dynamic collections dropdown
 interface Collection {
@@ -38,6 +40,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const cartCount = useSelector((state: RootState) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+  const [globalDiscount, setGlobalDiscount] = useState<{ isGlobalDiscount: boolean; discountPercentage?: number }>({ isGlobalDiscount: false });
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -87,6 +90,20 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
+    const fetchGlobalDiscount = async () => {
+      try {
+        const response = await fetch('/api/products/bulk-discount');
+        if (!response.ok) throw new Error('Failed to fetch global discount');
+        const data = await response.json();
+        setGlobalDiscount(data);
+      } catch (error) {
+        setGlobalDiscount({ isGlobalDiscount: false });
+      }
+    };
+    fetchGlobalDiscount();
+  }, []);
+
+  useEffect(() => {
     const handleOpenCart = () => setShowCart(true);
     window.addEventListener('open-cart', handleOpenCart);
     return () => window.removeEventListener('open-cart', handleOpenCart);
@@ -105,6 +122,19 @@ const Header = () => {
     return `/shop/brand/${encodeURIComponent(brand.name.toLowerCase())}`;
   };
 
+  // Handler to close all dropdowns (desktop)
+  const closeAllDropdowns = () => {
+    setIsDesktopBrandsOpen(false);
+    setIsProduktetNdricimitOpen(false);
+  };
+
+  // Handler to close all dropdowns and mobile menu (mobile)
+  const closeAllMobileDropdowns = () => {
+    setIsBrendetMegaMenuOpen(false);
+    setIsMobileProduktetNdricimitOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
   // Removed unused nextSlide and prevSlide
 
   return (
@@ -113,6 +143,10 @@ const Header = () => {
         ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
         : 'bg-white shadow-sm'
     }`}>
+      {/* Global Discount Ribbon */}
+      {globalDiscount.isGlobalDiscount && globalDiscount.discountPercentage && (
+        <GlobalDiscountRibbon discountPercentage={globalDiscount.discountPercentage} />
+      )}
       {/* Top info bar */}
       <div
         className={`header-topbar-transition overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-[60px] opacity-100 mb-0 lg:mb-2'}`}
@@ -222,7 +256,10 @@ const Header = () => {
                             <Link
                               key={index}
                               href={getBrandUrl(brand)}
-                              onClick={scrollToTop}
+                              onClick={() => {
+                                scrollToTop();
+                                setIsDesktopBrandsOpen(false); // Close desktop brands dropdown
+                              }}
                               className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
                             >
                               <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{brand.name}</span>
@@ -274,7 +311,10 @@ const Header = () => {
                             <Link
                               key={col._id}
                               href={`/collections/${col._id}`}
-                              onClick={scrollToTop}
+                              onClick={() => {
+                                scrollToTop();
+                                setIsProduktetNdricimitOpen(false); // Close desktop collections dropdown
+                              }}
                               className="group flex flex-row rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition bg-white border border-gray-100"
                             >
                               <div className="w-40 h-40 bg-gray-100 relative flex-shrink-0">
@@ -442,7 +482,10 @@ const Header = () => {
                             <Link
                               key={index}
                               href={getBrandUrl(brand)}
-                              onClick={scrollToTop}
+                              onClick={() => {
+                                scrollToTop();
+                                closeAllMobileDropdowns(); // Close mobile brands dropdown and menu
+                              }}
                               className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
                             >
                               <span className="text-gray-800 group-hover:text-[#0a9945] font-medium text-base">{brand.name}</span>
@@ -484,7 +527,10 @@ const Header = () => {
                             <Link
                               key={col._id}
                               href={`/collections/${col._id}`}
-                              onClick={scrollToTop}
+                              onClick={() => {
+                                scrollToTop();
+                                closeAllMobileDropdowns(); // Close mobile collections dropdown and menu
+                              }}
                               className="group flex flex-row rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white border border-gray-100 mb-2 p-2 items-center"
                             >
                               <div className="w-12 h-12 bg-gray-100 relative flex-shrink-0 mr-3 rounded-lg overflow-hidden">

@@ -79,17 +79,17 @@ export default function CheckoutPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center border-2 border-green-700">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-4 text-green-700">Porosia u dërgua me sukses!</h2>
+          <h2 className="text-2xl font-bold mb-4 text-blue-700">Porosia u dërgua me sukses!</h2>
           <p className="text-gray-600 mb-6">Do të kontaktoheni së shpejti për konfirmim.</p>
-          <div className="w-full bg-green-50 rounded-lg p-4">
-            <p className="text-sm text-green-700">Duke ju ridrejtuar në faqen kryesore...</p>
+          <div className="w-full bg-blue-50 border border-green-700 rounded-lg p-4">
+            <p className="text-sm text-blue-700">Duke ju ridrejtuar në faqen kryesore...</p>
           </div>
         </div>
       </div>
@@ -367,32 +367,18 @@ export default function CheckoutPage() {
               <div className="mt-6 p-4 bg-gray-50 rounded-xl">
                 <h4 className="font-semibold mb-4 text-gray-900">Mënyra e pagesës</h4>
                 <div className="space-y-3">
-                  <label className="flex items-center p-3 bg-white rounded-lg border-2 border-transparent hover:border-blue-200 cursor-pointer transition-all">
+                  <label className="flex items-center p-3 bg-white rounded-lg border-2 border-blue-500 cursor-default transition-all">
                     <input 
                       type="radio" 
                       name="paymentMethod" 
                       value="cash" 
-                      checked={paymentMethod === 'cash'} 
-                      onChange={e => setPaymentMethod(e.target.value)} 
+                      checked={true} 
+                      readOnly
                       className="mr-3 text-blue-600 focus:ring-blue-500" 
                     />
                     <div>
-                      <div className="font-medium">Paguaj me kesh</div>
-                      <div className="text-sm text-gray-500">Pas pranimit të porosisë</div>
-                    </div>
-                  </label>
-                  <label className="flex items-center p-3 bg-white rounded-lg border-2 border-transparent hover:border-blue-200 cursor-pointer transition-all">
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="card" 
-                      checked={paymentMethod === 'card'} 
-                      onChange={e => setPaymentMethod(e.target.value)} 
-                      className="mr-3 text-blue-600 focus:ring-blue-500" 
-                    />
-                    <div>
-                      <div className="font-medium">Paguaj me kartelë</div>
-                      <div className="text-sm text-gray-500">Online pagesë</div>
+                      <div className="font-medium">Paguaj kur merr porosinë</div>
+                      <div className="text-sm text-gray-500">Pagesa bëhet në dorëzim</div>
                     </div>
                   </label>
                 </div>

@@ -14,10 +14,28 @@ export async function GET(
   
   // If collection has categories, fetch products from those categories
   if (collection.categories && collection.categories.length > 0) {
-    const categoryProducts = await Product.find({
-      category: { $in: collection.categories }
-    });
-    collection.products = categoryProducts;
+    let categoryProducts: any[] = [];
+    // Handle virtual 'On Sale' category
+    if (collection.categories.includes('Produktet ne Zbritje')) {
+      const onSaleProducts = await Product.find({
+        $or: [
+          { discountPercentage: { $gt: 0 } },
+          { $expr: { $lt: ["$price", "$originalPrice"] } }
+        ]
+      });
+      categoryProducts = categoryProducts.concat(onSaleProducts);
+    }
+    // Handle real categories (excluding the virtual one)
+    const realCategories = collection.categories.filter((cat: any) => cat !== 'Produktet ne Zbritje');
+    if (realCategories.length > 0) {
+      const realCategoryProducts = await Product.find({
+        category: { $in: realCategories }
+      });
+      categoryProducts = categoryProducts.concat(realCategoryProducts);
+    }
+    // Remove duplicates by _id
+    const uniqueProducts = Array.from(new Map(categoryProducts.map(p => [p._id.toString(), p])).values());
+    collection.products = uniqueProducts;
   }
   
   return NextResponse.json(collection);
