@@ -3,6 +3,7 @@ import BrandShowcase from './components/BrandShowcase';
 import CollectionsShowcase from './components/Collections/CollectionsShowcase';
 import NewArrivalsCarousel from './components/NewArrivalsCarousel';
 import ShowRoom from './components/ShowRoom';
+import OtherProducts from '../components/OtherProducts';
 
 
 export default function Home() {
@@ -26,6 +27,9 @@ export default function Home() {
 
       {/* Brand Showcase Section */}
       <BrandShowcase />
+
+      {/* Other Products Section */}
+      <OtherProducts />
 
 
       {/* Products Section */}
