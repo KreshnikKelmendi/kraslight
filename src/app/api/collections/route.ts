@@ -59,8 +59,14 @@ export async function POST(req: Request) {
       categoryProducts = categoryProducts.concat(realCategoryProducts);
     }
     // Remove duplicates by _id
-    const uniqueProducts = Array.from(new Map((categoryProducts as any[]).map(p => [p._id.toString(), p])).values());
-    data.products = uniqueProducts.map((p: any) => p._id);
+    const uniqueProducts = Array.from(
+      new Map(
+        (categoryProducts as unknown[])
+          .filter((p): p is { _id: { toString: () => string } } => typeof p === 'object' && p !== null && '_id' in p && typeof (p as any)._id?.toString === 'function')
+          .map(p => [(p as { _id: { toString: () => string } })._id.toString(), p])
+      ).values()
+    );
+    data.products = uniqueProducts.map((p) => (p as { _id: string })._id);
   }
   
   const collection = await Collection.create(data);
