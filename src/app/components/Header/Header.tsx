@@ -96,7 +96,7 @@ const Header = () => {
         if (!response.ok) throw new Error('Failed to fetch global discount');
         const data = await response.json();
         setGlobalDiscount(data);
-      } catch (error) {
+      } catch {
         setGlobalDiscount({ isGlobalDiscount: false });
       }
     };
