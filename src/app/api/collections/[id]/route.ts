@@ -37,7 +37,7 @@ export async function GET(
     const uniqueProducts = Array.from(
       new Map(
         (categoryProducts as unknown[])
-          .filter((p): p is { _id: { toString: () => string } } => typeof p === 'object' && p !== null && '_id' in p && typeof (p as any)._id?.toString === 'function')
+          .filter((p): p is { _id: { toString: () => string } } => typeof p === 'object' && p !== null && '_id' in p && typeof (p as unknown as { _id?: { toString?: () => string } })._id?.toString === 'function')
           .map(p => [(p as { _id: { toString: () => string } })._id.toString(), p])
       ).values()
     );
