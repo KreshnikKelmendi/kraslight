@@ -80,8 +80,8 @@ const Header = () => {
         if (!response.ok) throw new Error('Failed to fetch collections');
         const data = await response.json();
         setCollections(data);
-      } catch (error) {
-        console.error('Error fetching collections:', error);
+      } catch {
+        console.error('Error fetching collections');
       } finally {
         setIsLoadingCollections(false);
       }

@@ -50,7 +50,7 @@ const OtherProducts = () => {
           product.category.trim() !== ""
         );
         setProducts(filtered);
-      } catch (err) {
+      } catch {
         setError("Failed to load products. Please try again later.");
       } finally {
         setIsLoading(false);
