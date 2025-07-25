@@ -19,6 +19,7 @@ interface Product {
   mainImage?: string;
   images?: string[];
   isNewArrival?: boolean;
+  createdAt?: string; // Add this line
 }
 
 interface Filters {
@@ -105,7 +106,6 @@ export default function ProductsList() {
     try {
       const response = await fetch('/api/products?admin=true');
       const data = await response.json();
-      console.log('Products data received:', data); // Debug log
       setProducts(data);
     } catch {
       setError('Failed to fetch products');
@@ -119,7 +119,9 @@ export default function ProductsList() {
   }, []);
 
   const filteredProductsMemo = useMemo(() => {
-    return products.filter(product => {
+    // Sort by createdAt descending (latest first)
+    const sorted = [...products].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return sorted.filter(product => {
       const matchesSearch = product.title.toLowerCase().includes(filters.search.toLowerCase());
       const matchesBrand = !filters.brand || product.brand === filters.brand;
       const matchesCategory = !filters.category || product.category === filters.category;

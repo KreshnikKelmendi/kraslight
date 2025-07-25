@@ -19,6 +19,7 @@ interface Product {
   stock: number;
   isNewArrival?: boolean;
   subcategory?: string;
+  createdAt?: string;
 }
 
 interface Collection {
@@ -81,6 +82,9 @@ export default function CollectionPage() {
     try {
       const res = await fetch(`/api/collections/${id}`);
       const data = await res.json();
+      if (data.products) {
+        data.products = data.products.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      }
       setCollection(data);
       
       // Extract unique categories
@@ -175,6 +179,8 @@ export default function CollectionPage() {
         filtered.sort((a, b) => b.title.localeCompare(a.title));
         break;
       default:
+        // Sort by createdAt descending (latest first) only for default
+        filtered.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         break;
     }
     setFilteredProducts(filtered);

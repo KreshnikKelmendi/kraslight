@@ -24,6 +24,7 @@ interface Product {
   stock?: number;
   sizes?: string;
   isNewArrival?: boolean;
+  createdAt?: string;
 }
 
 interface Filters {
@@ -82,8 +83,9 @@ export default function NewArrivalsPage() {
       const data = await response.json();
       // Filter products to only show new arrivals
       const newArrivalsProducts = data.filter((product: Product) => product.isNewArrival === true);
-      setProducts(newArrivalsProducts);
-      setFilteredProducts(newArrivalsProducts);
+      const sorted = newArrivalsProducts.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setProducts(sorted);
+      setFilteredProducts(sorted);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again later.');
@@ -208,7 +210,8 @@ export default function NewArrivalsPage() {
           break;
       }
 
-      setFilteredProducts(filtered);
+      const sorted = filtered.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setFilteredProducts(sorted);
       setFilterLoading(false);
     }, 500);
     return () => clearTimeout(timer);
@@ -569,7 +572,7 @@ export default function NewArrivalsPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, ease: 'easeOut' }}
-                className="text-3xl sm:text-4xl font-extrabold tracking-wide text-gray-900 mb-1 font-bwseidoround"
+                className="text-3xl font-bold tracking-wide mb-1 font-bwseidoround"
               >
                 Arritjet e reja
               </motion.h1>
@@ -577,7 +580,7 @@ export default function NewArrivalsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
-                className="text-base sm:text-lg text-gray-600 mb-2 font-bwseidoround"
+                className="text-sm lg:text-base text-gray-600 mb-2 font-bwseidoround"
               >
                 Zbuloni arritjet më të reja të Kraslight – produktet më të fundit, trendet më të freskëta dhe risitë që sjellim për ju çdo sezon.
               </motion.p>

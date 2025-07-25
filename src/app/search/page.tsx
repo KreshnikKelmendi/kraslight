@@ -20,6 +20,7 @@ interface Product {
   sizes: string;
   isNewArrival?: boolean;
   description: string;
+  createdAt?: string;
 }
 
 interface Filters {
@@ -108,7 +109,8 @@ export default function SearchPage() {
         filtered.sort((a, b) => a.title.localeCompare(b.title));
         break;
       default:
-        // Keep original order (newest first from API)
+        // Sort by createdAt descending (latest first)
+        filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         break;
     }
 

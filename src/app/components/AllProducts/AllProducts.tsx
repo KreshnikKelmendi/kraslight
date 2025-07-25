@@ -18,6 +18,7 @@ interface Product {
   isNewArrival?: boolean;
   images?: string[];
   mainImage?: string;
+  createdAt?: string;
 }
 
 export default function AllProducts() {
@@ -65,7 +66,8 @@ export default function AllProducts() {
   }
 
   // Transform products to always have mainImage and images
-  const transformedProducts = products.map((product) => {
+  const sortedProducts = [...products].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  const transformedProducts = sortedProducts.map((product) => {
     const availableImages = [
       ...(product.images || []),
       ...(product.image ? [product.image] : [])

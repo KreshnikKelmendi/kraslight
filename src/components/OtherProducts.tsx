@@ -96,11 +96,11 @@ const OtherProducts = () => {
   }
 
   return (
-    <div className="pb-24 px-4 lg:px-10">
+    <div className="py-12 lg:py-16 px-4 lg:px-10">
       <div className="flex justify-between items-center mb-8 gap-4 flex-wrap">
         <div className="flex flex-col">
           <h2 className="text-2xl font-bold font-bwseidoround">Produkte të tjera</h2>
-          <p className="mt-1 text-gray-500 max-w-lg text-sm font-bwseidoround">Duke filluar nga vegla pune, klima, e deri te produktet më të veçanta për shtëpi dhe biznes – këtu do të gjeni zgjedhje të ndryshme që plotësojnë çdo nevojë dhe stil, përtej ndriçimit!</p>
+          <p className="mt-1 text-gray-500 max-w-lg text-sm lg:text-base font-bwseidoround">Duke filluar nga vegla pune, klima, e deri te produktet më të veçanta për shtëpi dhe biznes – këtu do të gjeni zgjedhje të ndryshme që plotësojnë çdo nevojë dhe stil, përtej ndriçimit!</p>
         </div>
         <div className="flex flex-wrap gap-3 mt-2 sm:mt-0">
           <span

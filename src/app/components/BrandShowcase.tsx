@@ -58,7 +58,7 @@ const BrandShowcase = () => {
   }
 
   return (
-    <section className="pb-28 pt-16 lg:pb-32 lg:pt-20">
+    <section className="pb-24 pt-10 lg:pb-32 lg:pt-10">
       <div className="px-4 lg:px-10 mx-auto">
         {/* Header */}
         <motion.div
@@ -67,10 +67,10 @@ const BrandShowcase = () => {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="text-left mb-12"
         >
-          <h2 className="text-3xl lg:text-4xl font-bwseidoround text-gray-800 mb-3">
+          <h2 className="text-2xl font-bwseidoround text-gray-900 mb-3">
             Brendet tona
           </h2>
-          <p className="text-gray-500 text-sm md:text-base max-w-2xl text-left">
+          <p className="text-gray-500 text-sm lg:text-base max-w-lg text-left font-bwseidoround">
             Brendet më të njohura, të përzgjedhura nga Kraslight për ju. <br/>Zgjidhni cilësinë dhe stilin që i përshtatet më së miri nevojave tuaja.
           </p>
         </motion.div>

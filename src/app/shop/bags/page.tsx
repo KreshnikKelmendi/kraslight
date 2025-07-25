@@ -24,6 +24,7 @@ interface Product {
   stock?: number;
   sizes?: string;
   isNewArrival?: boolean;
+  createdAt?: string;
 }
 
 interface Filters {
@@ -65,8 +66,9 @@ export default function BagsPage() {
         (product.category || '').toLowerCase() === 'çanta' || 
         (product.subcategory || '').toLowerCase() === 'çanta'
       );
-      setProducts(bagsProducts);
-      setFilteredProducts(bagsProducts);
+      const sorted = bagsProducts.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setProducts(sorted);
+      setFilteredProducts(sorted);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again later.');
@@ -180,7 +182,8 @@ export default function BagsPage() {
         break;
     }
 
-    setFilteredProducts(filtered);
+    const sorted = filtered.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    setFilteredProducts(sorted);
   }, [filters, products, sortBy]);
 
   const handleGenderFilter = (gender: string | null) => {

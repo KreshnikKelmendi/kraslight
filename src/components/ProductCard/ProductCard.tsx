@@ -72,6 +72,8 @@ export default function ProductCard({
 
   // Use mainImage, images[0], image, or placeholder
   const displayImage = getValidImage(product.mainImage, product.images?.[0], product.image);
+  // On hover, use images[1] if available, else fallback to displayImage
+  const hoverImage = getValidImage(product.images?.[1], product.mainImage, product.images?.[0], product.image);
 
   // Calculate discount price
   const discountPrice = originalPrice && discountPercentage
@@ -80,33 +82,32 @@ export default function ProductCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`group relative bg-white border border-gray-100 rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:border-[#0a9945]/30 cursor-pointer ${className}`}
+      className={`group relative bg-white border border-gray-100 rounded-xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:border-[#0a9945]/30 cursor-pointer ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Product Image Container */}
       <Link href={`/products/${_id}`} className="block">
-        <div className="relative aspect-[3/4] lg:aspect-auto lg:h-[42vh] overflow-hidden bg-gray-50">
+        <div className="relative h-[25vh] lg:h-[40vh] overflow-hidden flex items-center justify-center">
           <Image
-            src={displayImage}
+            src={isHovered ? hoverImage : displayImage}
             alt={title}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover object-center transition-all duration-500"
+            sizes="100vw"
+            className={`transition-all duration-500 ${isHovered ? 'object-cover' : 'object-contain'}`}
             priority={false}
           />
-        
-                  {/* Subtle overlay on hover */}
+          {/* Subtle overlay on hover */}
           <div className={`absolute inset-0 bg-black/5 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
         
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        <div className="absolute top-0 left-0 flex flex-col gap-1">
           {/* Discount Badge */}
           {discountPercentage && discountPercentage > 0 && (
-            <div className="bg-red-500 text-white font-medium px-1.5 py-0.5 rounded text-xs shadow-sm">
+            <div className="bg-red-500 text-white font-bwseidoround font-medium px-1.5 py-0.5 rounded text-xs shadow-sm">
               -{discountPercentage}%
             </div>
           )}

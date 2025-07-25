@@ -44,21 +44,16 @@ const ShowRoom = () => {
   };
 
   return (
-    <section className="w-full flex flex-col lg:flex-row-reverse items-center justify-center py-10 lg:py-10 px-4 lg:px-10">
+    <section className="w-full flex flex-col lg:flex-row-reverse items-center justify-center py-10 lg:py-10 px-4 lg:px-10 bg-gray-100">
       {/* Left: Text, Right: Video */}
-      <div className="w-full lg:w-1/2 flex flex-col items-start justify-start z-20 mb-6 lg:mb-0  lg:ml-16">
+      <div className="w-full lg:w-1/2 flex flex-col items-start justify-start z-20 mb-6 lg:mb-0 lg:ml-16">
         <motion.h2
           ref={textRef}
           variants={textAnimationVariants}
           initial="hidden"
           animate={textInView ? "visible" : "hidden"}
           className="text-3xl lg:text-4xl font-bwseidoround 2xl:text-7xl lg:tracking-[1px] font-black mb-3 text-center lg:text-left tracking-tight leading-tight relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(90deg, #0a9945 0%, #111 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            textShadow: '0 6px 24px #e0ffe6',
-          }}
+          
         >
           Ejani dhe na vizitoni
         </motion.h2>

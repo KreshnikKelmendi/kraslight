@@ -25,11 +25,12 @@ export default function Home() {
       {/* ShowRoom Section */}
       <ShowRoom />
 
-      {/* Brand Showcase Section */}
-      <BrandShowcase />
+
 
       {/* Other Products Section */}
       <OtherProducts />
+      {/* Brand Showcase Section */}
+      <BrandShowcase />
 
 
       {/* Products Section */}

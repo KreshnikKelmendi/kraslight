@@ -20,6 +20,7 @@ interface Product {
   stock: number;
   isNewArrival?: boolean;
   subcategory?: string;
+  createdAt?: string;
 }
 
 interface Filters {
@@ -149,14 +150,16 @@ export default function BrandPage() {
         // Do not sort, keep original order
         break;
     }
-    setFilteredProducts(filtered);
+    const sorted = filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    setFilteredProducts(sorted);
   }, [products, filters, sortBy, priceRange]);
 
   async function fetchBrandProducts(brand: string) {
     try {
       const res = await fetch(`/api/products?brand=${brand}`);
       const data = await res.json();
-      setProducts(data);
+      const sorted = data.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setProducts(sorted);
       
       // Extract unique categories
       const categories = Array.from(new Set(data.map((p: Product) => p.category).filter(Boolean)));

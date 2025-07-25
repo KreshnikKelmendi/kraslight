@@ -154,7 +154,7 @@ const NewArrivalsCarousel: React.FC = () => {
   }
 
   return (
-    <section className="py-12 lg:py-20" ref={sectionRef}
+    <section className="py-10 lg:py-20" ref={sectionRef}
       onMouseEnter={() => setIsCarouselHovered(true)}
       onMouseLeave={() => setIsCarouselHovered(false)}
     >
@@ -167,7 +167,7 @@ const NewArrivalsCarousel: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={titleInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
-              className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 font-bwseidoround"
+              className="text-2xl font-bold mb-1 font-bwseidoround"
             >
               Arritjet e reja
             </motion.h2>
@@ -176,7 +176,7 @@ const NewArrivalsCarousel: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={titleInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-sm lg:text-base text-gray-600 max-w-2xl font-bwseidoround"
+              className="text-sm lg:text-base text-gray-500 max-w-lg font-bwseidoround"
             >
               Zbuloni koleksionet më të fundit dhe produktet e reja që sapo kanë mbërritur në Kraslight
             </motion.p>
