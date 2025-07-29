@@ -9,7 +9,7 @@ import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaC
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number; // Made optional to handle products without prices
   originalPrice?: number;
   discountPercentage?: number;
   stock: number;
@@ -19,6 +19,7 @@ interface Product {
   mainImage?: string;
   images?: string[];
   isNewArrival?: boolean;
+  barcode?: string;
   createdAt?: string; // Add this line
 }
 
@@ -122,11 +123,13 @@ export default function ProductsList() {
     // Sort by createdAt descending (latest first)
     const sorted = [...products].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     return sorted.filter(product => {
-      const matchesSearch = product.title.toLowerCase().includes(filters.search.toLowerCase());
+      const searchTerm = filters.search.toLowerCase();
+      const matchesSearch = product.title.toLowerCase().includes(searchTerm) ||
+                           (product.barcode && product.barcode.toLowerCase().includes(searchTerm));
       const matchesBrand = !filters.brand || product.brand === filters.brand;
       const matchesCategory = !filters.category || product.category === filters.category;
-      const matchesPrice = (!filters.minPrice || product.price >= filters.minPrice) &&
-                          (!filters.maxPrice || product.price <= filters.maxPrice);
+      const matchesPrice = (!filters.minPrice || (product.price !== undefined && product.price >= filters.minPrice)) &&
+                          (!filters.maxPrice || (product.price !== undefined && product.price <= filters.maxPrice));
       const matchesStock = (!filters.minStock || product.stock >= filters.minStock) &&
                           (!filters.maxStock || product.stock <= filters.maxStock);
       
@@ -960,6 +963,9 @@ export default function ProductsList() {
                     Kategoria
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Barkodi
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Çmimi
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1025,19 +1031,30 @@ export default function ProductsList() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {product.discountPercentage && product.discountPercentage > 0 ? (
-                          <div className="block">
-                            <div className="text-sm line-through text-gray-500">
-                              €{product.originalPrice?.toFixed(2)}
+                        <div className="text-sm font-medium text-gray-900">
+                          {product.barcode || '-'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {product.price !== undefined ? (
+                          product.discountPercentage && product.discountPercentage > 0 ? (
+                            <div className="block">
+                              <div className="text-sm line-through text-gray-500">
+                                €{product.originalPrice?.toFixed(2)}
+                              </div>
+                              <div className="text-sm font-bold text-red-600">
+                                €{product.price.toFixed(2)}
+                                <span className="ml-1">(-{product.discountPercentage}%)</span>
+                              </div>
                             </div>
-                            <div className="text-sm font-bold text-red-600">
+                          ) : (
+                            <div className="text-sm text-gray-900">
                               €{product.price.toFixed(2)}
-                              <span className="ml-1">(-{product.discountPercentage}%)</span>
                             </div>
-                          </div>
+                          )
                         ) : (
-                          <div className="text-sm text-gray-900">
-                            €{product.price.toFixed(2)}
+                          <div className="text-sm text-gray-500 italic">
+                            Pa çmim
                           </div>
                         )}
                       </td>

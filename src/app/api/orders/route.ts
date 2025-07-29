@@ -16,7 +16,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Validate stock availability before creating order
+    // Validate stock availability and fetch product barcodes
+    const itemsWithBarcodes = [];
     for (const item of body.items) {
       const product = await Product.findById(item.id);
       if (!product) {
@@ -27,6 +28,12 @@ export async function POST(req: Request) {
           error: `Stoku i pamjaftueshëm për produktin '${product.title}'. Në stok: ${product.stock}, Kërkuar: ${item.quantity}` 
         }, { status: 400 });
       }
+      
+      // Add barcode to the item
+      itemsWithBarcodes.push({
+        ...item,
+        barcode: product.barcode || ''
+      });
     }
 
     // Calculate shipping
@@ -35,7 +42,7 @@ export async function POST(req: Request) {
       shipping = 10;
     }
     // Calculate total with shipping
-    const itemsTotal = body.items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
+    const itemsTotal = itemsWithBarcodes.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
     const total = itemsTotal + shipping;
     
     const order = await Order.create({
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
       postalCode: body.postalCode,
       notes: body.notes,
       paymentMethod: body.paymentMethod || 'cash',
-      items: body.items,
+      items: itemsWithBarcodes,
       total,
       status: 'pending',
     });

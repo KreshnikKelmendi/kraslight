@@ -1,5 +1,5 @@
 import Main from './components/Main/Main';
-import BrandShowcase from './components/BrandShowcase';
+// import BrandShowcase from './components/BrandShowcase';
 import CollectionsShowcase from './components/Collections/CollectionsShowcase';
 import NewArrivalsCarousel from './components/NewArrivalsCarousel';
 import ShowRoom from './components/ShowRoom';
@@ -30,7 +30,7 @@ export default function Home() {
       {/* Other Products Section */}
       <OtherProducts />
       {/* Brand Showcase Section */}
-      <BrandShowcase />
+      {/* <BrandShowcase /> */}
 
 
       {/* Products Section */}

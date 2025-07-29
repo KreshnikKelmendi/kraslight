@@ -202,32 +202,32 @@ export default function Cart({ onClose }: { onClose?: () => void }) {
                               </span>
                               <button
                                 onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
-                                className="px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs cursor-pointer"
-                                disabled={item.stock !== undefined && item.quantity >= item.stock}
+                                className="px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors duration-200 text-xs cursor-pointer"
                               >
                                 +
                               </button>
                             </div>
-                            {item.stock !== undefined && (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5">
-                                {item.stock} në stok
-                              </span>
-                            )}
                           </div>
                           
                           <div className="text-right">
-                            {item.discountPercentage && item.discountPercentage > 0 ? (
-                              <div>
-                                <p className="text-xs line-through text-gray-400">€{item.originalPrice?.toFixed(2)}</p>
-                                <p className="font-bold text-base text-red-600">€{item.price.toFixed(2)}</p>
-                                <div className="bg-red-500 text-white text-xs px-1.5 py-0.5 font-bold mt-0.5">
-                                  -{item.discountPercentage}%
+                            {item.price !== undefined ? (
+                              item.discountPercentage && item.discountPercentage > 0 ? (
+                                <div>
+                                  <p className="text-xs line-through text-gray-400">€{item.originalPrice?.toFixed(2)}</p>
+                                  <p className="font-bold text-base text-red-600">€{item.price.toFixed(2)}</p>
+                                  <div className="bg-red-500 text-white text-xs px-1.5 py-0.5 font-bold mt-0.5">
+                                    -{item.discountPercentage}%
+                                  </div>
                                 </div>
-                              </div>
+                              ) : (
+                                <p className="font-bold text-base text-gray-900">€{item.price.toFixed(2)}</p>
+                              )
                             ) : (
-                              <p className="font-bold text-base text-gray-900">€{item.price.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 italic">Pa çmim</p>
                             )}
-                            <p className="text-xs text-gray-500 mt-0.5">€{(item.price * item.quantity).toFixed(2)} total</p>
+                            {item.price !== undefined && (
+                              <p className="text-xs text-gray-500 mt-0.5">€{(item.price * item.quantity).toFixed(2)} total</p>
+                            )}
                           </div>
                         </div>
                       </div>

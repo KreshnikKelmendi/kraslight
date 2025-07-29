@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number; // Made optional
   originalPrice?: number;
   discountPercentage?: number;
   stock?: number;
@@ -120,14 +120,14 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* Stock Status */}
-        {stock !== undefined && stock > 0 && (
+        {/* Stock Status - Hidden on client side */}
+        {/* {stock !== undefined && stock > 0 && (
           <div className="absolute bottom-2 left-2">
             <span className="bg-white/90 backdrop-blur-sm text-green-600 px-1.5 py-0.5 rounded text-xs font-medium shadow-sm">
               In Stock
             </span>
           </div>
-        )}
+        )} */}
 
         {/* Quick View Button */}
         <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
@@ -163,32 +163,34 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* Price */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {discountPercentage && discountPercentage > 0 ? (
-              <>
+        {/* Price - Only show if price exists */}
+        {price !== undefined && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {discountPercentage && discountPercentage > 0 ? (
+                <>
+                  <span className="text-lg font-semibold text-gray-900">
+                    €{discountPrice?.toFixed(2)}
+                  </span>
+                  <span className="text-sm line-through text-gray-400">
+                    €{originalPrice?.toFixed(2)}
+                  </span>
+                </>
+              ) : (
                 <span className="text-lg font-semibold text-gray-900">
-                  €{discountPrice.toFixed(2)}
+                  €{price.toFixed(2)}
                 </span>
-                <span className="text-sm line-through text-gray-400">
-                  €{originalPrice?.toFixed(2)}
-                </span>
-              </>
-            ) : (
-              <span className="text-lg font-semibold text-gray-900">
-                €{price.toFixed(2)}
-              </span>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Subtle arrow indicator */}
-          <div className={`w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 ${isHovered ? 'bg-gray-200' : ''}`}>
-            <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            {/* Subtle arrow indicator */}
+            <div className={`w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 ${isHovered ? 'bg-gray-200' : ''}`}>
+              <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );

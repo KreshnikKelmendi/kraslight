@@ -48,6 +48,7 @@ export async function GET(request: Request) {
         gender: product.gender || 'Meshkuj',
         category: product.category || 'Të tjera',
         subcategory: product.subcategory || '',
+        barcode: product.barcode || '',
         isNewArrival: product.isNewArrival || false,
         characteristics: product.characteristics || [],
         createdAt: product.createdAt,

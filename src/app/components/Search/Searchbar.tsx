@@ -14,6 +14,7 @@ interface Product {
   brand: string;
   category: string;
   gender: string;
+  barcode?: string;
   isNewArrival?: boolean;
 }
 
@@ -105,9 +106,13 @@ const Searchbar: React.FC<SearchbarProps> = ({ isOpen, onClose }) => {
   };
 
   const formatPrice = (price: number) => {
+    if (!price || isNaN(price)) {
+      return '';
+    }
     return new Intl.NumberFormat('sq-AL', {
-      style: 'currency',
-      currency: 'ALL'
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(price);
   };
 
@@ -131,7 +136,7 @@ const Searchbar: React.FC<SearchbarProps> = ({ isOpen, onClose }) => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Kërko produkte, brende, kategori..."
+              placeholder="Kërko produkte, brende, kategori, barkod..."
               className="w-full pl-12 pr-12 py-3 text-base border-0 focus:ring-0 focus:outline-none placeholder-gray-400 bg-transparent"
             />
             <button
@@ -216,16 +221,7 @@ const Searchbar: React.FC<SearchbarProps> = ({ isOpen, onClose }) => {
                               {product.title}
                             </h4>
                             <p className="text-xs text-gray-500">{product.brand}</p>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <span className="text-sm font-semibold text-gray-900">
-                                {formatPrice(product.price)}
-                              </span>
-                              {product.originalPrice && product.originalPrice > product.price && (
-                                <span className="text-xs text-gray-500 line-through">
-                                  {formatPrice(product.originalPrice)}
-                                </span>
-                              )}
-                            </div>
+                            {/* Price information removed from search results */}
                           </div>
                         </Link>
                       ))}

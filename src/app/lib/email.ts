@@ -56,8 +56,7 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
                 <td style="padding-left: 15px; vertical-align: top;">
                   <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 16px;">${item.name}</h3>
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">
-                    <strong>Brand:</strong> ${item.brand || 'N/A'} | 
-                    <strong>Size:</strong> ${item.size || 'N/A'} | 
+                    <strong>Brand:</strong> ${item.brand || 'N/A'}${item.size ? ` | <strong>Size:</strong> ${item.size}` : ''} | 
                     <strong>Category:</strong> ${item.category || 'N/A'}
                   </p>
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">
@@ -111,8 +110,8 @@ export async function sendOrderConfirmationToCustomer(order: Order) {
                 <h3 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 16px;">Detajet e Porosisë</h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                   <tr>
-                    <td style="padding: 8px 0; color: #666; width: 40%;"><strong>Numri i Porosisë:</strong></td>
-                    <td style="padding: 8px 0; color: #2c3e50; font-weight: bold;">#${order._id.toString().slice(-8)}</td>
+                    <td style="padding: 8px 0; color: #666; width: 40%;"><strong>Barkodi i Produktit:</strong></td>
+                    <td style="padding: 8px 0; color: #2c3e50; font-weight: bold;">${order.items.map(item => item.barcode || 'N/A').join(', ')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #666;"><strong>Data e Porosisë:</strong></td>
@@ -266,8 +265,7 @@ export async function sendOrderNotification(order: Order) {
                 <td style="padding-left: 15px; vertical-align: top;">
                   <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 16px;">${item.name}</h3>
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">
-                    <strong>Brand:</strong> ${item.brand || 'N/A'} | 
-                    <strong>Size:</strong> ${item.size || 'N/A'} | 
+                    <strong>Brand:</strong> ${item.brand || 'N/A'}${item.size ? ` | <strong>Size:</strong> ${item.size}` : ''} | 
                     <strong>Category:</strong> ${item.category || 'N/A'}
                   </p>
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">
@@ -320,8 +318,8 @@ export async function sendOrderNotification(order: Order) {
                 <h3 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 16px;">Informacionet e Porosisë</h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                   <tr>
-                    <td style="padding: 8px 0; color: #666; width: 40%;"><strong>Numri i Porosisë:</strong></td>
-                    <td style="padding: 8px 0; color: #2c3e50;">#${order._id.toString().slice(-8)}</td>
+                    <td style="padding: 8px 0; color: #666; width: 40%;"><strong>Barkodi i Produktit:</strong></td>
+                    <td style="padding: 8px 0; color: #2c3e50;">${order.items.map(item => item.barcode || 'N/A').join(', ')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #666;"><strong>Data:</strong></td>

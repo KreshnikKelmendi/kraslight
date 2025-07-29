@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDB } from '../../../lib/mongodb';
 import { Order } from '../../../models/Order';
+import { Product } from '../../../models/Product';
 import { sendOrderStatusUpdateEmail } from '../../../lib/email';
 
 export async function PUT(
@@ -103,6 +104,48 @@ export async function GET(
     console.error('Error fetching order:', error);
     return NextResponse.json(
       { error: 'Failed to fetch order', details: (error as Error)?.message },
+      { status: 500 }
+    );
+  }
+} 
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    await connectToDB();
+    const { id } = await context.params;
+
+    // Find the order first to get the items for stock restoration
+    const order = await Order.findById(id);
+    if (!order) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
+    // Restore stock for each ordered product
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(
+        item.id,
+        { $inc: { stock: item.quantity } },
+        { new: true }
+      );
+    }
+
+    // Delete the order
+    await Order.findByIdAndDelete(id);
+
+    return NextResponse.json(
+      { message: 'Order deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete order', details: (error as Error)?.message },
       { status: 500 }
     );
   }

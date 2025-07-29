@@ -27,6 +27,7 @@ export default function AddProduct() {
   const [brandLogoFile, setBrandLogoFile] = useState<File | null>(null);
   const [brandLogoPreview, setBrandLogoPreview] = useState<string | null>(null);
   const [subcategory, setSubcategory] = useState('');
+  const [barcode, setBarcode] = useState('');
 
   // Check authentication on mount
   useEffect(() => {
@@ -131,13 +132,14 @@ export default function AddProduct() {
 
     const formData = new FormData();
     formData.append('title', title);
-    formData.append('price', price);
+    formData.append('price', price || ''); // Handle empty price
     formData.append('stock', stock);
     formData.append('brand', brand || 'Other');
     formData.append('category', category === 'Other' ? customCategory : category || 'Other');
     formData.append('description', description);
     formData.append('isNewArrival', isNewArrival.toString());
     formData.append('subcategory', subcategory);
+    formData.append('barcode', barcode);
     
     // Append characteristics
     const filteredCharacteristics = characteristics.filter(char => char.key.trim() !== '' && char.value.trim() !== '');
@@ -171,6 +173,7 @@ export default function AddProduct() {
         setBrandLogoFile(null);
         setBrandLogoPreview(null);
         setSubcategory('');
+        setBarcode('');
       } else {
         setMessage({ text: '❌ Dështoi shtimi i produktit', type: 'error' });
       }
@@ -310,10 +313,24 @@ export default function AddProduct() {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Barkodi i Produktit <span className="text-gray-500 font-normal">(Opsionale)</span>
+            </label>
+            <input
+              type="text"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Shkruani barkodin e produktit"
+            />
+            <p className="mt-1 text-xs text-gray-500">Barkodi përdoret për kërkim të shpejtë të produktit</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Çmimi *
+                Çmimi <span className="text-gray-500 font-normal">(Opsionale)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-gray-500 text-lg">€</span>
@@ -321,13 +338,13 @@ export default function AddProduct() {
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  required
                   step="0.01"
                   min="0"
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="0.00"
                 />
               </div>
+              <p className="mt-1 text-xs text-gray-500">Lëreni bosh nëse produkti nuk ka çmim</p>
             </div>
 
             <div>

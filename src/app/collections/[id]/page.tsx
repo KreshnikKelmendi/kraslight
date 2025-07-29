@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { FaTimes, FaFilter, FaSearch, FaTimesCircle } from 'react-icons/fa';
+import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
 
 interface Product {
   _id: string;
   title: string;
   image: string;
-  price: number;
+  price?: number; // Made optional
   originalPrice?: number;
   discountPercentage?: number;
   gender: string;
@@ -32,8 +32,6 @@ interface Collection {
 
 interface Filters {
   type: string | null;
-  minPrice: number | null;
-  maxPrice: number | null;
   categories: string[];
   brands: string[];
   subcategories: string[];
@@ -49,8 +47,6 @@ export default function CollectionPage() {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({
     type: null,
-    minPrice: null,
-    maxPrice: null,
     categories: [],
     brands: [],
     subcategories: [],
@@ -59,9 +55,11 @@ export default function CollectionPage() {
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
-  const [minAvailablePrice, setMinAvailablePrice] = useState(0);
-  const [maxAvailablePrice, setMaxAvailablePrice] = useState(1000);
+  const [expandedFilters, setExpandedFilters] = useState({
+    brands: false,
+    subcategories: true, // open by default
+  });
+
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -97,13 +95,7 @@ export default function CollectionPage() {
       const subcategories = Array.from(new Set(data.products.map((p: Product) => p.subcategory).filter(Boolean)));
       setAvailableSubcategories(subcategories as string[]);
       
-      // Set price range
-      const prices = data.products.map((p: Product) => p.price);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      setMinAvailablePrice(minPrice);
-      setMaxAvailablePrice(maxPrice);
-      setPriceRange([minPrice, maxPrice]);
+
       
       if (typeof window !== 'undefined') {
         setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
@@ -141,8 +133,6 @@ export default function CollectionPage() {
   const clearFilters = () => {
     setFilters({
       type: null,
-      minPrice: null,
-      maxPrice: null,
       categories: [],
       brands: [],
       subcategories: [],
@@ -158,19 +148,26 @@ export default function CollectionPage() {
     }
     const filtered = collection.products.filter(product => {
       const matchesType = !filters.type || product.category === filters.type;
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
       const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);
       const matchesBrand = filters.brands.length === 0 || filters.brands.includes(product.brand);
       const matchesSubcategory = filters.subcategories.length === 0 || filters.subcategories.includes(product.subcategory || '');
-      return matchesType && matchesPrice && matchesCategory && matchesBrand && matchesSubcategory;
+      return matchesType && matchesCategory && matchesBrand && matchesSubcategory;
     });
     // Sort products
     switch (sortBy) {
       case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => {
+          const priceA = a.price ?? Infinity;
+          const priceB = b.price ?? Infinity;
+          return priceA - priceB;
+        });
         break;
       case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => {
+          const priceA = a.price ?? -Infinity;
+          const priceB = b.price ?? -Infinity;
+          return priceB - priceA;
+        });
         break;
       case 'name-asc':
         filtered.sort((a, b) => a.title.localeCompare(b.title));
@@ -184,7 +181,7 @@ export default function CollectionPage() {
         break;
     }
     setFilteredProducts(filtered);
-  }, [collection, filters, sortBy, priceRange]);
+  }, [collection, filters, sortBy]);
 
   if (loading) {
     return (
@@ -227,86 +224,79 @@ export default function CollectionPage() {
 
         {/* Type Filter */}
         {/* Removed 'Të Gjitha' and categories section */}
-        {/* Price Range Filter */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-            Çmimi
-          </h3>
-          <div className="space-y-3 bg-gradient-to-br from-green-50 to-gray-50 p-3 rounded-lg">
-            <div className="flex flex-col gap-2">
-              <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{priceRange[0]}€</span>
-                <input
-                  type="range"
-                  min={minAvailablePrice}
-                  max={maxAvailablePrice}
-                  value={priceRange[0]}
-                  onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                  className="w-full accent-[#0a9945]"
-                />
-                <input
-                  type="range"
-                  min={minAvailablePrice}
-                  max={maxAvailablePrice}
-                  value={priceRange[1]}
-                  onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                  className="w-full accent-[#0a9945]"
-                />
-                <span className="text-sm">{priceRange[1]}€</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Brands Filter */}
         {availableBrands.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-              Brendet
-            </h3>
-            <div className="space-y-2">
-              {availableBrands.map((brand) => (
-                <button
-                  key={brand}
-                  onClick={() => handleBrandFilter(brand)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.brands.includes(brand)
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {brand}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setExpandedFilters(prev => ({ ...prev, brands: !prev.brands }))}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                Brendet
+              </div>
+              {expandedFilters.brands ? (
+                <FaChevronUp className="text-gray-500 text-xs" />
+              ) : (
+                <FaChevronDown className="text-gray-500 text-xs" />
+              )}
+            </button>
+            {expandedFilters.brands && (
+              <div className="space-y-2">
+                {availableBrands.map((brand) => (
+                  <button
+                    key={brand}
+                    onClick={() => handleBrandFilter(brand)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filters.brands.includes(brand)
+                        ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {brand}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {/* Subcategory Filter */}
         {(() => { console.log('Available subcategories:', availableSubcategories); return null; })()}
         {availableSubcategories.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-              Nënkategoritë
-            </h3>
-            <div className="space-y-2">
-              {availableSubcategories.map((subcategory) => (
-                <button
-                  key={subcategory}
-                  onClick={() => handleSubcategoryFilter(subcategory)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.subcategories.includes(subcategory)
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {subcategory}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setExpandedFilters(prev => ({ ...prev, subcategories: !prev.subcategories }))}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                Nënkategoritë
+              </div>
+              {expandedFilters.subcategories ? (
+                <FaChevronUp className="text-gray-500 text-xs" />
+              ) : (
+                <FaChevronDown className="text-gray-500 text-xs" />
+              )}
+            </button>
+            {expandedFilters.subcategories && (
+              <div className="space-y-2">
+                {availableSubcategories.map((subcategory) => (
+                  <button
+                    key={subcategory}
+                    onClick={() => handleSubcategoryFilter(subcategory)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filters.subcategories.includes(subcategory)
+                        ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {subcategory}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -343,84 +333,77 @@ export default function CollectionPage() {
             <div className="flex-1 overflow-y-auto p-4">
               {/* Type Filter */}
               {/* Removed 'Të Gjitha' and categories section */}
-              {/* Price Range Filter (Mobile) */}
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                  Çmimi
-                </h3>
-                <div className="space-y-2 bg-gradient-to-br from-green-50 to-gray-50 p-3 rounded-lg">
-                  <div className="flex flex-col gap-2">
-                    <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{priceRange[0]}€</span>
-                      <input
-                        type="range"
-                        min={minAvailablePrice}
-                        max={maxAvailablePrice}
-                        value={priceRange[0]}
-                        onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="w-full accent-[#0a9945]"
-                      />
-                      <input
-                        type="range"
-                        min={minAvailablePrice}
-                        max={maxAvailablePrice}
-                        value={priceRange[1]}
-                        onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="w-full accent-[#0a9945]"
-                      />
-                      <span className="text-sm">{priceRange[1]}€</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
               {/* Brands Filter (Mobile) */}
               {availableBrands.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                    Brendet
-                  </h3>
-                  <div className="space-y-1">
-                    {availableBrands.map((brand) => (
-                      <button
-                        key={brand}
-                        onClick={() => handleBrandFilter(brand)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          filters.brands.includes(brand)
-                            ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {brand}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => setExpandedFilters(prev => ({ ...prev, brands: !prev.brands }))}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                      Brendet
+                    </div>
+                    {expandedFilters.brands ? (
+                      <FaChevronUp className="text-gray-500 text-xs" />
+                    ) : (
+                      <FaChevronDown className="text-gray-500 text-xs" />
+                    )}
+                  </button>
+                  {expandedFilters.brands && (
+                    <div className="space-y-1">
+                      {availableBrands.map((brand) => (
+                        <button
+                          key={brand}
+                          onClick={() => handleBrandFilter(brand)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            filters.brands.includes(brand)
+                              ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {brand}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {/* Subcategory Filter (Mobile) */}
               {availableSubcategories.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                    Nënkategoritë
-                  </h3>
-                  <div className="space-y-1">
-                    {availableSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory}
-                        onClick={() => handleSubcategoryFilter(subcategory)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          filters.subcategories.includes(subcategory)
-                            ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {subcategory}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => setExpandedFilters(prev => ({ ...prev, subcategories: !prev.subcategories }))}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                      Nënkategoritë
+                    </div>
+                    {expandedFilters.subcategories ? (
+                      <FaChevronUp className="text-gray-500 text-xs" />
+                    ) : (
+                      <FaChevronDown className="text-gray-500 text-xs" />
+                    )}
+                  </button>
+                  {expandedFilters.subcategories && (
+                    <div className="space-y-1">
+                      {availableSubcategories.map((subcategory) => (
+                        <button
+                          key={subcategory}
+                          onClick={() => handleSubcategoryFilter(subcategory)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            filters.subcategories.includes(subcategory)
+                              ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {subcategory}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

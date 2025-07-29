@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaTimes, FaFilter } from 'react-icons/fa';
+import { FaTimes, FaFilter, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { motion } from 'framer-motion';
 
@@ -28,8 +28,6 @@ interface Product {
 }
 
 interface Filters {
-  minPrice: number | null;
-  maxPrice: number | null;
   brands: string[];
   categories: string[];
 }
@@ -40,8 +38,6 @@ export default function NewArrivalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters & { mainCategories?: string[] }>({
-    minPrice: null,
-    maxPrice: null,
     brands: [],
     categories: [],
     mainCategories: [],
@@ -52,6 +48,11 @@ export default function NewArrivalsPage() {
   const [brandCount, setBrandCount] = useState(0);
   // Add a new state for filter loading
   const [filterLoading, setFilterLoading] = useState(false);
+  const [expandedFilters, setExpandedFilters] = useState({
+    brands: false,
+    categories: true, // open by default
+    mainCategories: false,
+  });
 
   // Slider images array
   const sliderImages = [
@@ -164,14 +165,7 @@ export default function NewArrivalsPage() {
 
 
 
-      // Price filters
-      if (filters.minPrice !== null) {
-        filtered = filtered.filter(product => product.price >= filters.minPrice!);
-      }
 
-      if (filters.maxPrice !== null) {
-        filtered = filtered.filter(product => product.price <= filters.maxPrice!);
-      }
 
       // Brand filters
       if (filters.brands.length > 0) {
@@ -239,8 +233,6 @@ export default function NewArrivalsPage() {
 
   const clearFilters = () => {
     setFilters({
-      minPrice: null,
-      maxPrice: null,
       brands: [],
       categories: [],
       mainCategories: [],
@@ -296,115 +288,120 @@ export default function NewArrivalsPage() {
               Pastro
             </button>
           </div>
-          {/* Price Range Filter */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
-              Çmimi
-            </h3>
-            <div className="space-y-3 bg-gradient-to-br from-gray-100 to-gray-50 p-3 rounded-lg">
-              <div className="flex flex-col gap-2">
-                <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{filters.minPrice ?? 0}€</span>
-                  <input
-                    type="range"
-                    min={Math.min(...products.map(p => p.price), 0)}
-                    max={Math.max(...products.map(p => p.price), 1000)}
-                    value={filters.minPrice ?? Math.min(...products.map(p => p.price), 0)}
-                    onChange={e => setFilters(f => ({ ...f, minPrice: Number(e.target.value) }))}
-                    className="w-full accent-gray-900"
-                  />
-                  <input
-                    type="range"
-                    min={Math.min(...products.map(p => p.price), 0)}
-                    max={Math.max(...products.map(p => p.price), 1000)}
-                    value={filters.maxPrice ?? Math.max(...products.map(p => p.price), 1000)}
-                    onChange={e => setFilters(f => ({ ...f, maxPrice: Number(e.target.value) }))}
-                    className="w-full accent-gray-900"
-                  />
-                  <span className="text-sm">{filters.maxPrice ?? Math.max(...products.map(p => p.price), 1000)}€</span>
-                </div>
-              </div>
-            </div>
-          </div>
+
           {/* Brands Filter */}
           {uniqueBrands.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
-                Brendet
-              </h3>
-              <div className="space-y-2">
-                {uniqueBrands.map((brand: string) => (
-                  <button
-                    key={brand}
-                    onClick={() => handleBrandFilter(brand)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                      filters.brands.includes(brand)
-                        ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-md'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {brand}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => setExpandedFilters(prev => ({ ...prev, brands: !prev.brands }))}
+                className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
+                  Brendet
+                </div>
+                {expandedFilters.brands ? (
+                  <FaChevronUp className="text-gray-500 text-xs" />
+                ) : (
+                  <FaChevronDown className="text-gray-500 text-xs" />
+                )}
+              </button>
+              {expandedFilters.brands && (
+                <div className="space-y-2">
+                  {uniqueBrands.map((brand: string) => (
+                    <button
+                      key={brand}
+                      onClick={() => handleBrandFilter(brand)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        filters.brands.includes(brand)
+                          ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-md'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {brand}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {/* Categories Filter (main categories) */}
           {uniqueMainCategories.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
-                Kategoritë
-              </h3>
-              <div className="space-y-2">
-                {uniqueMainCategories.map((category: string) => (
-                  <button
-                    key={category}
-                    onClick={() => {
-                      setFilters(prev => ({
-                        ...prev,
-                        mainCategories: prev.mainCategories && prev.mainCategories.includes(category)
-                          ? prev.mainCategories.filter(c => c !== category)
-                          : [...(prev.mainCategories || []), category]
-                      }));
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                      filters.mainCategories && filters.mainCategories.includes(category)
-                        ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-md'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => setExpandedFilters(prev => ({ ...prev, mainCategories: !prev.mainCategories }))}
+                className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
+                  Kategoritë
+                </div>
+                {expandedFilters.mainCategories ? (
+                  <FaChevronUp className="text-gray-500 text-xs" />
+                ) : (
+                  <FaChevronDown className="text-gray-500 text-xs" />
+                )}
+              </button>
+              {expandedFilters.mainCategories && (
+                <div className="space-y-2">
+                  {uniqueMainCategories.map((category: string) => (
+                    <button
+                      key={category}
+                      onClick={() => {
+                        setFilters(prev => ({
+                          ...prev,
+                          mainCategories: prev.mainCategories && prev.mainCategories.includes(category)
+                            ? prev.mainCategories.filter(c => c !== category)
+                            : [...(prev.mainCategories || []), category]
+                        }));
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        filters.mainCategories && filters.mainCategories.includes(category)
+                          ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-md'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {/* Subcategories Filter (was Categories) */}
           {uniqueCategories.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
-                Nënkategoritë
-              </h3>
-              <div className="space-y-2">
-                {uniqueCategories.map((category: string) => (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryFilter(category)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                      filters.categories.includes(category)
-                        ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-md'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => setExpandedFilters(prev => ({ ...prev, categories: !prev.categories }))}
+                className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
+                  Nënkategoritë
+                </div>
+                {expandedFilters.categories ? (
+                  <FaChevronUp className="text-gray-500 text-xs" />
+                ) : (
+                  <FaChevronDown className="text-gray-500 text-xs" />
+                )}
+              </button>
+              {expandedFilters.categories && (
+                <div className="space-y-2">
+                  {uniqueCategories.map((category: string) => (
+                    <button
+                      key={category}
+                      onClick={() => handleCategoryFilter(category)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        filters.categories.includes(category)
+                          ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-md'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -438,38 +435,7 @@ export default function NewArrivalsPage() {
               </div>
               {/* Mobile Filter Content */}
               <div className="flex-1 overflow-y-auto p-4">
-                {/* Price Range Filter (Mobile) */}
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
-                    Çmimi
-                  </h3>
-                  <div className="space-y-2 bg-gradient-to-br from-gray-100 to-gray-50 p-3 rounded-lg">
-                    <div className="flex flex-col gap-2">
-                      <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{filters.minPrice ?? 0}€</span>
-                        <input
-                          type="range"
-                          min={Math.min(...products.map(p => p.price), 0)}
-                          max={Math.max(...products.map(p => p.price), 1000)}
-                          value={filters.minPrice ?? Math.min(...products.map(p => p.price), 0)}
-                          onChange={e => setFilters(f => ({ ...f, minPrice: Number(e.target.value) }))}
-                          className="w-full accent-gray-900"
-                        />
-                        <input
-                          type="range"
-                          min={Math.min(...products.map(p => p.price), 0)}
-                          max={Math.max(...products.map(p => p.price), 1000)}
-                          value={filters.maxPrice ?? Math.max(...products.map(p => p.price), 1000)}
-                          onChange={e => setFilters(f => ({ ...f, maxPrice: Number(e.target.value) }))}
-                          className="w-full accent-gray-900"
-                        />
-                        <span className="text-sm">{filters.maxPrice ?? Math.max(...products.map(p => p.price), 1000)}€</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+
                 {/* Brands Filter (Mobile) */}
                 {uniqueBrands.length > 0 && (
                   <div className="mb-4">

@@ -3,7 +3,7 @@ import { Schema, models, model } from 'mongoose';
 const ProductSchema = new Schema(
   {
     title: { type: String, required: true },
-    price: { type: Number, required: true },
+    price: { type: Number }, // Made optional - removed required: true
     originalPrice: { type: Number }, // Store original price when discount is applied
     discountPercentage: { type: Number, min: 0, max: 100 }, // Store discount percentage
     image: { type: String }, // Legacy single image field
@@ -15,6 +15,7 @@ const ProductSchema = new Schema(
     brandLogo: { type: String }, // Optional logo path for the brand
     sizes: { type: String, default: '' }, // Store sizes as comma-separated string (optional with default)
     subcategory: { type: String, default: '' }, // Nenkategoria e produktit
+    barcode: { type: String, default: '' }, // Barkodi i produktit
     gender: { 
       type: String, 
       required: true, 
@@ -41,7 +42,7 @@ const ProductSchema = new Schema(
 // Add a pre-save middleware to calculate discounted price
 ProductSchema.pre('save', function(next) {
   if (this.isModified('discountPercentage') || this.isModified('price')) {
-    if (this.discountPercentage && this.discountPercentage > 0) {
+    if (this.discountPercentage && this.discountPercentage > 0 && this.price) {
       // If discount is being applied, store original price
       if (!this.originalPrice) {
         this.originalPrice = this.price;

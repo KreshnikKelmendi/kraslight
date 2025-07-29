@@ -16,7 +16,7 @@ const DEFAULT_IMAGE = '/images/placeholder.jpg';
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number; // Made optional
   originalPrice?: number;
   discountPercentage?: number;
   image?: string;
@@ -28,6 +28,7 @@ interface Product {
   gender: string;
   category: string;
   description?: string;
+  barcode?: string;
   isNewArrival?: boolean;
   characteristics?: Array<{key: string, value: string}>;
 }
@@ -114,7 +115,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const hasSizes = product.sizes && product.sizes.trim() !== '';
   const sizes = hasSizes ? product.sizes.split(',').map(size => size.trim()).filter(size => size !== '') : [];
   
-  const discountPrice = product.originalPrice 
+  const discountPrice = product.price && product.originalPrice 
     ? product.originalPrice * (1 - (product.discountPercentage || 0) / 100)
     : product.price;
 
@@ -131,7 +132,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   };
 
   // Check if add to cart button should be enabled
-  const canAddToCart = product.stock > 0 && (!hasSizes || selectedSize);
+  const canAddToCart = (!hasSizes || selectedSize);
 
   return (
     <div className="min-h-screen bg-white">
@@ -237,15 +238,24 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <h1 className="font-bwseidoround text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
                 {product.title}
               </h1>
+              {product.barcode && (
+                <div className="flex items-center space-x-2">
+                  <span className="font-bwseidoround text-sm text-gray-600">Barkodi:</span>
+                  <span className="font-bwseidoround text-sm font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">
+                    {product.barcode}
+                  </span>
+                </div>
+              )}
             </div>
             {/* Price Section */}
-            <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                <div className="flex items-center space-x-2 sm:space-x-4">
-                  {product.originalPrice ? (
+            {product.price !== undefined && (
+              <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                                  <div className="flex items-center space-x-2 sm:space-x-4">
+                  {product.originalPrice && product.price ? (
                     <>
                       <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
-                        €{discountPrice.toFixed(2)}
+                        €{discountPrice?.toFixed(2)}
                       </span>
                       <span className="font-bwseidoround text-sm sm:text-lg text-gray-400 line-through">
                         €{product.originalPrice.toFixed(2)}
@@ -254,21 +264,22 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                         -{product.discountPercentage}%
                       </div>
                     </>
-                  ) : (
+                  ) : product.price ? (
                     <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
                       €{product.price.toFixed(2)}
                     </span>
+                  ) : null}
+                </div>
+                  {/* Stock Status */}
+                  {product.stock > 0 && (
+                    <div className="flex items-center space-x-2 text-green-600 font-bwseidoround bg-green-50 px-2 sm:px-3 py-1 sm:py-2 mt-1 sm:mt-0 rounded-xl">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="font-semibold text-xs sm:text-sm">{product.stock} në stok</span>
+                    </div>
                   )}
                 </div>
-                {/* Stock Status */}
-                {product.stock > 0 && (
-                  <div className="flex items-center space-x-2 text-green-600 font-bwseidoround bg-green-50 px-2 sm:px-3 py-1 sm:py-2 mt-1 sm:mt-0 rounded-xl">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-semibold text-xs sm:text-sm">{product.stock} në stok</span>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
             {/* Description */}
             {product.description && (
               <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
@@ -340,7 +351,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                       {quantity}
                     </span>
                     <button
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      onClick={() => setQuantity(quantity + 1)}
                       className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold rounded-r-xl"
                     >
                       +
@@ -376,13 +387,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     dispatch(addToCart({
                       id: product._id,
                       name: product.title,
-                      price: discountPrice,
+                      price: discountPrice || product.price || 0,
                       originalPrice: product.originalPrice,
                       discountPercentage: product.discountPercentage,
                       image: currentImage,
                       quantity,
                       brand: product.brand,
-                      size: selectedSize || 'N/A',
+                      ...(selectedSize && { size: selectedSize }),
                       category: product.category,
                       gender: product.gender,
                       stock: product.stock,
@@ -402,9 +413,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 >
                   <FaShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span>
-                    {product.stock === 0
-                      ? 'Nga stoku'
-                      : !hasSizes
+                    {!hasSizes
                       ? 'Shto në shportë'
                       : !selectedSize
                       ? 'Zgjidhni madhësinë'
@@ -472,30 +481,22 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <div className="space-y-2 sm:space-y-4">
                 <div className="space-y-1 sm:space-y-2">
                   <p className="font-bwseidoround text-xs text-gray-700 leading-relaxed">
-                    Porosia mund të kthehet brenda 24 orëve
+                    Porosia mund të kthehet brenda 24 orëve.
                   </p>
-                  <p className="font-bwseidoround text-xs text-red-600 font-medium">
-                    *Artikujt me çmime speciale nuk mund të kthehen!
-                  </p>
+                 
                 </div>
                 <div className="space-y-1 sm:space-y-2">
-                  <p className="font-bwseidoround text-xs text-gray-700">
-                    Na kontaktoni në Whatsapp / Viber, në numrin tonë 
-                    <span className="font-semibold text-gray-900"> 049 666 678 </span>
-                    dhe në rrjetet tona sociale!
+                  <p className="font-bwseidoround font-semibold text-xs text-green-900">
+                    Per çdo pyetje apo sqarime shtesë, mund të na kontaktoni në Whatsapp / Viber, në numrin tonë 
+                    <span className="font-semibold text-gray -900"> 049 111 111 </span>
+                    dhe në rrjetet tona sociale si Instagram, Facebook.
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <p className="font-bwseidoround text-xs text-gray-700">
-                    Porositë tona realizohen me postën
+                    Porositë tona realizohen me postë.
                   </p>
-                  <Image 
-                    src="/assets/logo/logposta-removebg-preview.png" 
-                    alt="Adidas" 
-                    width={64}
-                    height={32}
-                    className="rounded-xl"
-                  />
+                
                 </div>
               </div>
             </div>

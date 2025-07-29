@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PdfImage } from '@react-pdf/renderer';
-import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle } from 'react-icons/hi2';
+import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle, HiOutlineTrash, HiOutlineCheck } from 'react-icons/hi2';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
@@ -426,6 +426,12 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmPosition, setDeleteConfirmPosition] = useState({ x: 0, y: 0 });
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
+  const [deletingBulk, setDeletingBulk] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   // Add pagination state
@@ -446,6 +452,23 @@ export default function OrdersPage() {
       router.push('/signin');
     }
   }, [isAuthenticated, router]);
+
+  // Close delete popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDeleteConfirm) {
+        setShowDeleteConfirm(false);
+      }
+    };
+
+    if (showDeleteConfirm) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showDeleteConfirm]);
 
   // Function to update order status
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -479,6 +502,94 @@ export default function OrdersPage() {
     } finally {
       setUpdatingStatus(null);
     }
+  };
+
+  // Function to delete a single order
+  const deleteOrder = async (orderId: string) => {
+    setDeletingOrder(orderId);
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete order');
+      }
+
+      // Remove the order from the list
+      setOrders(prevOrders => prevOrders.filter(order => order._id !== orderId));
+      setSelectedOrders(prev => prev.filter(id => id !== orderId));
+      setShowDeleteConfirm(false);
+      
+      console.log('Order deleted successfully');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Gabim gjatë fshirjes së porosisë');
+    } finally {
+      setDeletingOrder(null);
+    }
+  };
+
+  // Function to bulk delete orders
+  const bulkDeleteOrders = async () => {
+    if (selectedOrders.length === 0) return;
+    
+    setDeletingBulk(true);
+    try {
+      const response = await fetch('/api/orders/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderIds: selectedOrders }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete orders');
+      }
+
+      const result = await response.json();
+      
+      // Remove the deleted orders from the list
+      setOrders(prevOrders => prevOrders.filter(order => !selectedOrders.includes(order._id)));
+      setSelectedOrders([]);
+      setShowBulkDeleteConfirm(false);
+      
+      console.log(`${result.deletedCount} orders deleted successfully`);
+    } catch (error) {
+      console.error('Error bulk deleting orders:', error);
+      alert('Gabim gjatë fshirjes së porosive');
+    } finally {
+      setDeletingBulk(false);
+    }
+  };
+
+  // Function to handle order selection
+  const handleOrderSelection = (orderId: string) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  // Function to select all orders on current page
+  const selectAllOrders = () => {
+    const currentPageOrderIds = paginatedOrders.map(order => order._id);
+    setSelectedOrders(prev => {
+      const allSelected = currentPageOrderIds.every(id => prev.includes(id));
+      if (allSelected) {
+        return prev.filter(id => !currentPageOrderIds.includes(id));
+      } else {
+        const newSelected = [...prev];
+        currentPageOrderIds.forEach(id => {
+          if (!newSelected.includes(id)) {
+            newSelected.push(id);
+          }
+        });
+        return newSelected;
+      }
+    });
   };
 
   // Get status options based on current status
@@ -698,6 +809,49 @@ export default function OrdersPage() {
           </div>
         </div>
 
+        {/* Bulk Actions Section */}
+        {!loading && !error && filteredOrders.length > 0 && (
+          <div className="bg-white shadow-sm border border-slate-200 p-6 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={paginatedOrders.length > 0 && paginatedOrders.every(order => selectedOrders.includes(order._id))}
+                    onChange={selectAllOrders}
+                    className="w-4 h-4 text-slate-600 bg-slate-100 border-slate-300 rounded focus:ring-slate-500 focus:ring-2"
+                  />
+                  <span className="text-sm font-medium text-slate-700">
+                    Zgjidh të gjitha ({paginatedOrders.length})
+                  </span>
+                </div>
+                {selectedOrders.length > 0 && (
+                  <span className="text-sm text-slate-600">
+                    {selectedOrders.length} porosi e zgjedhur
+                  </span>
+                )}
+              </div>
+              
+              {selectedOrders.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    disabled={deletingBulk}
+                    className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {deletingBulk ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    ) : (
+                      <HiOutlineTrash className="w-4 h-4" />
+                    )}
+                    Fshi të Zgjedhurat ({selectedOrders.length})
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
         {loading && (
           <div className="text-center py-20">
@@ -739,12 +893,37 @@ export default function OrdersPage() {
                 return (
                   <div 
                     key={order._id} 
-                    className="bg-white shadow-sm border border-slate-400 hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group relative flex flex-col min-h-[180px]"
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setShowOrderDetails(true);
-                    }}
+                    className="bg-white shadow-sm border border-slate-400 hover:shadow-lg transition-all duration-300 overflow-hidden group relative flex flex-col min-h-[180px]"
                   >
+                    {/* Checkbox and Delete Button */}
+                    <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrders.includes(order._id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleOrderSelection(order._id);
+                        }}
+                        className="w-4 h-4 text-slate-600 bg-slate-100 border-slate-300 rounded focus:ring-slate-500 focus:ring-2"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setDeleteConfirmPosition({ 
+                            x: rect.left + rect.width / 2, 
+                            y: rect.bottom + 10 
+                          });
+                          setSelectedOrder(order);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="p-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors"
+                        title="Fshi porosinë"
+                      >
+                        <HiOutlineTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
                     {/* Watermark */}
                     <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
                       <div
@@ -793,7 +972,15 @@ export default function OrdersPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="relative z-10 flex flex-col gap-3 p-3 text-[15px] text-slate-800">
+                    
+                    {/* Order Content - Clickable */}
+                    <div 
+                      className="relative z-10 flex flex-col gap-3 p-3 text-[15px] text-slate-800 cursor-pointer"
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setShowOrderDetails(true);
+                      }}
+                    >
                       <div className="flex flex-col gap-1">
                         <div className="font-extrabold text-lg text-blue-900 tracking-tight truncate drop-shadow-sm">{order.firstName} {order.lastName}</div>
                         <div className="flex items-center gap-2 mt-1">
@@ -886,11 +1073,122 @@ export default function OrdersPage() {
                         <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-100 text-xs text-blue-900">
                           <span className="font-medium">Shënim:</span> {order.notes.length > 40 ? `${order.notes.slice(0, 40)}...` : order.notes}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                              )}
+
+        {/* Delete Confirmation Popup */}
+        {showDeleteConfirm && selectedOrder && (
+          <div 
+            className="fixed z-50"
+            style={{
+              left: `${deleteConfirmPosition.x}px`,
+              top: `${deleteConfirmPosition.y}px`,
+              transform: 'translateX(-50%)'
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-64"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <HiOutlineTrash className="w-4 h-4 text-red-600" />
+                </div>
+                <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  Fshi Porosinë
+                </h3>
+                <p className="text-xs text-gray-600 mb-4">
+                  A jeni të sigurt që dëshironi të fshini porosinë e <strong>{selectedOrder.firstName} {selectedOrder.lastName}</strong>?
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-50 transition-colors"
+                  >
+                    Anulo
+                  </button>
+                  <button
+                    onClick={() => deleteOrder(selectedOrder._id)}
+                    disabled={deletingOrder === selectedOrder._id}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                  >
+                    {deletingOrder === selectedOrder._id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                        Duke fshirë...
+                      </>
+                    ) : (
+                      <>
+                        <HiOutlineTrash className="w-3 h-3" />
+                        Fshi
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Arrow pointing up */}
+            <div 
+              className="absolute w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-white"
+              style={{
+                left: '50%',
+                top: '-4px',
+                transform: 'translateX(-50%)'
+              }}
+            />
+          </div>
+        )}
+
+        {/* Bulk Delete Confirmation Modal */}
+        {showBulkDeleteConfirm && (
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-sm w-full p-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <HiOutlineTrash className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Fshi Porositë e Zgjedhura
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  A jeni të sigurt që dëshironi të fshini <strong>{selectedOrders.length} porosi</strong>?
+                  <br />
+                  <span className="text-xs text-red-600">
+                    Ky veprim nuk mund të kthehet mbrapsht.
+                  </span>
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowBulkDeleteConfirm(false)}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Anulo
+                  </button>
+                  <button
+                    onClick={bulkDeleteOrders}
+                    disabled={deletingBulk}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm"
+                  >
+                    {deletingBulk ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Duke fshirë...
+                      </>
+                    ) : (
+                      <>
+                        <HiOutlineTrash className="w-4 h-4" />
+                        Fshi {selectedOrders.length} Porosi
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+})}
             </div>
             {/* Pagination Controls */}
             {totalPages > 1 && (
@@ -913,16 +1211,16 @@ export default function OrdersPage() {
 
         {/* Order Details Modal */}
         {showOrderDetails && selectedOrder && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               {/* Header */}
-              <div className="sticky top-0 bg-white border-b border-slate-200 px-8 py-6 rounded-t-3xl">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-4xl font-light text-slate-900 mb-2">
+                    <h2 className="text-2xl font-medium text-gray-900 mb-1">
                       Detajet e Porosisë #{selectedOrder._id.slice(-8)}
                     </h2>
-                    <p className="text-slate-600 text-lg">
+                    <p className="text-gray-600 text-sm">
                       {selectedOrder.firstName} {selectedOrder.lastName} • {new Date(selectedOrder.createdAt).toLocaleDateString('sq-AL', {
                         year: 'numeric',
                         month: 'long',
@@ -934,7 +1232,7 @@ export default function OrdersPage() {
                   </div>
                   <button
                     onClick={() => setShowOrderDetails(false)}
-                    className="text-slate-400 hover:text-slate-600 text-3xl font-light hover:bg-slate-100 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+                    className="text-gray-400 hover:text-gray-600 text-xl font-light hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
                   >
                     ×
                   </button>
@@ -943,14 +1241,14 @@ export default function OrdersPage() {
 
               {/* PDF Download Button */}
               {selectedOrder && (
-                <div className="flex justify-end px-8 pt-4">
+                <div className="flex justify-end px-6 pt-4">
                   <PDFDownloadLink
                     document={<InvoicePDFDocument order={selectedOrder} />}
                     fileName={`invoice-${selectedOrder._id.slice(-8)}.pdf`}
-                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-medium rounded-xl shadow-lg hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
                   >
                     {({ loading }: { loading: boolean }) =>
-                      loading ? 'Duke gjeneruar PDF...' : <><HiOutlineDocumentArrowDown className="w-5 h-5" /> Shkarko Faturën PDF</>
+                      loading ? 'Duke gjeneruar PDF...' : <><HiOutlineDocumentArrowDown className="w-4 h-4" /> Shkarko Faturën PDF</>
                     }
                   </PDFDownloadLink>
                 </div>

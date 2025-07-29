@@ -64,7 +64,8 @@ export async function PUT(
     const formData = await request.formData();
 
     const title = formData.get('title') as string;
-    const originalPrice = parseFloat(formData.get('price') as string);
+    const priceStr = formData.get('price') as string;
+    const originalPrice = priceStr ? parseFloat(priceStr) : undefined;
     const discountPercentageRaw = formData.get('discountPercentage') as string;
     const discountPercentage =
       discountPercentageRaw?.trim() !== '' ? parseFloat(discountPercentageRaw) : null;
@@ -73,6 +74,7 @@ export async function PUT(
     const sizes = formData.get('sizes') as string;
     const gender = formData.get('gender') as string;
     const category = formData.get('category') as string;
+    const barcode = formData.get('barcode') as string;
     const description = formData.get('description') as string;
     const isNewArrival = formData.get('isNewArrival') === 'true';
     const characteristics = formData.get('characteristics') as string;
@@ -80,7 +82,7 @@ export async function PUT(
     const existingImages = formData.getAll('existingImages') as string[];
     const newImageFiles = formData.getAll('images') as File[];
 
-    if (!title || isNaN(originalPrice) || isNaN(stock) || !brand) {
+    if (!title || isNaN(stock) || !brand) {
       return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
     }
 
@@ -89,20 +91,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    const finalPrice =
-      discountPercentage && discountPercentage > 0
-        ? originalPrice * (1 - discountPercentage / 100)
-        : originalPrice;
+    const finalPrice = originalPrice !== undefined
+      ? (discountPercentage && discountPercentage > 0
+          ? originalPrice * (1 - discountPercentage / 100)
+          : originalPrice)
+      : undefined;
 
     product.title = title;
     product.price = finalPrice;
-    product.originalPrice = discountPercentage && discountPercentage > 0 ? originalPrice : undefined;
+    product.originalPrice = (discountPercentage && discountPercentage > 0 && originalPrice !== undefined) ? originalPrice : undefined;
     product.discountPercentage = discountPercentage;
     product.stock = stock;
     product.brand = brand;
     product.sizes = sizes || '';
     product.gender = (gender as 'Meshkuj' | 'Femra' | 'Të Gjitha') || 'Të Gjitha';
     product.category = category || 'Të tjera';
+    product.barcode = barcode || '';
     product.description = description || '';
     product.isNewArrival = isNewArrival;
 

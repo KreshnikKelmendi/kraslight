@@ -10,13 +10,15 @@ export async function POST(req: NextRequest) {
     
     // Get form data
     const title = formData.get('title') as string;
-    const price = parseFloat(formData.get('price') as string);
+    const priceStr = formData.get('price') as string;
+    const price = priceStr ? parseFloat(priceStr) : undefined;
     const stock = parseInt(formData.get('stock') as string);
     const brand = formData.get('brand') as string;
     const sizes = (formData.get('sizes') as string) || '';
     const gender = (formData.get('gender') as string) || 'Të Gjitha';
     const category = formData.get('category') as string;
     const subcategory = (formData.get('subcategory') as string) || '';
+    const barcode = (formData.get('barcode') as string) || '';
     const description = formData.get('description') as string;
     const isNewArrival = formData.get('isNewArrival') === 'true';
     const characteristics = formData.get('characteristics') as string;
@@ -32,15 +34,14 @@ export async function POST(req: NextRequest) {
     console.log('Files count:', files?.length);
 
     // Validate required fields
-    if (!title || isNaN(price) || isNaN(stock) || !files.length) {
+    if (!title || isNaN(stock) || !files.length) {
       console.log('Validation failed:', {
         title: !title,
-        price: isNaN(price),
         stock: isNaN(stock),
         files: !files.length
       });
       return NextResponse.json(
-        { error: 'Missing or invalid fields. Please check title, price, stock, and images.' }, 
+        { error: 'Missing or invalid fields. Please check title, stock, and images.' }, 
         { status: 400 }
       );
     }
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
       gender: gender || 'Të Gjitha',
       category: category || 'Të tjera',
       subcategory: subcategory || '',
+      barcode: barcode || '',
       description: description || '',
       characteristics: characteristics ? JSON.parse(characteristics) : [],
       images: imageUrls,

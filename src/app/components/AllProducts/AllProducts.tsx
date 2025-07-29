@@ -6,7 +6,7 @@ import ProductCard from '../../../components/ProductCard/ProductCard';
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number; // Made optional
   originalPrice?: number;
   discountPercentage?: number;
   image: string;

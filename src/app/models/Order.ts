@@ -27,6 +27,7 @@ const OrderSchema = new Schema(
         gender: { type: String },
         stock: { type: Number },
         description: { type: String },
+        barcode: { type: String },
       }
     ],
     total: { type: Number, required: true },

@@ -5,7 +5,7 @@ import Image from 'next/image';
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number; // Made optional
   originalPrice?: number;
   discountPercentage?: number;
   image: string;
@@ -57,17 +57,19 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
               </h3>
               <p className="text-sm text-gray-600 mb-2">{product.brand}</p>
               
-              {/* Price */}
-              <div className="flex items-center space-x-2">
-                <span className="text-lg font-bold text-gray-900">
-                  {product.price.toLocaleString('sq-AL')} €
-                </span>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {product.originalPrice.toLocaleString('sq-AL')} €
+              {/* Price - Only show if price exists */}
+              {product.price !== undefined && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    {product.price.toLocaleString('sq-AL')} €
                   </span>
-                )}
-              </div>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-sm text-gray-500 line-through">
+                      {product.originalPrice.toLocaleString('sq-AL')} €
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </Link>

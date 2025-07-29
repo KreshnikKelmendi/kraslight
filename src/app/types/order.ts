@@ -13,6 +13,7 @@ export interface OrderItem {
   gender?: string;
   stock?: number;
   description?: string;
+  barcode?: string;
 }
 
 export interface Order {

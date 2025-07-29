@@ -80,33 +80,35 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3 text-sm">
                 <BsLightningCharge className="text-white text-lg" />
-                <span className="text-gray-300">Produkte të Energjisë</span>
+                <span className="text-gray-300">Produkte Ndriqimi & Elektrike</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <BsShieldCheck className="text-white text-lg" />
-                <span className="text-gray-300">Garancia 2 Vite</span>
+                <span className="text-gray-300">Garancion</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <BsTruck className="text-white text-lg" />
-                <span className="text-gray-300">Dërgesa e Shpejtë</span>
+                <span className="text-gray-300">Dërgesë e Shpejtë</span>
               </div>
             </div>
 
             {/* Social Media */}
             <div className="flex gap-3">
               <a 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/kraslight.ks/" 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                title="Na ndiqni në Instagram"
                 aria-label="Instagram"
                 className="w-10 h-10 flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:text-[#0a9945]"
               >
                 <FaInstagram className="text-lg" />
               </a>
               <a 
-                href="https://facebook.com" 
+                href="https://www.facebook.com/kraslight" 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                title="Na ndiqni në Facebook"
                 aria-label="Facebook"
                 className="w-10 h-10 flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:text-[#0a9945]"
               >
@@ -209,7 +211,7 @@ const Footer = () => {
               
             </div>
             <p className="text-gray-300 text-sm">
-              Abonohuni për përditësimet e fundit dhe ofertat ekskluzive për produkte elektronike.
+              Abonohuni për përditësimet e fundit dhe ofertat ekskluzive për produkte elektrike dhe ndriqim.
             </p>
             
             {/* Message Display */}

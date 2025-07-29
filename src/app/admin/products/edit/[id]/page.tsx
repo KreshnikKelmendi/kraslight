@@ -11,7 +11,7 @@ import { useAuth } from '../../../../lib/AuthContext';
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number; // Made optional
   originalPrice?: number;
   discountPercentage?: number;
   images: string[];
@@ -20,6 +20,7 @@ interface Product {
   brand: string;
   category: string;
   description?: string;
+  barcode?: string;
   isNewArrival?: boolean;
   characteristics?: Array<{key: string, value: string}>;
 }
@@ -37,6 +38,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   const [category, setCategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [barcode, setBarcode] = useState('');
   const [isNewArrival, setIsNewArrival] = useState(false);
   const [characteristics, setCharacteristics] = useState<Array<{key: string, value: string}>>([{key: '', value: ''}]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -63,7 +65,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           console.log('Fetched product data:', productData); // Debug log
           
           setTitle(productData.title);
-          setPrice(productData.originalPrice?.toString() || productData.price.toString());
+          setPrice(productData.originalPrice?.toString() || productData.price?.toString() || '');
           setDiscountPercentage(productData.discountPercentage && productData.discountPercentage > 0 ? productData.discountPercentage.toString() : '');
           setStock(productData.stock.toString());
           setBrand(productData.brand || '');
@@ -86,6 +88,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
               : productData.category || ''
           );
           setDescription(productData.description || '');
+          setBarcode(productData.barcode || '');
           setIsNewArrival(productData.isNewArrival || false);
           setCharacteristics(productData.characteristics && productData.characteristics.length > 0 ? productData.characteristics : [{key: '', value: ''}]);
           setProduct(productData);
@@ -155,6 +158,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     formData.append('brand', brand);
     formData.append('category', category === 'Other' ? customCategory : category || 'Other');
     formData.append('description', description);
+    formData.append('barcode', barcode);
     formData.append('isNewArrival', isNewArrival.toString());
     
     // Append characteristics
@@ -288,11 +292,25 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
               />
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Barkodi i Produktit <span className="text-gray-500 font-normal">(Opsionale)</span>
+            </label>
+            <input
+              type="text"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Shkruani barkodin e produktit"
+            />
+            <p className="mt-1 text-xs text-gray-500">Barkodi përdoret për kërkim të shpejtë të produktit</p>
+          </div>
           {/* Pricing Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Çmimi Origjinal
+                Çmimi Origjinal <span className="text-gray-500 font-normal">(Opsionale)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-gray-500 text-lg">€</span>
@@ -300,13 +318,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  required
                   step="0.01"
                   min="0"
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="0.00"
                 />
               </div>
+              <p className="mt-1 text-xs text-gray-500">Lëreni bosh nëse produkti nuk ka çmim</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -325,7 +343,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 />
                 <span className="absolute right-3 top-3 text-gray-500 text-lg">%</span>
               </div>
-              {discountPercentage && (
+              {discountPercentage && price && (
                 <p className="mt-1 text-sm text-gray-500">
                   Çmimi i ri: €{((parseFloat(price) || 0) * (1 - (parseFloat(discountPercentage) || 0) / 100)).toFixed(2)}
                 </p>

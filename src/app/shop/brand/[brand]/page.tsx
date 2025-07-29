@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { FaTimes, FaFilter, FaSearch, FaTimesCircle } from 'react-icons/fa';
+import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { motion } from 'framer-motion';
 
@@ -52,6 +52,10 @@ export default function BrandPage() {
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [expandedFilters, setExpandedFilters] = useState({
+    categories: false,
+    subcategories: true, // open by default
+  });
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [minAvailablePrice, setMinAvailablePrice] = useState(0);
   const [maxAvailablePrice, setMaxAvailablePrice] = useState(1000);
@@ -125,7 +129,8 @@ export default function BrandPage() {
   useEffect(() => {
     const filtered = products.filter(product => {
       const matchesType = !filters.type || product.category === filters.type;
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+      // Make price filter optional - allow products without prices
+      const matchesPrice = product.price === undefined || (product.price >= priceRange[0] && product.price <= priceRange[1]);
       const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category);
       const matchesBrand = filters.brands.length === 0 || filters.brands.includes(product.brand);
       const matchesSubcategory = filters.subcategories.length === 0 || filters.subcategories.includes(product.subcategory || '');
@@ -151,6 +156,7 @@ export default function BrandPage() {
         break;
     }
     const sorted = filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    console.log('Filtered products:', sorted.length, 'Original products:', products.length);
     setFilteredProducts(sorted);
   }, [products, filters, sortBy, priceRange]);
 
@@ -158,6 +164,7 @@ export default function BrandPage() {
     try {
       const res = await fetch(`/api/products?brand=${brand}`);
       const data = await res.json();
+      console.log('API Response for brand:', brand, 'Products:', data);
       const sorted = data.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setProducts(sorted);
       
@@ -169,10 +176,10 @@ export default function BrandPage() {
       const subcategories = Array.from(new Set(data.map((p: Product) => p.subcategory).filter(Boolean)));
       setAvailableSubcategories(subcategories as string[]);
       
-      // Set price range
-      const prices = data.map((p: Product) => p.price);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
+      // Set price range - only consider products with prices
+      const prices = data.map((p: Product) => p.price).filter((price): price is number => price !== undefined);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : 100;
       setMinAvailablePrice(minPrice);
       setMaxAvailablePrice(maxPrice);
       setPriceRange([minPrice, maxPrice]);
@@ -268,86 +275,79 @@ export default function BrandPage() {
           </button>
         </div>
 
-        {/* Price Range Filter */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-            Çmimi
-          </h3>
-          <div className="space-y-3 bg-gradient-to-br from-green-50 to-gray-50 p-3 rounded-lg">
-            <div className="flex flex-col gap-2">
-              <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{priceRange[0]}€</span>
-                <input
-                  type="range"
-                  min={minAvailablePrice}
-                  max={maxAvailablePrice}
-                  value={priceRange[0]}
-                  onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                  className="w-full accent-[#0a9945]"
-                />
-                <input
-                  type="range"
-                  min={minAvailablePrice}
-                  max={maxAvailablePrice}
-                  value={priceRange[1]}
-                  onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                  className="w-full accent-[#0a9945]"
-                />
-                <span className="text-sm">{priceRange[1]}€</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Categories Filter */}
         {availableCategories.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-              Kategoritë
-            </h3>
-            <div className="space-y-2">
-              {availableCategories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryFilter(category)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.categories.includes(category)
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setExpandedFilters(prev => ({ ...prev, categories: !prev.categories }))}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                Kategoritë
+              </div>
+              {expandedFilters.categories ? (
+                <FaChevronUp className="text-gray-500 text-xs" />
+              ) : (
+                <FaChevronDown className="text-gray-500 text-xs" />
+              )}
+            </button>
+            {expandedFilters.categories && (
+              <div className="space-y-2">
+                {availableCategories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryFilter(category)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filters.categories.includes(category)
+                        ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Subcategory Filter */}
         {availableSubcategories.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-              Nënkategoritë
-            </h3>
-            <div className="space-y-2">
-              {availableSubcategories.map((subcategory) => (
-                <button
-                  key={subcategory}
-                  onClick={() => handleSubcategoryFilter(subcategory)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.subcategories.includes(subcategory)
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {subcategory}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setExpandedFilters(prev => ({ ...prev, subcategories: !prev.subcategories }))}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                Nënkategoritë
+              </div>
+              {expandedFilters.subcategories ? (
+                <FaChevronUp className="text-gray-500 text-xs" />
+              ) : (
+                <FaChevronDown className="text-gray-500 text-xs" />
+              )}
+            </button>
+            {expandedFilters.subcategories && (
+              <div className="space-y-2">
+                {availableSubcategories.map((subcategory) => (
+                  <button
+                    key={subcategory}
+                    onClick={() => handleSubcategoryFilter(subcategory)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filters.subcategories.includes(subcategory)
+                        ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {subcategory}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -382,88 +382,81 @@ export default function BrandPage() {
 
             {/* Mobile Filter Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              {/* Price Range Filter (Mobile) */}
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                  Çmimi
-                </h3>
-                <div className="space-y-2 bg-gradient-to-br from-green-50 to-gray-50 p-3 rounded-lg">
-                  <div className="flex flex-col gap-2">
-                    <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{priceRange[0]}€</span>
-                      <input
-                        type="range"
-                        min={minAvailablePrice}
-                        max={maxAvailablePrice}
-                        value={priceRange[0]}
-                        onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="w-full accent-[#0a9945]"
-                      />
-                      <input
-                        type="range"
-                        min={minAvailablePrice}
-                        max={maxAvailablePrice}
-                        value={priceRange[1]}
-                        onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="w-full accent-[#0a9945]"
-                      />
-                      <span className="text-sm">{priceRange[1]}€</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Categories Filter (Mobile) */}
-              {availableCategories.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                    Kategoritë
-                  </h3>
-                  <div className="space-y-1">
-                    {availableCategories.map((category) => (
-                      <button
-                        key={category}
-                        onClick={() => handleCategoryFilter(category)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          filters.categories.includes(category)
-                            ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {category}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* Subcategory Filter (Mobile) */}
-              {availableSubcategories.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                    Nënkategoritë
-                  </h3>
-                  <div className="space-y-1">
-                    {availableSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory}
-                        onClick={() => handleSubcategoryFilter(subcategory)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          filters.subcategories.includes(subcategory)
-                            ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {subcategory}
-                      </button>
-                    ))}
+                              {/* Categories Filter (Mobile) */}
+                {availableCategories.length > 0 && (
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setExpandedFilters(prev => ({ ...prev, categories: !prev.categories }))}
+                      className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                        Kategoritë
+                      </div>
+                      {expandedFilters.categories ? (
+                        <FaChevronUp className="text-gray-500 text-xs" />
+                      ) : (
+                        <FaChevronDown className="text-gray-500 text-xs" />
+                      )}
+                    </button>
+                    {expandedFilters.categories && (
+                      <div className="space-y-1">
+                        {availableCategories.map((category) => (
+                          <button
+                            key={category}
+                            onClick={() => handleCategoryFilter(category)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              filters.categories.includes(category)
+                                ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
+
+                              {/* Subcategory Filter (Mobile) */}
+                {availableSubcategories.length > 0 && (
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setExpandedFilters(prev => ({ ...prev, subcategories: !prev.subcategories }))}
+                      className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                        Nënkategoritë
+                      </div>
+                      {expandedFilters.subcategories ? (
+                        <FaChevronUp className="text-gray-500 text-xs" />
+                      ) : (
+                        <FaChevronDown className="text-gray-500 text-xs" />
+                      )}
+                    </button>
+                    {expandedFilters.subcategories && (
+                      <div className="space-y-1">
+                        {availableSubcategories.map((subcategory) => (
+                          <button
+                            key={subcategory}
+                            onClick={() => handleSubcategoryFilter(subcategory)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              filters.subcategories.includes(subcategory)
+                                ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {subcategory}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Mobile Filter Footer */}

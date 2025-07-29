@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { FaTimes, FaFilter, FaSearch, FaTimesCircle } from 'react-icons/fa';
+import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 
 interface Product {
@@ -37,6 +37,10 @@ export default function MaterialeElektrikePage() {
   });
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [expandedFilters, setExpandedFilters] = useState({
+    brands: false,
+    subcategories: true, // open by default
+  });
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [minAvailablePrice, setMinAvailablePrice] = useState(0);
   const [maxAvailablePrice, setMaxAvailablePrice] = useState(1000);
@@ -60,6 +64,11 @@ export default function MaterialeElektrikePage() {
           setMinAvailablePrice(minPrice);
           setMaxAvailablePrice(maxPrice);
           setPriceRange([minPrice, maxPrice]);
+        } else {
+          // Set default values when no products are found
+          setMinAvailablePrice(0);
+          setMaxAvailablePrice(100);
+          setPriceRange([0, 100]);
         }
       } catch (err: unknown) {
         if (err && typeof err === 'object' && 'message' in err && typeof (err as ErrorWithMessage).message === 'string') {
@@ -161,84 +170,77 @@ export default function MaterialeElektrikePage() {
             Pastro
           </button>
         </div>
-        {/* Price Range Filter */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-            Çmimi
-          </h3>
-          <div className="space-y-3 bg-gradient-to-br from-green-50 to-gray-50 p-3 rounded-lg">
-            <div className="flex flex-col gap-2">
-              <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{priceRange[0]}€</span>
-                <input
-                  type="range"
-                  min={minAvailablePrice}
-                  max={maxAvailablePrice}
-                  value={priceRange[0]}
-                  onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                  className="w-full accent-[#0a9945]"
-                />
-                <input
-                  type="range"
-                  min={minAvailablePrice}
-                  max={maxAvailablePrice}
-                  value={priceRange[1]}
-                  onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                  className="w-full accent-[#0a9945]"
-                />
-                <span className="text-sm">{priceRange[1]}€</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
         {/* Brands Filter */}
         {availableBrands.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-              Brendet
-            </h3>
-            <div className="space-y-2">
-              {availableBrands.map((brand: string) => (
-                <button
-                  key={brand}
-                  onClick={() => handleBrandFilter(brand)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.brands.includes(brand)
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {brand}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setExpandedFilters(prev => ({ ...prev, brands: !prev.brands }))}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                Brendet
+              </div>
+              {expandedFilters.brands ? (
+                <FaChevronUp className="text-gray-500 text-xs" />
+              ) : (
+                <FaChevronDown className="text-gray-500 text-xs" />
+              )}
+            </button>
+            {expandedFilters.brands && (
+              <div className="space-y-2">
+                {availableBrands.map((brand: string) => (
+                  <button
+                    key={brand}
+                    onClick={() => handleBrandFilter(brand)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filters.brands.includes(brand)
+                        ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {brand}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {/* Subcategory Filter */}
         {availableSubcategories.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-              Nënkategoritë
-            </h3>
-            <div className="space-y-2">
-              {availableSubcategories.map((subcategory: string) => (
-                <button
-                  key={subcategory}
-                  onClick={() => handleSubcategoryFilter(subcategory)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.subcategories.includes(subcategory)
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {subcategory}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setExpandedFilters(prev => ({ ...prev, subcategories: !prev.subcategories }))}
+              className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                Nënkategoritë
+              </div>
+              {expandedFilters.subcategories ? (
+                <FaChevronUp className="text-gray-500 text-xs" />
+              ) : (
+                <FaChevronDown className="text-gray-500 text-xs" />
+              )}
+            </button>
+            {expandedFilters.subcategories && (
+              <div className="space-y-2">
+                {availableSubcategories.map((subcategory: string) => (
+                  <button
+                    key={subcategory}
+                    onClick={() => handleSubcategoryFilter(subcategory)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filters.subcategories.includes(subcategory)
+                        ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {subcategory}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -272,84 +274,77 @@ export default function MaterialeElektrikePage() {
             </div>
             {/* Mobile Filter Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              {/* Price Range Filter (Mobile) */}
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                  Çmimi
-                </h3>
-                <div className="space-y-2 bg-gradient-to-br from-green-50 to-gray-50 p-3 rounded-lg">
-                  <div className="flex flex-col gap-2">
-                    <label className="block text-xs text-gray-600 mb-1 font-medium">Zgjidhni intervalin e çmimit:</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{priceRange[0]}€</span>
-                      <input
-                        type="range"
-                        min={minAvailablePrice}
-                        max={maxAvailablePrice}
-                        value={priceRange[0]}
-                        onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="w-full accent-[#0a9945]"
-                      />
-                      <input
-                        type="range"
-                        min={minAvailablePrice}
-                        max={maxAvailablePrice}
-                        value={priceRange[1]}
-                        onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="w-full accent-[#0a9945]"
-                      />
-                      <span className="text-sm">{priceRange[1]}€</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
               {/* Brands Filter (Mobile) */}
               {availableBrands.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                    Brendet
-                  </h3>
-                  <div className="space-y-1">
-                    {availableBrands.map((brand: string) => (
-                      <button
-                        key={brand}
-                        onClick={() => handleBrandFilter(brand)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          filters.brands.includes(brand)
-                            ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {brand}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => setExpandedFilters(prev => ({ ...prev, brands: !prev.brands }))}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                      Brendet
+                    </div>
+                    {expandedFilters.brands ? (
+                      <FaChevronUp className="text-gray-500 text-xs" />
+                    ) : (
+                      <FaChevronDown className="text-gray-500 text-xs" />
+                    )}
+                  </button>
+                  {expandedFilters.brands && (
+                    <div className="space-y-1">
+                      {availableBrands.map((brand: string) => (
+                        <button
+                          key={brand}
+                          onClick={() => handleBrandFilter(brand)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            filters.brands.includes(brand)
+                              ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {brand}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {/* Subcategory Filter (Mobile) */}
               {availableSubcategories.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
-                    Nënkategoritë
-                  </h3>
-                  <div className="space-y-1">
-                    {availableSubcategories.map((subcategory: string) => (
-                      <button
-                        key={subcategory}
-                        onClick={() => handleSubcategoryFilter(subcategory)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          filters.subcategories.includes(subcategory)
-                            ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {subcategory}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => setExpandedFilters(prev => ({ ...prev, subcategories: !prev.subcategories }))}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#0a9945] rounded-full"></div>
+                      Nënkategoritë
+                    </div>
+                    {expandedFilters.subcategories ? (
+                      <FaChevronUp className="text-gray-500 text-xs" />
+                    ) : (
+                      <FaChevronDown className="text-gray-500 text-xs" />
+                    )}
+                  </button>
+                  {expandedFilters.subcategories && (
+                    <div className="space-y-1">
+                      {availableSubcategories.map((subcategory: string) => (
+                        <button
+                          key={subcategory}
+                          onClick={() => handleSubcategoryFilter(subcategory)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            filters.subcategories.includes(subcategory)
+                              ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white shadow-md'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {subcategory}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
