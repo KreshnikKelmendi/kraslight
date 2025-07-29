@@ -64,7 +64,6 @@ export default function ProductCard({
     price,
     originalPrice,
     discountPercentage,
-    stock,
     brand
   } = product;
 

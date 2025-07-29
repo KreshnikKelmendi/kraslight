@@ -109,16 +109,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (!price || isNaN(price)) {
-      return '';
-    }
-    return new Intl.NumberFormat('sq-AL', {
-      style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
+
 
   if (!isOpen) return null;
 

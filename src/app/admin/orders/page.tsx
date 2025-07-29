@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PdfImage } from '@react-pdf/renderer';
-import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle, HiOutlineTrash, HiOutlineCheck } from 'react-icons/hi2';
+import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, HiOutlineXMark, HiOutlineShoppingBag, HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineClock, HiOutlineExclamationTriangle, HiOutlineTrash } from 'react-icons/hi2';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
@@ -455,7 +455,7 @@ export default function OrdersPage() {
 
   // Close delete popup when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = () => {
       if (showDeleteConfirm) {
         setShowDeleteConfirm(false);
       }

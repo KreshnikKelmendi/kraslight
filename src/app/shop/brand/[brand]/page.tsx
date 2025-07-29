@@ -57,8 +57,6 @@ export default function BrandPage() {
     subcategories: true, // open by default
   });
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
-  const [minAvailablePrice, setMinAvailablePrice] = useState(0);
-  const [maxAvailablePrice, setMaxAvailablePrice] = useState(1000);
   const [productCount, setProductCount] = useState(0);
   const [categoryCount, setCategoryCount] = useState(0);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -177,11 +175,9 @@ export default function BrandPage() {
       setAvailableSubcategories(subcategories as string[]);
       
       // Set price range - only consider products with prices
-      const prices = data.map((p: Product) => p.price).filter((price): price is number => price !== undefined);
+      const prices = data.map((p: Product) => p.price).filter((price: number | undefined): price is number => price !== undefined);
       const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
       const maxPrice = prices.length > 0 ? Math.max(...prices) : 100;
-      setMinAvailablePrice(minPrice);
-      setMaxAvailablePrice(maxPrice);
       setPriceRange([minPrice, maxPrice]);
       
       if (typeof window !== 'undefined') {
