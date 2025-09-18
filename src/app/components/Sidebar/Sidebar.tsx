@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../lib/AuthContext';
-import { FiShoppingBag, FiList, FiHome, FiLogOut, FiImage, FiClipboard, FiMail, FiFileText } from 'react-icons/fi';
+import { FiShoppingBag, FiList, FiHome, FiLogOut, FiImage, FiClipboard, FiMail } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 
 const Sidebar = () => {
