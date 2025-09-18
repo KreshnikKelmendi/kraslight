@@ -52,6 +52,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         const res = await axios.get(`/api/products/${id}`);
         const productData = res.data;
         console.log('Product data:', productData); // Debug log
+        console.log('Stock value:', productData.stock, 'Type:', typeof productData.stock); // Debug stock
         
         // Handle both old and new image formats
         const availableImages = [
@@ -132,7 +133,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   };
 
   // Check if add to cart button should be enabled
-  const canAddToCart = (!hasSizes || selectedSize);
+  const canAddToCart = (!hasSizes || selectedSize) && product.stock > 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -247,36 +248,43 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 </div>
               )}
             </div>
+            {/* Stock Status Section */}
+            <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
+              <div className="flex items-center space-x-2 font-bwseidoround">
+                <div className={`w-3 h-3 rounded-full ${
+                  product.stock > 0 ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                <span className={`font-semibold text-sm sm:text-base ${
+                  product.stock > 0 ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {product.stock > 0 ? 'Në stok' : 'Jashtë Stokut'}
+                </span>
+              </div>
+            </div>
+
             {/* Price Section */}
             {product.price !== undefined && (
               <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                                  <div className="flex items-center space-x-2 sm:space-x-4">
-                  {product.originalPrice && product.price ? (
-                    <>
+                  <div className="flex items-center space-x-2 sm:space-x-4">
+                    {product.originalPrice && product.price ? (
+                      <>
+                        <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
+                          €{discountPrice?.toFixed(2)}
+                        </span>
+                        <span className="font-bwseidoround text-sm sm:text-lg text-gray-400 line-through">
+                          €{product.originalPrice.toFixed(2)}
+                        </span>
+                        <div className="bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold rounded-xl">
+                          -{product.discountPercentage}%
+                        </div>
+                      </>
+                    ) : product.price ? (
                       <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
-                        €{discountPrice?.toFixed(2)}
+                        €{product.price.toFixed(2)}
                       </span>
-                      <span className="font-bwseidoround text-sm sm:text-lg text-gray-400 line-through">
-                        €{product.originalPrice.toFixed(2)}
-                      </span>
-                      <div className="bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold rounded-xl">
-                        -{product.discountPercentage}%
-                      </div>
-                    </>
-                  ) : product.price ? (
-                    <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
-                      €{product.price.toFixed(2)}
-                    </span>
-                  ) : null}
-                </div>
-                  {/* Stock Status */}
-                  {product.stock > 0 && (
-                    <div className="flex items-center space-x-2 text-green-600 font-bwseidoround bg-green-50 px-2 sm:px-3 py-1 sm:py-2 mt-1 sm:mt-0 rounded-xl">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="font-semibold text-xs sm:text-sm">{product.stock} në stok</span>
-                    </div>
-                  )}
+                    ) : null}
+                  </div>
                 </div>
               </div>
             )}
@@ -413,7 +421,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 >
                   <FaShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span>
-                    {!hasSizes
+                    {product.stock <= 0
+                      ? 'Jashtë Stokut'
+                      : !hasSizes
                       ? 'Shto në shportë'
                       : !selectedSize
                       ? 'Zgjidhni madhësinë'
