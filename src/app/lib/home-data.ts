@@ -46,10 +46,18 @@ const STANDARD_CATEGORIES = [
   'Ndriçim kopshti',
 ];
 
-export async function getHomePageData(): Promise<HomePageData> {
-  await connectToDB();
+const EMPTY_HOME_DATA: HomePageData = {
+  slider: { _id: null, slides: [] },
+  collections: [],
+  newArrivals: [],
+  otherProducts: [],
+};
 
-  const [activeSlider, collectionsRaw, productsRaw] = await Promise.all([
+export async function getHomePageData(): Promise<HomePageData> {
+  try {
+    await connectToDB();
+
+    const [activeSlider, collectionsRaw, productsRaw] = await Promise.all([
     Slider.findOne({ isActive: true }).lean<ActiveSliderLean>(),
     Collection.find({})
       .select('_id name description image')
@@ -57,9 +65,9 @@ export async function getHomePageData(): Promise<HomePageData> {
     Product.find({ stock: { $gt: 0 } })
       .sort({ createdAt: -1 })
       .lean(),
-  ]);
+    ]);
 
-  const slides: HomeSlide[] = (activeSlider?.slides ?? [])
+    const slides: HomeSlide[] = (activeSlider?.slides ?? [])
     .map((slide) => {
       const image = sanitizeImageUrl(
         typeof slide.image === 'string' ? slide.image.trim() : ''
@@ -73,31 +81,35 @@ export async function getHomePageData(): Promise<HomePageData> {
         link: typeof slide.link === 'string' ? slide.link.trim() : '',
       };
     })
-    .filter((s): s is HomeSlide => s !== null);
+      .filter((s): s is HomeSlide => s !== null);
 
-  const collections: HomeCollection[] = collectionsRaw.map((c) => ({
+    const collections: HomeCollection[] = collectionsRaw.map((c) => ({
     _id: c._id.toString(),
     name: c.name,
     description: c.description,
     image: sanitizeImageUrl(c.image as string) ?? '',
-  }));
+    }));
 
-  const products = productsRaw.map(formatProduct);
-  const newArrivals = products.filter((p) => p.isNewArrival);
-  const otherProducts = products.filter(
+    const products = productsRaw.map(formatProduct);
+    const newArrivals = products.filter((p) => p.isNewArrival);
+    const otherProducts = products.filter(
     (p) =>
       p.category &&
       !STANDARD_CATEGORIES.includes(p.category) &&
-      p.category.trim() !== ''
-  );
+        p.category.trim() !== ''
+    );
 
-  return {
-    slider: {
-      _id: activeSlider?._id?.toString() ?? null,
-      slides,
-    },
-    collections,
-    newArrivals,
-    otherProducts,
-  };
+    return {
+      slider: {
+        _id: activeSlider?._id?.toString() ?? null,
+        slides,
+      },
+      collections,
+      newArrivals,
+      otherProducts,
+    };
+  } catch (error) {
+    console.error('[getHomePageData] Failed:', error);
+    return EMPTY_HOME_DATA;
+  }
 }
