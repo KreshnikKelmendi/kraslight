@@ -3,6 +3,8 @@ import { Product } from '../models/Product';
 import { Collection } from '../models/Collection';
 import { Slider, type ISlide } from '../models/Slider';
 import type { Types } from 'mongoose';
+import { formatProduct, type FormattedProduct } from './format-product';
+import { sanitizeImageUrl } from './images';
 
 type ActiveSliderLean = {
   _id: Types.ObjectId;
@@ -15,8 +17,6 @@ type CollectionLean = {
   description?: string;
   image: string;
 };
-import { formatProduct, type FormattedProduct } from './format-product';
-import { sanitizeImageUrl } from './images';
 
 export interface HomeSlide {
   image: string;
@@ -51,7 +51,9 @@ export async function getHomePageData(): Promise<HomePageData> {
 
   const [activeSlider, collectionsRaw, productsRaw] = await Promise.all([
     Slider.findOne({ isActive: true }).lean<ActiveSliderLean>(),
-    Collection.find({}).select('_id name description image').lean<CollectionLean>(),
+    Collection.find({})
+      .select('_id name description image')
+      .lean<CollectionLean[]>(),
     Product.find({ stock: { $gt: 0 } })
       .sort({ createdAt: -1 })
       .lean(),
