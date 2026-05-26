@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { optimizeImageUrl } from "@/app/lib/images";
+import { fetchJson } from "@/app/lib/fetch-json";
 
 interface Collection {
   _id: string;
@@ -32,9 +33,12 @@ export default function CollectionsShowcase({
     if (initialCollections?.length) return;
 
     async function fetchCollections() {
-      const res = await fetch('/api/collections');
-      const data = await res.json();
-      setCollections(data);
+      try {
+        const data = await fetchJson<Collection[]>('/api/collections');
+        setCollections(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load collections:', error);
+      }
     }
     fetchCollections();
   }, [initialCollections]);

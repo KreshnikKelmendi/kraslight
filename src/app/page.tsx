@@ -5,7 +5,8 @@ import ShowRoom from './components/ShowRoom';
 import OtherProducts from '../components/OtherProducts';
 import { getHomePageData } from './lib/home-data';
 
-export const revalidate = 60;
+// Always load homepage data at request time (Vercel env + MongoDB available at runtime).
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const homeData = await getHomePageData();

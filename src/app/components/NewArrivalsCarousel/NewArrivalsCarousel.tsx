@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { getValidImage, optimizeImageUrl } from '@/app/lib/images';
 import type { FormattedProduct } from '@/app/lib/format-product';
+import { fetchJson } from '@/app/lib/fetch-json';
 
 type Product = FormattedProduct & {
   price?: number;
@@ -39,8 +40,12 @@ interface NewArrivalsCarouselProps {
 const NewArrivalsCarousel: React.FC<NewArrivalsCarouselProps> = ({
   initialProducts,
 }) => {
-  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
-  const [loading, setLoading] = useState(!initialProducts);
+  const hasServerProducts =
+    Array.isArray(initialProducts) && initialProducts.length > 0;
+  const [products, setProducts] = useState<Product[]>(
+    hasServerProducts ? initialProducts : []
+  );
+  const [loading, setLoading] = useState(!hasServerProducts);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -67,22 +72,18 @@ const NewArrivalsCarousel: React.FC<NewArrivalsCarouselProps> = ({
   }, [mounted]);
 
   useEffect(() => {
-    if (initialProducts) return;
+    if (hasServerProducts) return;
 
     const fetchNewArrivals = async () => {
       try {
         setError(null);
-        const response = await fetch('/api/products');
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(
-            typeof data?.error === 'string' ? data.error : 'Failed to fetch products'
-          );
-        }
+        const data = await fetchJson<Product[]>('/api/products');
         if (!Array.isArray(data)) {
           throw new Error('Invalid products response');
         }
-        const newArrivalsProducts = data.filter((product: Product) => product.isNewArrival === true);
+        const newArrivalsProducts = data.filter(
+          (product) => product.isNewArrival === true
+        );
         setProducts(newArrivalsProducts);
       } catch (error) {
         console.error('Error fetching new arrivals:', error);
@@ -93,7 +94,7 @@ const NewArrivalsCarousel: React.FC<NewArrivalsCarouselProps> = ({
     };
 
     fetchNewArrivals();
-  }, [initialProducts]);
+  }, [hasServerProducts]);
 
   const productsPerView = mounted && isMobile ? 2 : 5;
   const maxIndex = Math.max(0, products.length - productsPerView);

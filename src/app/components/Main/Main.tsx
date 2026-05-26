@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FaChevronRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { optimizeImageUrl } from '@/app/lib/images';
+import { fetchJson } from '@/app/lib/fetch-json';
 
 interface Slide {
   image: string;
@@ -59,19 +60,24 @@ function buildSliderState(data: { _id: string | null; slides: Slide[] }): {
 }
 
 export default function Main({ initialSlider }: MainProps) {
-  const initial = initialSlider ? buildSliderState(initialSlider) : null;
+  const hasServerSlider = Boolean(initialSlider?.slides?.length);
+  const initial = hasServerSlider && initialSlider
+    ? buildSliderState(initialSlider)
+    : null;
   const [slider, setSlider] = useState<Slider | null>(initial?.slider ?? null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoading, setIsLoading] = useState(!initialSlider);
+  const [isLoading, setIsLoading] = useState(!hasServerSlider);
   const [error, setError] = useState<string | null>(initial?.error ?? null);
 
   useEffect(() => {
-    if (initialSlider) return;
+    if (hasServerSlider) return;
 
     const fetchSlider = async () => {
       try {
-        const response = await fetch('/api/sliders');
-        const data = await response.json();
+        const data = await fetchJson<{
+          _id: string | null;
+          slides: unknown[];
+        }>('/api/sliders');
 
         // Handle empty slides array
         if (!data.slides || data.slides.length === 0) {
@@ -103,7 +109,7 @@ export default function Main({ initialSlider }: MainProps) {
         }
 
         setSlider({
-          _id: data._id,
+          _id: data._id || 'default',
           slides: validSlides
         });
         setError(null);
@@ -124,7 +130,7 @@ export default function Main({ initialSlider }: MainProps) {
     };
 
     fetchSlider();
-  }, [initialSlider]);
+  }, [hasServerSlider]);
 
   // Auto-advance slides
   useEffect(() => {

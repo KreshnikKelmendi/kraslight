@@ -36,10 +36,7 @@ export async function GET(request: Request) {
       .lean();
     
     // Format products
-    const formattedProducts = products.map((product) => ({
-      ...formatProduct(product),
-      __v: product.__v,
-    }));
+    const formattedProducts = products.map((product) => formatProduct(product));
 
     return NextResponse.json(formattedProducts);
   } catch (error) {

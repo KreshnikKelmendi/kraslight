@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard/ProductCard";
+import { fetchJson } from "@/app/lib/fetch-json";
 
 interface Product {
   _id: string;
@@ -33,24 +34,24 @@ interface OtherProductsProps {
 }
 
 const OtherProducts = ({ initialProducts }: OtherProductsProps) => {
-  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
-  const [isLoading, setIsLoading] = useState(!initialProducts);
+  const hasServerProducts =
+    Array.isArray(initialProducts) && initialProducts.length > 0;
+  const [products, setProducts] = useState<Product[]>(
+    hasServerProducts ? initialProducts : []
+  );
+  const [isLoading, setIsLoading] = useState(!hasServerProducts);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("Të gjitha");
   const [filterLoading, setFilterLoading] = useState(false);
 
   useEffect(() => {
-    if (initialProducts) return;
+    if (hasServerProducts) return;
 
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products');
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
-        const data = await response.json();
+        const data = await fetchJson<Product[]>('/api/products');
         const filtered = data.filter(
-          (product: Product) =>
+          (product) =>
             product.category &&
             !standardCategories.includes(product.category) &&
             product.category.trim() !== ''
@@ -63,7 +64,7 @@ const OtherProducts = ({ initialProducts }: OtherProductsProps) => {
       }
     };
     fetchProducts();
-  }, [initialProducts]);
+  }, [hasServerProducts]);
 
   // Get unique custom categories
   const customCategories = Array.from(
