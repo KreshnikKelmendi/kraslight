@@ -1,7 +1,20 @@
 import { connectToDB } from './mongodb';
 import { Product } from '../models/Product';
 import { Collection } from '../models/Collection';
-import { Slider } from '../models/Slider';
+import { Slider, type ISlide } from '../models/Slider';
+import type { Types } from 'mongoose';
+
+type ActiveSliderLean = {
+  _id: Types.ObjectId;
+  slides: ISlide[];
+};
+
+type CollectionLean = {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  image: string;
+};
 import { formatProduct, type FormattedProduct } from './format-product';
 import { sanitizeImageUrl } from './images';
 
@@ -37,8 +50,8 @@ export async function getHomePageData(): Promise<HomePageData> {
   await connectToDB();
 
   const [activeSlider, collectionsRaw, productsRaw] = await Promise.all([
-    Slider.findOne({ isActive: true }).lean(),
-    Collection.find({}).select('_id name description image').lean(),
+    Slider.findOne({ isActive: true }).lean<ActiveSliderLean>(),
+    Collection.find({}).select('_id name description image').lean<CollectionLean>(),
     Product.find({ stock: { $gt: 0 } })
       .sort({ createdAt: -1 })
       .lean(),
