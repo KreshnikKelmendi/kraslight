@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { optimizeImageUrl } from "@/app/lib/images";
 
 interface Collection {
   _id: string;
@@ -11,8 +12,16 @@ interface Collection {
   image: string;
 }
 
-export default function CollectionsShowcase() {
-  const [collections, setCollections] = useState<Collection[]>([]);
+interface CollectionsShowcaseProps {
+  initialCollections?: Collection[];
+}
+
+export default function CollectionsShowcase({
+  initialCollections,
+}: CollectionsShowcaseProps) {
+  const [collections, setCollections] = useState<Collection[]>(
+    initialCollections ?? []
+  );
   const router = useRouter();
   const [ref, inView] = useInView({
     triggerOnce: true,
@@ -20,14 +29,15 @@ export default function CollectionsShowcase() {
   });
 
   useEffect(() => {
-    fetchCollections();
-  }, []);
+    if (initialCollections?.length) return;
 
-  async function fetchCollections() {
-    const res = await fetch("/api/collections");
-    const data = await res.json();
-    setCollections(data);
-  }
+    async function fetchCollections() {
+      const res = await fetch('/api/collections');
+      const data = await res.json();
+      setCollections(data);
+    }
+    fetchCollections();
+  }, [initialCollections]);
 
   function handleClick(id: string) {
     router.push(`/collections/${id}`);
@@ -74,7 +84,9 @@ export default function CollectionsShowcase() {
         animate={inView ? "visible" : "hidden"}
         className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
       >
-        {collections.map((collection) => (
+        {collections
+          .filter((collection) => collection.image)
+          .map((collection) => (
           <motion.div
             key={collection._id}
             variants={cardVariants}
@@ -84,7 +96,7 @@ export default function CollectionsShowcase() {
             <div className="relative w-full h-[35vh] lg:h-[63vh] rounded-t-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl">
               {collection.image && (
                 <Image
-                  src={collection.image}
+                  src={optimizeImageUrl(collection.image, { width: 800, quality: 'auto:good' })}
                   alt={collection.name ? `Koleksioni ${collection.name}` : 'Koleksion'}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
-import { uploadImage } from '@/app/lib/cloudinary';
+import { uploadImageDetailed } from '@/app/lib/cloudinary';
+import type { CompressionStats } from '@/app/lib/images';
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,27 +47,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Handle file uploads to Cloudinary
-    const imageUrls = [];
-    
+    const imageUrls: string[] = [];
+    const compression: CompressionStats[] = [];
+
     try {
-      // Upload all image files to Cloudinary
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Validate file type
+
         if (!file.type.startsWith('image/')) {
           return NextResponse.json(
-            { error: `File ${file.name} is not an image. Please upload only image files.` }, 
+            { error: `File ${file.name} is not an image. Please upload only image files.` },
             { status: 400 }
           );
         }
-        
-        // Upload to Cloudinary
-        const imageUrl = await uploadImage(file, 'kraslight/products');
-        imageUrls.push(imageUrl);
-        
-        console.log(`✅ File ${i + 1} uploaded to Cloudinary: ${file.name} -> ${imageUrl}`);
+
+        const uploaded = await uploadImageDetailed(
+          file,
+          'kraslight/products',
+          'product'
+        );
+        imageUrls.push(uploaded.url);
+        compression.push(uploaded.compression);
+
+        console.log(
+          `✅ File ${i + 1}: ${file.name} ${uploaded.compression.originalBytes} → ${uploaded.compression.compressedBytes} bytes`
+        );
       }
     } catch (fileError) {
       console.error('Cloudinary upload error:', fileError);
@@ -88,9 +93,15 @@ export async function POST(req: NextRequest) {
         }
         
         // Upload brand logo to Cloudinary
-        brandLogoUrl = await uploadImage(brandLogoFile, 'kraslight/brands');
-        
-        console.log(`✅ Brand logo uploaded to Cloudinary: ${brandLogoFile.name} -> ${brandLogoUrl}`);
+        const logoUpload = await uploadImageDetailed(
+          brandLogoFile,
+          'kraslight/brands',
+          'brand'
+        );
+        brandLogoUrl = logoUpload.url;
+        compression.push(logoUpload.compression);
+
+        console.log(`✅ Brand logo: ${brandLogoFile.name} -> ${brandLogoUrl}`);
       } catch (logoError) {
         console.error('Brand logo upload error:', logoError);
         // Continue without brand logo
@@ -132,9 +143,10 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Product created successfully with ID:', newProduct._id);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: 'Product added successfully', 
+      message: 'Product added successfully',
+      compression,
       product: {
         _id: newProduct._id,
         title: newProduct.title,

@@ -7,6 +7,8 @@ import axios from 'axios';
 import { FaUpload, FaSpinner, FaTrash, FaImage, FaPlus, FaMinus } from 'react-icons/fa';
 import Image from 'next/image';
 import { useAuth } from '../../../../lib/AuthContext';
+import UploadCompressionInfo from '../../../../components/admin/UploadCompressionInfo';
+import { formatFileSize, type CompressionStats } from '@/app/lib/images';
 
 interface Product {
   _id: string;
@@ -48,6 +50,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+  const [newFileSizes, setNewFileSizes] = useState<number[]>([]);
+  const [uploadCompression, setUploadCompression] = useState<CompressionStats[]>([]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -126,18 +130,24 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       setImageFiles(prev => [...prev, ...files]);
+      setNewFileSizes(prev => [...prev, ...files.map((f) => f.size)]);
       const newPreviewUrls = files.map(file => URL.createObjectURL(file));
       setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
     }
   };
 
   const removeImage = (index: number) => {
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    const existingCount = product?.images?.length ?? 0;
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+    if (index >= existingCount) {
+      const newIdx = index - existingCount;
+      setImageFiles((prev) => prev.filter((_, i) => i !== newIdx));
+      setNewFileSizes((prev) => prev.filter((_, i) => i !== newIdx));
+    }
     if (mainImageIndex === index) {
       setMainImageIndex(0);
     } else if (mainImageIndex > index) {
-      setMainImageIndex(prev => prev - 1);
+      setMainImageIndex((prev) => prev - 1);
     }
   };
 
@@ -183,10 +193,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     try {
       const res = await axios.put(`/api/products/${id}`, formData);
       if (res.status === 200) {
+        if (res.data.compression?.length) {
+          setUploadCompression(res.data.compression);
+        }
         setMessage({ text: '✅ Produkti u përditësua me sukses!', type: 'success' });
         setTimeout(() => {
           router.push('/admin/products/list');
-        }, 1500);
+        }, res.data.compression?.length ? 3500 : 1500);
       } else {
         setMessage({ text: '❌ Dështoi përditësimi i produktit', type: 'error' });
       }
@@ -444,7 +457,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
               <div className="mb-4">
                 <h4 className="text-xs font-medium text-gray-700 mb-2">Imazhet e Ngarkuara ({previewUrls.length})</h4>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {previewUrls.map((url, index) => (
+                  {previewUrls.map((url, index) => {
+                    const existingCount = product?.images?.length ?? 0;
+                    const newSize =
+                      index >= existingCount
+                        ? newFileSizes[index - existingCount]
+                        : undefined;
+                    return (
                     <div key={url + '-' + index} className="relative group">
                       <div className="aspect-square relative rounded-lg overflow-hidden bg-white border border-gray-200 hover:border-blue-500 transition-colors">
                         {imageErrors[url] ? (
@@ -476,6 +495,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                           Imazhi Kryesor
                         </div>
                       )}
+                      {newSize !== undefined && (
+                        <p className="mt-1 text-[10px] text-center text-gray-500">
+                          {formatFileSize(newSize)} (para ngarkimit)
+                        </p>
+                      )}
                       {index !== mainImageIndex && (
                         <button
                           type="button"
@@ -486,7 +510,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                         </button>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -505,6 +530,9 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
               />
             </label>
             <div className="text-[10px] text-gray-400 mt-1 ml-1">Imazhi i parë do të jetë kryesor</div>
+            {uploadCompression.length > 0 && (
+              <UploadCompressionInfo stats={uploadCompression} className="mt-3" />
+            )}
           </div>
           {/* Submit Button */}
           <div className="flex justify-end">

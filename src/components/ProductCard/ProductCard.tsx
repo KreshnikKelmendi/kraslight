@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FaEye } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { getValidImage, optimizeImageUrl } from '@/app/lib/images';
 
 interface Product {
   _id: string;
@@ -30,16 +31,6 @@ interface ProductCardProps {
   className?: string;
   onWishlistClick?: () => void;
   isWishlisted?: boolean;
-}
-
-function getValidImage(...candidates: (string | undefined)[]) {
-  return candidates.find(
-    (img) => typeof img === 'string' && img.trim().length > 1 && (
-      img.trim().startsWith('/') || 
-      img.trim().startsWith('http://') || 
-      img.trim().startsWith('https://')
-    )
-  ) || '/images/placeholder.jpg';
 }
 
 // Format product title for better display
@@ -70,9 +61,14 @@ export default function ProductCard({
   const [isHovered, setIsHovered] = useState(false);
 
   // Use mainImage, images[0], image, or placeholder
-  const displayImage = getValidImage(product.mainImage, product.images?.[0], product.image);
-  // On hover, use images[1] if available, else fallback to displayImage
-  const hoverImage = getValidImage(product.images?.[1], product.mainImage, product.images?.[0], product.image);
+  const displayImage = optimizeImageUrl(
+    getValidImage(product.mainImage, product.images?.[0], product.image),
+    { width: 600, quality: 'auto:good' }
+  );
+  const hoverImage = optimizeImageUrl(
+    getValidImage(product.images?.[1], product.mainImage, product.images?.[0], product.image),
+    { width: 600, quality: 'auto:good' }
+  );
 
   // Calculate discount price
   const discountPrice = originalPrice && discountPercentage

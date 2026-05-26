@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FaChevronRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { optimizeImageUrl } from '@/app/lib/images';
 
 interface Slide {
   image: string;
@@ -30,13 +31,43 @@ function isValidSlide(slide: unknown): slide is Slide {
 
 type ErrorWithMessage = { message: string };
 
-export default function Main() {
-  const [slider, setSlider] = useState<Slider | null>(null);
+interface MainProps {
+  initialSlider?: { _id: string | null; slides: Slide[] };
+}
+
+function buildSliderState(data: { _id: string | null; slides: Slide[] }): {
+  slider: Slider;
+  error: string | null;
+} {
+  if (!data.slides?.length) {
+    return {
+      slider: { _id: data._id || 'default', slides: [] },
+      error: 'No slider content available. Please create a slider through the admin interface.',
+    };
+  }
+  const validSlides = data.slides.filter(isValidSlide);
+  if (!validSlides.length) {
+    return {
+      slider: { _id: data._id || 'default', slides: [] },
+      error: 'No valid slides found. Please check the slider content.',
+    };
+  }
+  return {
+    slider: { _id: data._id || 'default', slides: validSlides },
+    error: null,
+  };
+}
+
+export default function Main({ initialSlider }: MainProps) {
+  const initial = initialSlider ? buildSliderState(initialSlider) : null;
+  const [slider, setSlider] = useState<Slider | null>(initial?.slider ?? null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!initialSlider);
+  const [error, setError] = useState<string | null>(initial?.error ?? null);
 
   useEffect(() => {
+    if (initialSlider) return;
+
     const fetchSlider = async () => {
       try {
         const response = await fetch('/api/sliders');
@@ -93,7 +124,7 @@ export default function Main() {
     };
 
     fetchSlider();
-  }, []);
+  }, [initialSlider]);
 
   // Auto-advance slides
   useEffect(() => {
@@ -135,7 +166,10 @@ export default function Main() {
           className="relative h-full w-full"
         >
           <Image
-            src={currentSlideContent.image}
+            src={optimizeImageUrl(currentSlideContent.image, {
+              width: 1920,
+              quality: 'auto:good',
+            })}
             alt={currentSlideContent.title || 'Slider image'}
             fill
             className="object-cover"

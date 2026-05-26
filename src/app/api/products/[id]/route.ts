@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
-import path from 'path';
-import { writeFile } from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  deleteProductCloudinaryAssets,
+  uploadImageDetailed,
+} from '@/app/lib/cloudinary';
+import {
+  sanitizeImageList,
+  sanitizeImageUrl,
+  type CompressionStats,
+} from '@/app/lib/images';
 
 // DELETE /api/orders/[id]
 export async function DELETE(
@@ -18,13 +24,19 @@ export async function DELETE(
     }
 
     await connectToDB();
-    const deletedProduct = await Product.findByIdAndDelete(id);
 
-    if (!deletedProduct) {
+    const product = await Product.findById(id);
+    if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Product deleted successfully' });
+    const cloudinaryCleanup = await deleteProductCloudinaryAssets(product);
+    await Product.findByIdAndDelete(id);
+
+    return NextResponse.json({
+      message: 'Product deleted successfully',
+      cloudinary: cloudinaryCleanup,
+    });
   } catch (error) {
     console.error('Error deleting product:', error);
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
@@ -46,7 +58,17 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    const images = sanitizeImageList(product.images);
+    const mainImage =
+      sanitizeImageUrl(product.mainImage) ?? images[0] ?? sanitizeImageUrl(product.image);
+    const image = mainImage ?? images[0];
+
+    return NextResponse.json({
+      ...product.toObject(),
+      images,
+      mainImage,
+      image,
+    });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
@@ -131,18 +153,23 @@ export async function PUT(
       product.markModified('characteristics');
     }
 
-    // Handle images
     const imagePaths = [...existingImages];
+    const compression: CompressionStats[] = [];
 
     for (const file of newImageFiles) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const fileName = `${uuidv4()}-${file.name}`;
-      const filePath = path.join(process.cwd(), 'public', 'uploads', 'products', fileName);
-
-      await writeFile(filePath, buffer);
-      imagePaths.push(`/uploads/products/${fileName}`);
+      if (!file.type.startsWith('image/')) {
+        return NextResponse.json(
+          { error: `File ${file.name} is not an image.` },
+          { status: 400 }
+        );
+      }
+      const uploaded = await uploadImageDetailed(
+        file,
+        'kraslight/products',
+        'product'
+      );
+      imagePaths.push(uploaded.url);
+      compression.push(uploaded.compression);
     }
 
     if (imagePaths.length > 0) {
@@ -153,7 +180,7 @@ export async function PUT(
 
     await product.save();
 
-    return NextResponse.json(product);
+    return NextResponse.json({ product, compression });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });

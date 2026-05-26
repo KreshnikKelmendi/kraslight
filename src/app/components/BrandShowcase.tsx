@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
+import { optimizeImageUrl } from '@/app/lib/images';
 
 interface Brand {
   name: string;
@@ -99,7 +100,7 @@ const BrandShowcase = () => {
                 {/* Logo Container */}
                 <div className="relative w-full h-20 mb-4">
                   <Image
-                    src={brand.logo}
+                    src={optimizeImageUrl(brand.logo, { width: 200, quality: 'auto:good' })}
                     alt={brand.name}
                     fill
                     className="object-contain p-2"

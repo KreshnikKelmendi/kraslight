@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
+import { sanitizeImageList, sanitizeImageUrl } from '@/app/lib/images';
 
 export async function GET(request: Request) {
   try {
@@ -46,13 +47,20 @@ export async function GET(request: Request) {
                product.brand && 
                (product.price === undefined || (typeof product.price === 'number' && !isNaN(product.price)));
       })
-      .map(product => ({
+      .map(product => {
+        const images = sanitizeImageList(product.images as string[]);
+        const image =
+          sanitizeImageUrl(product.mainImage as string) ??
+          images[0] ??
+          sanitizeImageUrl(product.image as string);
+
+        return {
         _id: product._id.toString(),
         title: product.title,
         price: product.price,
         originalPrice: product.originalPrice,
         discountPercentage: product.discountPercentage,
-        image: product.image || product.mainImage || (product.images && product.images[0]),
+        image,
         stock: product.stock,
         brand: product.brand,
         sizes: product.sizes,
@@ -60,8 +68,9 @@ export async function GET(request: Request) {
         category: product.category,
         barcode: product.barcode,
         isNewArrival: product.isNewArrival,
-        description: product.description
-      }));
+        description: product.description,
+      };
+      });
 
     return NextResponse.json(formattedProducts);
   } catch (error) {

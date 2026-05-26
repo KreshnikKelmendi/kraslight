@@ -21,6 +21,13 @@ export async function PUT(
       );
     }
 
+    if (!['pending', 'delivered'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Status must be pending or delivered' },
+        { status: 400 }
+      );
+    }
+
     // Find the order first to get the old status
     const existingOrder = await Order.findById(id);
     if (!existingOrder) {

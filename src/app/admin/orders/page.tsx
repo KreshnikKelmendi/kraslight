@@ -41,50 +41,33 @@ interface Order {
   createdAt: string;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: React.ReactNode }> = {
+type OrderStatusKey = 'pending' | 'delivered';
+
+const statusConfig: Record<
+  OrderStatusKey,
+  { label: string; color: string; bgColor: string; borderColor: string; icon: React.ReactNode }
+> = {
   pending: {
-    label: 'Në pritje',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    icon: <HiOutlineClock className="w-4 h-4" />
-  },
-  processing: {
-    label: 'Po procesohet',
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    icon: <HiOutlineClock className="w-4 h-4" />
-  },
-  shipped: {
-    label: 'U dërgua',
-    color: 'text-indigo-700',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
-    icon: <HiOutlineTruck className="w-4 h-4" />
+    label: 'Aktive',
+    color: 'text-slate-700',
+    bgColor: 'bg-slate-100',
+    borderColor: 'border-slate-200',
+    icon: <HiOutlineClock className="w-4 h-4" />,
   },
   delivered: {
-    label: 'U dorëzua',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    icon: <HiOutlineCheckCircle className="w-4 h-4" />
-  },
-  completed: {
-    label: 'Përfunduar',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    icon: <HiOutlineCheckCircle className="w-4 h-4" />
-  },
-  cancelled: {
-    label: 'U anulua',
-    color: 'text-rose-700',
-    bgColor: 'bg-rose-50',
-    borderColor: 'border-rose-200',
-    icon: <HiOutlineExclamationTriangle className="w-4 h-4" />
+    label: 'Done',
+    color: 'text-emerald-800',
+    bgColor: 'bg-emerald-100',
+    borderColor: 'border-emerald-300',
+    icon: <HiOutlineCheckCircle className="w-4 h-4" />,
   },
 };
+
+const isOrderDelivered = (status: string) =>
+  status === 'delivered' || status === 'completed';
+
+const getOrderStatusKey = (status: string): OrderStatusKey =>
+  isOrderDelivered(status) ? 'delivered' : 'pending';
 
 const paymentMethodLabels: Record<string, string> = {
   cash: 'Kesh',
@@ -428,6 +411,7 @@ export default function OrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [deleteConfirmPosition, setDeleteConfirmPosition] = useState({ x: 0, y: 0 });
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
@@ -520,7 +504,8 @@ export default function OrdersPage() {
       setOrders(prevOrders => prevOrders.filter(order => order._id !== orderId));
       setSelectedOrders(prev => prev.filter(id => id !== orderId));
       setShowDeleteConfirm(false);
-      
+      setOrderToDelete(null);
+
       console.log('Order deleted successfully');
     } catch (error) {
       console.error('Error deleting order:', error);
@@ -592,17 +577,9 @@ export default function OrdersPage() {
     });
   };
 
-  // Get status options based on current status
-  const getStatusOptions = (currentStatus: string) => {
-    const allStatuses = [
-      { value: 'pending', label: 'Në pritje', emoji: '⏳' },
-      { value: 'processing', label: 'Po procesohet', emoji: '🔄' },
-      { value: 'shipped', label: 'U dërgua', emoji: '📦' },
-      { value: 'delivered', label: 'U dorëzua', emoji: '✅' },
-      { value: 'cancelled', label: 'U anulua', emoji: '❌' },
-    ];
-
-    return allStatuses.filter(status => status.value !== currentStatus);
+  const openOrderDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
   };
 
   useEffect(() => {
@@ -637,8 +614,10 @@ export default function OrdersPage() {
     }
 
     // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
+    if (statusFilter === 'pending') {
+      filtered = filtered.filter((order) => !isOrderDelivered(order.status));
+    } else if (statusFilter === 'delivered') {
+      filtered = filtered.filter((order) => isOrderDelivered(order.status));
     }
 
     // Date filter
@@ -711,9 +690,9 @@ export default function OrdersPage() {
                 <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-3">
                   <HiOutlineClock className="w-6 h-6 text-amber-600" />
                 </div>
-                <p className="text-lg font-medium text-slate-600 uppercase tracking-wide mb-2">Në Pritje</p>
-                <p className="text-4xl font-light text-amber-600">
-                  {filteredOrders.filter(o => o.status === 'pending').length}
+                <p className="text-lg font-medium text-slate-600 uppercase tracking-wide mb-2">Aktive</p>
+                <p className="text-4xl font-light text-slate-700">
+                  {filteredOrders.filter((o) => !isOrderDelivered(o.status)).length}
                 </p>
               </div>
             </div>
@@ -723,9 +702,9 @@ export default function OrdersPage() {
                 <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-3">
                   <HiOutlineCheckCircle className="w-6 h-6 text-emerald-600" />
                 </div>
-                <p className="text-lg font-medium text-slate-600 uppercase tracking-wide mb-2">Përfunduar</p>
+                <p className="text-lg font-medium text-slate-600 uppercase tracking-wide mb-2">U dorëzua</p>
                 <p className="text-4xl font-light text-emerald-600">
-                  {filteredOrders.filter(o => o.status === 'completed').length}
+                  {filteredOrders.filter((o) => isOrderDelivered(o.status)).length}
                 </p>
               </div>
             </div>
@@ -772,11 +751,8 @@ export default function OrdersPage() {
                 className="block w-full px-3 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all duration-200 text-slate-900 bg-white"
               >
                 <option value="all">Të gjitha statuset</option>
-                <option value="pending">Në pritje</option>
-                <option value="processing">Po procesohet</option>
-                <option value="shipped">U dërgua</option>
-                <option value="delivered">U dorëzua</option>
-                <option value="completed">Përfunduar</option>
+                <option value="pending">Aktive</option>
+                <option value="delivered">U dorëzua (Done)</option>
                 <option value="cancelled">Anuluar</option>
               </select>
             </div>
@@ -811,20 +787,27 @@ export default function OrdersPage() {
 
         {/* Bulk Actions Section */}
         {!loading && !error && filteredOrders.length > 0 && (
-          <div className="bg-white shadow-sm border border-slate-200 p-6 mb-8">
+          <div
+            className="bg-white shadow-sm border border-slate-200 p-6 mb-8"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={paginatedOrders.length > 0 && paginatedOrders.every(order => selectedOrders.includes(order._id))}
-                    onChange={selectAllOrders}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      selectAllOrders();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                     className="w-4 h-4 text-slate-600 bg-slate-100 border-slate-300 rounded focus:ring-slate-500 focus:ring-2"
                   />
                   <span className="text-sm font-medium text-slate-700">
                     Zgjidh të gjitha ({paginatedOrders.length})
                   </span>
-                </div>
+                </label>
                 {selectedOrders.length > 0 && (
                   <span className="text-sm text-slate-600">
                     {selectedOrders.length} porosi e zgjedhur
@@ -835,7 +818,11 @@ export default function OrdersPage() {
               {selectedOrders.length > 0 && (
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowBulkDeleteConfirm(true);
+                    }}
                     disabled={deletingBulk}
                     className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
@@ -888,15 +875,23 @@ export default function OrdersPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedOrders.map((order) => {
-                const status = statusConfig[order.status] || statusConfig.pending;
-                
+                const delivered = isOrderDelivered(order.status);
+                const status = statusConfig[getOrderStatusKey(order.status)];
+
                 return (
-                  <div 
-                    key={order._id} 
-                    className="bg-white shadow-sm border border-slate-400 hover:shadow-lg transition-all duration-300 overflow-hidden group relative flex flex-col min-h-[180px]"
+                  <div
+                    key={order._id}
+                    className={`relative flex flex-col min-h-[180px] overflow-hidden transition-all duration-300 group ${
+                      delivered
+                        ? 'bg-gradient-to-br from-emerald-50 to-white border-2 border-emerald-400 shadow-md shadow-emerald-100/50'
+                        : 'bg-white border border-slate-200 hover:border-slate-300 hover:shadow-lg shadow-sm'
+                    }`}
                   >
-                    {/* Checkbox and Delete Button */}
-                    <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+                    <div
+                      className="absolute top-3 right-3 z-30 flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
                       <input
                         type="checkbox"
                         checked={selectedOrders.includes(order._id)}
@@ -904,27 +899,38 @@ export default function OrdersPage() {
                           e.stopPropagation();
                           handleOrderSelection(order._id);
                         }}
-                        className="w-4 h-4 text-slate-600 bg-slate-100 border-slate-300 rounded focus:ring-slate-500 focus:ring-2"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-slate-600 bg-white border-slate-300 rounded focus:ring-emerald-500 focus:ring-2"
                       />
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           const rect = e.currentTarget.getBoundingClientRect();
-                          setDeleteConfirmPosition({ 
-                            x: rect.left + rect.width / 2, 
-                            y: rect.bottom + 10 
+                          setDeleteConfirmPosition({
+                            x: rect.left + rect.width / 2,
+                            y: rect.bottom + 10,
                           });
-                          setSelectedOrder(order);
+                          setOrderToDelete(order);
                           setShowDeleteConfirm(true);
                         }}
-                        className="p-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors"
+                        className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors bg-white/90"
                         title="Fshi porosinë"
                       >
                         <HiOutlineTrash className="w-4 h-4" />
                       </button>
                     </div>
+
+                    {delivered && (
+                      <div className="absolute top-3 left-3 z-30">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider shadow-sm">
+                          <HiOutlineCheckCircle className="w-4 h-4" />
+                          Done
+                        </span>
+                      </div>
+                    )}
                     
-                    {/* Watermark */}
+                    {!delivered && (
                     <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
                       <div
                         style={{
@@ -972,41 +978,48 @@ export default function OrdersPage() {
                         </span>
                       </div>
                     </div>
-                    
-                    {/* Order Content - Clickable */}
-                    <div 
-                      className="relative z-10 flex flex-col gap-3 p-3 text-[15px] text-slate-800 cursor-pointer"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setShowOrderDetails(true);
-                      }}
+                    )}
+
+                    <div
+                      className={`relative z-10 flex flex-col gap-3 p-3 pt-10 text-[15px] text-slate-800 cursor-pointer ${
+                        delivered ? 'text-emerald-950' : ''
+                      }`}
+                      onClick={() => openOrderDetails(order)}
                     >
                       <div className="flex flex-col gap-1">
-                        <div className="font-extrabold text-lg text-blue-900 tracking-tight truncate drop-shadow-sm">{order.firstName} {order.lastName}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${status.bgColor} ${status.color}`}>{status.label}</span>
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                updateOrderStatus(order._id, e.target.value);
-                              }
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            disabled={updatingStatus === order._id}
-                            className="text-xs bg-slate-100 border border-slate-300 text-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-200 transition-colors"
+                        <div
+                          className={`font-extrabold text-lg tracking-tight truncate ${
+                            delivered ? 'text-emerald-900' : 'text-slate-900'
+                          }`}
+                        >
+                          {order.firstName} {order.lastName}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${status.bgColor} ${status.color} ${status.borderColor}`}
                           >
-                            <option value="">Ndrysho statusin e porosisë</option>
-                            {getStatusOptions(order.status).map((status) => (
-                              <option key={status.value} value={status.value} className="text-slate-900">
-                                {status.emoji} {status.label}
-                              </option>
-                            ))}
-                          </select>
-                          {updatingStatus === order._id && (
-                            <div className="ml-2 inline-block align-middle">
-                              <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-300 border-t-slate-600"></div>
-                            </div>
+                            {status.icon}
+                            {delivered ? 'U dorëzua' : status.label}
+                          </span>
+                          {!delivered && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order._id, 'delivered');
+                              }}
+                              disabled={updatingStatus === order._id}
+                              title="U dorëzua"
+                              aria-label="U dorëzua"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 border border-emerald-300 bg-white rounded-full px-2.5 py-1 hover:bg-emerald-50 hover:border-emerald-400 disabled:opacity-50 transition-colors shadow-sm"
+                            >
+                              {updatingStatus === order._id ? (
+                                <span className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <HiOutlineCheckCircle className="w-4 h-4 text-emerald-600" />
+                              )}
+                              U dorëzua
+                            </button>
                           )}
                         </div>
                       </div>
@@ -1070,13 +1083,25 @@ export default function OrdersPage() {
                       </div>
                       {/* Notes */}
                       {order.notes && (
-                        <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-100 text-xs text-blue-900">
-                          <span className="font-medium">Shënim:</span> {order.notes.length > 40 ? `${order.notes.slice(0, 40)}...` : order.notes}
+                        <div
+                          className={`mt-1 p-2 rounded border text-xs ${
+                            delivered
+                              ? 'bg-emerald-100/80 border-emerald-200 text-emerald-900'
+                              : 'bg-blue-50 border-blue-100 text-blue-900'
+                          }`}
+                        >
+                          <span className="font-medium">Shënim:</span>{' '}
+                          {order.notes.length > 40 ? `${order.notes.slice(0, 40)}...` : order.notes}
                         </div>
-                              )}
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
         {/* Delete Confirmation Popup */}
-        {showDeleteConfirm && selectedOrder && (
+        {showDeleteConfirm && orderToDelete && (
           <div 
             className="fixed z-50"
             style={{
@@ -1097,21 +1122,24 @@ export default function OrdersPage() {
                   Fshi Porosinë
                 </h3>
                 <p className="text-xs text-gray-600 mb-4">
-                  A jeni të sigurt që dëshironi të fshini porosinë e <strong>{selectedOrder.firstName} {selectedOrder.lastName}</strong>?
+                  A jeni të sigurt që dëshironi të fshini porosinë e <strong>{orderToDelete.firstName} {orderToDelete.lastName}</strong>?
                 </p>
                 <div className="flex gap-2 justify-center">
                   <button
-                    onClick={() => setShowDeleteConfirm(false)}
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setOrderToDelete(null);
+                    }}
                     className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-50 transition-colors"
                   >
                     Anulo
                   </button>
                   <button
-                    onClick={() => deleteOrder(selectedOrder._id)}
-                    disabled={deletingOrder === selectedOrder._id}
+                    onClick={() => deleteOrder(orderToDelete._id)}
+                    disabled={deletingOrder === orderToDelete._id}
                     className="px-3 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
                   >
-                    {deletingOrder === selectedOrder._id ? (
+                    {deletingOrder === orderToDelete._id ? (
                       <>
                         <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
                         Duke fshirë...
@@ -1185,11 +1213,7 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-})}
-            </div>
+
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-8">

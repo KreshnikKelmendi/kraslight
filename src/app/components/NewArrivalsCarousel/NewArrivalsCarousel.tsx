@@ -6,11 +6,11 @@ import { useInView } from 'react-intersection-observer';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { getValidImage, optimizeImageUrl } from '@/app/lib/images';
+import type { FormattedProduct } from '@/app/lib/format-product';
 
-interface Product {
-  _id: string;
-  title: string;
-  price: number;
+type Product = FormattedProduct & {
+  price?: number;
   originalPrice?: number;
   discountPercentage?: number;
   image?: string;
@@ -19,22 +19,8 @@ interface Product {
   category: string;
   isNewArrival?: boolean;
   stock?: number;
-  sizes: string;
-  description: string;
-  images?: string[];
-  mainImage?: string;
-  subcategory?: string;
-}
-
-function getValidImage(...candidates: (string | undefined)[]) {
-  return candidates.find(
-    (img) => typeof img === 'string' && img.trim().length > 1 && (
-      img.trim().startsWith('/') || 
-      img.trim().startsWith('http://') || 
-      img.trim().startsWith('https://')
-    )
-  ) || '/images/placeholder.jpg';
-}
+  sizes?: string;
+};
 
 function formatProductTitle(title: string) {
   return title
@@ -46,9 +32,15 @@ function formatProductTitle(title: string) {
     .join(' ');
 }
 
-const NewArrivalsCarousel: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface NewArrivalsCarouselProps {
+  initialProducts?: Product[];
+}
+
+const NewArrivalsCarousel: React.FC<NewArrivalsCarouselProps> = ({
+  initialProducts,
+}) => {
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(!initialProducts);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -74,14 +66,22 @@ const NewArrivalsCarousel: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, [mounted]);
 
-  // Fetch new arrivals products
   useEffect(() => {
+    if (initialProducts) return;
+
     const fetchNewArrivals = async () => {
       try {
         setError(null);
         const response = await fetch('/api/products');
-        if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            typeof data?.error === 'string' ? data.error : 'Failed to fetch products'
+          );
+        }
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid products response');
+        }
         const newArrivalsProducts = data.filter((product: Product) => product.isNewArrival === true);
         setProducts(newArrivalsProducts);
       } catch (error) {
@@ -93,7 +93,7 @@ const NewArrivalsCarousel: React.FC = () => {
     };
 
     fetchNewArrivals();
-  }, []);
+  }, [initialProducts]);
 
   const productsPerView = mounted && isMobile ? 2 : 5;
   const maxIndex = Math.max(0, products.length - productsPerView);
@@ -137,19 +137,7 @@ const NewArrivalsCarousel: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-lg text-red-600 font-light tracking-wide">Gabim në ngarkimin e produkteve. Ju lutem provoni përsëri.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (products.length === 0 && !loading) {
+  if (error || (products.length === 0 && !loading)) {
     return null;
   }
 
@@ -270,10 +258,14 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
     brand
   } = product;
 
-  const displayImage = getValidImage(product.mainImage, product.images?.[0], product.image);
-  const discountPrice = originalPrice && discountPercentage
-    ? originalPrice * (1 - discountPercentage / 100)
-    : price;
+  const displayImage = optimizeImageUrl(
+    getValidImage(product.mainImage, product.images?.[0], product.image),
+    { width: 500, quality: 'auto:good' }
+  );
+  const discountPrice =
+    originalPrice && discountPercentage
+      ? originalPrice * (1 - discountPercentage / 100)
+      : price ?? undefined;
 
   return (
     <motion.div
@@ -367,20 +359,20 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
         {/* Price */}
         <div className="flex items-center justify-between font-bwseidoround">
           <div className="flex items-center gap-2">
-            {discountPercentage && discountPercentage > 0 ? (
+            {discountPercentage && discountPercentage > 0 && discountPrice != null ? (
               <>
                 <span className="text-lg text-gray-900">
-                  €{discountPrice.toFixed(2)}
+                  €{discountPrice?.toFixed(2)}
                 </span>
                 <span className="text-sm line-through text-gray-400">
                   €{originalPrice?.toFixed(2)}
                 </span>
               </>
-            ) : (
+            ) : price != null ? (
               <span className="text-lg text-gray-900">
-                €{price.toFixed(2)}
+                €{price?.toFixed(2)}
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Subtle arrow indicator */}

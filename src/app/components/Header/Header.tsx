@@ -13,6 +13,8 @@ import Cart from '../../../components/Cart';
 import Searchbar from '../Search/Searchbar';
 import GlobalDiscountRibbon from './GlobalDiscountRibbon';
 import CatalogDropdown from './CatalogDropdown';
+import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 
 // Add Collection type for dynamic collections dropdown
@@ -57,33 +59,24 @@ const Header = () => {
 
 
   useEffect(() => {
-    const fetchCollections = async () => {
+    const loadHeaderData = async () => {
       try {
-        const response = await fetch('/api/collections');
-        if (!response.ok) throw new Error('Failed to fetch collections');
-        const data = await response.json();
-        setCollections(data);
+        const [collectionsData, discountData] = await Promise.all([
+          fetchCachedJson<Collection[]>('/api/collections'),
+          fetchCachedJson<{ isGlobalDiscount: boolean }>(
+            '/api/products/bulk-discount'
+          ).catch(() => ({ isGlobalDiscount: false })),
+        ]);
+        setCollections(collectionsData);
+        setGlobalDiscount(discountData);
       } catch {
-        console.error('Error fetching collections');
+        console.error('Error fetching header data');
+        setGlobalDiscount({ isGlobalDiscount: false });
       } finally {
         setIsLoadingCollections(false);
       }
     };
-    fetchCollections();
-  }, []);
-
-  useEffect(() => {
-    const fetchGlobalDiscount = async () => {
-      try {
-        const response = await fetch('/api/products/bulk-discount');
-        if (!response.ok) throw new Error('Failed to fetch global discount');
-        const data = await response.json();
-        setGlobalDiscount(data);
-      } catch {
-        setGlobalDiscount({ isGlobalDiscount: false });
-      }
-    };
-    fetchGlobalDiscount();
+    loadHeaderData();
   }, []);
 
 
@@ -258,7 +251,7 @@ const Header = () => {
                               className="group flex flex-row rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition bg-white border border-gray-100"
                             >
                               <div className="w-40 h-40 bg-gray-100 relative flex-shrink-0">
-                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
+                                <Image src={optimizeImageUrl(col.image || IMAGE_PLACEHOLDER, { width: 320, quality: 'auto:good' })} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
                               </div>
                               <div className="flex flex-col justify-center pl-6 pr-4 py-4 flex-1">
                                 <span className="text-gray-900 font-bold text-base mb-1 text-left w-full">{col.name}</span>
@@ -429,7 +422,7 @@ const Header = () => {
                               className="group flex flex-row rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white border border-gray-100 mb-2 p-2 items-center"
                             >
                               <div className="w-12 h-12 bg-gray-100 relative flex-shrink-0 mr-3 rounded-lg overflow-hidden">
-                                <Image src={col.image || '/images/placeholder.jpg'} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
+                                <Image src={optimizeImageUrl(col.image || IMAGE_PLACEHOLDER, { width: 320, quality: 'auto:good' })} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
                               </div>
                               <div className="flex flex-col justify-center flex-1">
                                 <span className="text-gray-900 font-bold text-sm mb-1 text-left w-full">{col.name}</span>

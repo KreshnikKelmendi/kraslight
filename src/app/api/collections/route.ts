@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Collection } from '../../models/Collection';
 import { Product } from '../../models/Product';
 import { connectToDB } from '../../lib/mongodb';
+import { sanitizeImageUrl } from '@/app/lib/images';
 
 export async function GET() {
   try {
@@ -19,10 +20,14 @@ export async function GET() {
           // Update the collection with the fetched products
           collection.products = categoryProducts;
         }
-        return collection;
+        const doc = collection.toObject ? collection.toObject() : collection;
+        return {
+          ...doc,
+          image: sanitizeImageUrl(doc.image as string) ?? '',
+        };
       })
     );
-    
+
     return NextResponse.json(collectionsWithProducts);
   } catch (error) {
     console.error('Error fetching collections:', error);

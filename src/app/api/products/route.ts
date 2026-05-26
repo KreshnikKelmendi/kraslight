@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Product } from '@/app/models/Product';
+import { formatProduct } from '@/app/lib/format-product';
+import { deleteProductCloudinaryAssets } from '@/app/lib/cloudinary';
 
 export async function GET(request: Request) {
   try {
@@ -34,28 +36,10 @@ export async function GET(request: Request) {
       .lean();
     
     // Format products
-    const formattedProducts = products.map(product => {
-      const formatted = {
-        _id: product._id.toString(),
-        title: product.title,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        discountPercentage: product.discountPercentage,
-        image: product.image,
-        stock: product.stock,
-        brand: product.brand || 'No Brand',
-        sizes: product.sizes || '',
-        gender: product.gender || 'Meshkuj',
-        category: product.category || 'Të tjera',
-        subcategory: product.subcategory || '',
-        barcode: product.barcode || '',
-        isNewArrival: product.isNewArrival || false,
-        characteristics: product.characteristics || [],
-        createdAt: product.createdAt,
-        __v: product.__v
-      };
-      return formatted;
-    });
+    const formattedProducts = products.map((product) => ({
+      ...formatProduct(product),
+      __v: product.__v,
+    }));
 
     return NextResponse.json(formattedProducts);
   } catch (error) {
@@ -78,9 +62,23 @@ export async function DELETE(request: Request) {
         { status: 400 }
       );
     }
-    // Delete products in bulk
+    const products = await Product.find({ _id: { $in: ids } });
+    let cloudinaryDeleted = 0;
+
+    await Promise.all(
+      products.map(async (product) => {
+        const cleanup = await deleteProductCloudinaryAssets(product);
+        cloudinaryDeleted += cleanup.deleted;
+      })
+    );
+
     const result = await Product.deleteMany({ _id: { $in: ids } });
-    return NextResponse.json({ message: 'Products deleted successfully', deletedCount: result.deletedCount });
+
+    return NextResponse.json({
+      message: 'Products deleted successfully',
+      deletedCount: result.deletedCount,
+      cloudinaryImagesDeleted: cloudinaryDeleted,
+    });
   } catch (error) {
     console.error('Error in bulk delete:', error);
     return NextResponse.json(

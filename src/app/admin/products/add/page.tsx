@@ -6,6 +6,8 @@ import { FaUpload, FaSpinner, FaTrash, FaImage, FaPlus, FaMinus } from 'react-ic
 import Image from 'next/image';
 import { useAuth } from '../../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
+import UploadCompressionInfo from '../../../components/admin/UploadCompressionInfo';
+import { formatFileSize, type CompressionStats } from '@/app/lib/images';
 
 export default function AddProduct() {
   const { isAuthenticated } = useAuth();
@@ -28,6 +30,8 @@ export default function AddProduct() {
   const [brandLogoPreview, setBrandLogoPreview] = useState<string | null>(null);
   const [subcategory, setSubcategory] = useState('');
   const [barcode, setBarcode] = useState('');
+  const [fileSizes, setFileSizes] = useState<number[]>([]);
+  const [uploadCompression, setUploadCompression] = useState<CompressionStats[]>([]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -90,6 +94,7 @@ export default function AddProduct() {
       // Update state
       setImageFiles(prev => [...prev, ...validFiles]);
       setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+      setFileSizes(prev => [...prev, ...validFiles.map((f) => f.size)]);
       setMessage({ text: '', type: '' });
     }
   };
@@ -103,6 +108,7 @@ export default function AddProduct() {
     
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setFileSizes(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleBrandLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +164,9 @@ export default function AddProduct() {
       const res = await axios.post('/api/upload-product', formData);
       if (res.status === 200 && res.data.success) {
         setMessage({ text: '✅ Produkti u shtua me sukses!', type: 'success' });
+        if (res.data.compression?.length) {
+          setUploadCompression(res.data.compression);
+        }
         // Clear form
         setTitle('');
         setPrice('');
@@ -170,6 +179,7 @@ export default function AddProduct() {
         setCharacteristics([{key: '', value: ''}]);
         setImageFiles([]);
         setPreviewUrls([]);
+        setFileSizes([]);
         setBrandLogoFile(null);
         setBrandLogoPreview(null);
         setSubcategory('');
@@ -489,6 +499,11 @@ export default function AddProduct() {
                           </button>
                         </div>
                       </div>
+                      {fileSizes[index] !== undefined && (
+                        <p className="mt-1 text-[10px] text-center text-gray-500">
+                          {formatFileSize(fileSizes[index])} (para ngarkimit)
+                        </p>
+                      )}
                       {index === 0 && (
                         <div className="mt-1 text-[10px] text-center font-medium bg-blue-100 text-blue-800 py-0.5 px-1 rounded-full">
                           Imazhi Kryesor
@@ -515,6 +530,9 @@ export default function AddProduct() {
               />
             </label>
             <div className="text-[10px] text-gray-400 mt-1 ml-1">Imazhi i parë do të jetë kryesor</div>
+            {uploadCompression.length > 0 && (
+              <UploadCompressionInfo stats={uploadCompression} className="mt-3" />
+            )}
           </div>
 
           {/* Submit Button */}

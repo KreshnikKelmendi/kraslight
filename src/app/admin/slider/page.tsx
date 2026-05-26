@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '../../lib/AuthContext';
 import { FaSave, FaEdit, FaCheck } from 'react-icons/fa';
+import UploadCompressionInfo from '../../components/admin/UploadCompressionInfo';
+import type { CompressionStats } from '@/app/lib/images';
 
 interface Slide {
   image: string;
@@ -24,6 +26,7 @@ export default function SliderAdmin() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState<number | null>(null);
   const [showBrandDropdown, setShowBrandDropdown] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [lastCompression, setLastCompression] = useState<CompressionStats | null>(null);
 
   // Check authentication on mount
   useEffect(() => {
@@ -111,9 +114,12 @@ export default function SliderAdmin() {
       const newSlides = [...slides];
       newSlides[index] = {
         ...newSlides[index],
-        image: data.path
+        image: data.path || data.url
       };
       setSlides(newSlides);
+      if (data.compression) {
+        setLastCompression(data.compression);
+      }
     } catch {
       setError('Failed to upload image');
     }
@@ -195,6 +201,10 @@ export default function SliderAdmin() {
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
+        )}
+
+        {lastCompression && (
+          <UploadCompressionInfo stats={lastCompression} className="mb-4" />
         )}
 
         <form onSubmit={handleSubmit} className="space-y-10">

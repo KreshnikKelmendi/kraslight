@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDB } from '@/app/lib/mongodb';
 import { Slider, ISlide } from '@/app/models/Slider';
+import { sanitizeImageUrl } from '@/app/lib/images';
 
 interface ApiError extends Error {
   statusCode?: number;
@@ -35,11 +36,12 @@ export async function GET() {
     const validSlides = (activeSlider.slides as unknown[])
       .filter(isValidSlide)
       .map((slide: ISlide) => ({
-        image: slide.image.trim(),
+        image: sanitizeImageUrl(slide.image.trim()) ?? '',
         title: typeof slide.title === 'string' ? slide.title.trim() : '',
         description: typeof slide.description === 'string' ? slide.description.trim() : '',
         link: typeof slide.link === 'string' ? slide.link.trim() : ''
-      }));
+      }))
+      .filter((slide) => slide.image.length > 0);
 
     return NextResponse.json({
       _id: activeSlider._id,

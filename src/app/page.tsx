@@ -1,40 +1,22 @@
 import Main from './components/Main/Main';
-// import BrandShowcase from './components/BrandShowcase';
 import CollectionsShowcase from './components/Collections/CollectionsShowcase';
 import NewArrivalsCarousel from './components/NewArrivalsCarousel';
 import ShowRoom from './components/ShowRoom';
 import OtherProducts from '../components/OtherProducts';
+import { getHomePageData } from './lib/home-data';
 
+export const revalidate = 60;
 
-export default function Home() {
+export default async function Home() {
+  const homeData = await getHomePageData();
+
   return (
     <main className="min-h-screen">
-      {/* Main Slider Section */}
-      <Main />
-
-
-      {/* Collections Section */}
-      <CollectionsShowcase />
-
-      {/* New Arrivals Carousel Section */}
-      <NewArrivalsCarousel />
-
-      {/* Second Banner Section */}
-      {/* <SecondBanner /> */}
-
-      {/* ShowRoom Section */}
+      <Main initialSlider={homeData.slider} />
+      <CollectionsShowcase initialCollections={homeData.collections} />
+      <NewArrivalsCarousel initialProducts={homeData.newArrivals} />
       <ShowRoom />
-
-
-
-      {/* Other Products Section */}
-      <OtherProducts />
-      {/* Brand Showcase Section */}
-      {/* <BrandShowcase /> */}
-
-
-      {/* Products Section */}
-      {/* <AllProducts /> */}
+      <OtherProducts initialProducts={homeData.otherProducts} />
     </main>
   );
 }

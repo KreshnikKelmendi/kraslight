@@ -5,7 +5,8 @@ import ProductCard from "./ProductCard/ProductCard";
 interface Product {
   _id: string;
   title: string;
-  price: number;
+  price?: number;
+  description?: string;
   originalPrice?: number;
   discountPercentage?: number;
   stock?: number;
@@ -15,7 +16,6 @@ interface Product {
   images?: string[];
   mainImage?: string;
   category?: string;
-  description?: string;
   isNewArrival?: boolean;
   subcategory?: string;
   gender?: string;
@@ -28,36 +28,42 @@ const standardCategories = [
   "Ndriçim kopshti"
 ];
 
-const OtherProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface OtherProductsProps {
+  initialProducts?: Product[];
+}
+
+const OtherProducts = ({ initialProducts }: OtherProductsProps) => {
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [isLoading, setIsLoading] = useState(!initialProducts);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("Të gjitha");
   const [filterLoading, setFilterLoading] = useState(false);
 
   useEffect(() => {
+    if (initialProducts) return;
+
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products");
+        const response = await fetch('/api/products');
         if (!response.ok) {
-          throw new Error("Failed to fetch products");
+          throw new Error('Failed to fetch products');
         }
         const data = await response.json();
-        // Filter products with custom categories (not standard)
-        const filtered = data.filter((product: Product) =>
-          product.category &&
-          !standardCategories.includes(product.category) &&
-          product.category.trim() !== ""
+        const filtered = data.filter(
+          (product: Product) =>
+            product.category &&
+            !standardCategories.includes(product.category) &&
+            product.category.trim() !== ''
         );
         setProducts(filtered);
       } catch {
-        setError("Failed to load products. Please try again later.");
+        setError('Failed to load products. Please try again later.');
       } finally {
         setIsLoading(false);
       }
     };
     fetchProducts();
-  }, []);
+  }, [initialProducts]);
 
   // Get unique custom categories
   const customCategories = Array.from(

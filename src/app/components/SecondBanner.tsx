@@ -2,28 +2,33 @@
 import Image from 'next/image';
 import { motion, useInView } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
-
-const sliderImages = [
-  '/uploads/products/37ef206b-0259-49e2-a1de-7c9b4540c8b8-alexander-mcqueen-rtw-aw24-look-01-65e4617b6c308.jpg',
-  '/uploads/products/52827481-16b9-45a0-9f1e-af106d22c916.jpg',
-  '/uploads/products/a371121f-4899-49fe-9fde-166375653749-15270-3840x2160-desktop-4k-gigi-hadid-background-image.jpg',
-  '/uploads/products/12075f73-a91b-44ad-bd25-5d37277ef50e-hbz-liz-hurley-00-index-1553010048.jpg',
-  '/uploads/products/09d31f29-9598-4715-8519-7ee6ad4cdd40-HD-wallpaper-gigi-hadid-latest-gigi-hadid-celebrities-girls-model.jpg',
-  '/uploads/products/3e723abe-b057-40f7-aec9-d0288f4d5fc0.jpg',
-  '/uploads/products/5b0821c2-54b1-4c22-8bbc-78b81e7d29e8.jpg',
-];
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
+import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
 
 const SecondBanner = () => {
+  const [bannerImages, setBannerImages] = useState<string[]>([]);
   const [current, setCurrent] = useState(0);
   const textRef = useRef(null);
   const isInView = useInView(textRef, { once: true, amount: 0.3 });
 
   useEffect(() => {
+    fetchCachedJson<{ slides: { image: string }[] }>('/api/sliders')
+      .then((data) => {
+        const urls = (data.slides ?? [])
+          .map((s) => s.image)
+          .filter((url) => url && url.includes('res.cloudinary.com'));
+        setBannerImages(urls.length ? urls : [IMAGE_PLACEHOLDER]);
+      })
+      .catch(() => setBannerImages([IMAGE_PLACEHOLDER]));
+  }, []);
+
+  useEffect(() => {
+    if (bannerImages.length < 2) return;
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % sliderImages.length);
+      setCurrent((prev) => (prev + 1) % bannerImages.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [bannerImages.length]);
 
   const textVariants = {
     hidden: { y: 50, opacity: 0 },
@@ -43,10 +48,10 @@ const SecondBanner = () => {
       <div className="flex items-center gap-6 md:gap-10">
         {/* Small Left Image Slider */}
         <div className="flex-shrink-0 w-20 h-28 md:w-36 2xl:w-52 md:h-full relative overflow-hidden shadow-md">
-          {sliderImages.map((img, idx) => (
+          {bannerImages.map((img, idx) => (
             <Image
-              key={img}
-              src={img}
+              key={`${img}-${idx}`}
+              src={optimizeImageUrl(img, { width: 400, quality: 'auto:good' })}
               alt={`Slider ${idx + 1}`}
               fill
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${idx === current ? 'opacity-100' : 'opacity-0'}`}
@@ -55,7 +60,7 @@ const SecondBanner = () => {
           ))}
           {/* Dots */}
           <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex space-x-1 z-10">
-            {sliderImages.map((_, idx) => (
+            {bannerImages.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrent(idx)}

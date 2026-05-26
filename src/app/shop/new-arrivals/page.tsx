@@ -54,25 +54,6 @@ export default function NewArrivalsPage() {
     mainCategories: false,
   });
 
-  // Slider images array
-  const sliderImages = [
-    '/uploads/slider/07719d9c-2a20-4491-9cb2-b1b025bd0092.jpg',
-    '/uploads/a7e34469-41d2-4dd9-82f5-b47100521149-HD-wallpaper-gigi-hadid-latest-gigi-hadid-celebrities-girls-model.jpg',
-    '/uploads/3e723abe-b057-40f7-aec9-d0288f4d5fc0.jpg',
-    '/uploads/5b0821c2-54b1-4c22-8bbc-78b81e7d29e8.jpg',
-    '/uploads/d60bc875-2783-4d75-b823-25eae3ffcc9b.jpg',
-    '/uploads/slider/09c25e9e-d381-4b52-93e2-fe8185ed6c36.jpg'
-  ];
-
-  // Auto-slide effect - fast changing
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // setCurrentSlide((prevSlide) => (prevSlide + 1) % sliderImages.length); // This line was removed
-    }, 1500); // 1.5 seconds for fast changing
-
-    return () => clearInterval(interval);
-  }, [sliderImages.length]);
-
   useEffect(() => {
     fetchProducts();
   }, []);

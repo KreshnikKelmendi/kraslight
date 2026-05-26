@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
+import UploadCompressionInfo from '../../components/admin/UploadCompressionInfo';
+import type { CompressionStats } from '@/app/lib/images';
 
 interface Product {
   _id: string;
@@ -48,6 +50,7 @@ export default function CollectionsAdminPage() {
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error">("success");
   const [showForm, setShowForm] = useState(false);
+  const [lastCompression, setLastCompression] = useState<CompressionStats | null>(null);
   
   // Edit state
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
@@ -144,14 +147,18 @@ export default function CollectionsAdminPage() {
       if (image) {
         const formData = new FormData();
         formData.append("file", image);
+        formData.append("folder", "collections");
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
         const uploadData = await uploadRes.json();
         imageUrl = uploadData.url || uploadData.path || uploadData.image || "";
+        if (uploadData.compression) {
+          setLastCompression(uploadData.compression);
+        }
       }
-      
+
       const response = await fetch("/api/collections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -245,14 +252,18 @@ export default function CollectionsAdminPage() {
       if (editImage) {
         const formData = new FormData();
         formData.append("file", editImage);
+        formData.append("folder", "collections");
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
         const uploadData = await uploadRes.json();
         imageUrl = uploadData.url || uploadData.path || uploadData.image || "";
+        if (uploadData.compression) {
+          setLastCompression(uploadData.compression);
+        }
       }
-      
+
       const response = await fetch(`/api/collections/${editingCollection._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -311,6 +322,10 @@ export default function CollectionsAdminPage() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {lastCompression && (
+          <UploadCompressionInfo stats={lastCompression} className="mb-6" />
+        )}
+
         {/* Add Collection Form */}
         {showForm && (
           <div className="mb-8 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">

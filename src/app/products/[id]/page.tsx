@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import axios from 'axios';
 // import Image from 'next/image';
-import { FaShoppingCart, FaSpinner, FaTruck, FaShieldAlt, FaUndo } from 'react-icons/fa';
+import { FaShoppingCart, FaTruck, FaShieldAlt, FaUndo } from 'react-icons/fa';
+import ProductPageSkeleton from './ProductPageSkeleton';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
 import Image from 'next/image';
+import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
 
-// Default placeholder image
-const DEFAULT_IMAGE = '/images/placeholder.jpg';
+const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
 
 interface Product {
   _id: string;
@@ -88,14 +89,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="text-center">
-          <FaSpinner className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-4" />
-          <p className="font-bwseidoround text-sm text-gray-500">Duke ngarkuar produktin...</p>
-        </div>
-      </div>
-    );
+    return <ProductPageSkeleton />;
   }
 
   if (!product) {
@@ -122,14 +116,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
   // Ensure we have images array and selectedImage is always a string
   const productImages = (product.images || [product.image].filter(Boolean) || [DEFAULT_IMAGE]) as string[];
-  const currentImage = selectedImage || product.mainImage || productImages[0] || DEFAULT_IMAGE;
+  const rawCurrentImage = selectedImage || product.mainImage || productImages[0] || DEFAULT_IMAGE;
+  const currentImage = optimizeImageUrl(rawCurrentImage, { width: 900, quality: 'auto:good' });
 
   // Filter out the main image from thumbnails to avoid duplicate display
   const thumbnailImages = productImages.filter(img => img !== currentImage);
 
   // Fallback handler for broken images
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = '/images/placeholder.jpg';
+    e.currentTarget.src = IMAGE_PLACEHOLDER;
   };
 
   // Check if add to cart button should be enabled
@@ -195,7 +190,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     }`}
                   >
                     <Image
-                      src={image}
+                      src={optimizeImageUrl(image, { width: 120, quality: 'auto:good' })}
                       alt={`${product.title} - Image ${index + 1}`}
                       className="object-cover w-full h-full rounded-xl"
                       onError={handleImageError}
