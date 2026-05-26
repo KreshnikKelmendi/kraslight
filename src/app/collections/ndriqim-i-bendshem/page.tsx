@@ -92,8 +92,6 @@ export default function NdriqimIBendshemPage() {
     return Array.from(new Set(products.map((p: Product) => p.brand).filter(Boolean)));
   }, [products]);
   const availableSubcategories = useMemo(() => {
-    console.log('Products with subcategories:', products.filter(p => p.subcategory));
-    console.log('All subcategories:', products.map(p => p.subcategory));
     return Array.from(
       new Set(
         products
