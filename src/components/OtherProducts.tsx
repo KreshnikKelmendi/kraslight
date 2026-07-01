@@ -2,25 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard/ProductCard";
 import { fetchJson } from "@/app/lib/fetch-json";
-
-interface Product {
-  _id: string;
-  title: string;
-  price?: number;
-  description?: string;
-  originalPrice?: number;
-  discountPercentage?: number;
-  stock?: number;
-  brand: string;
-  sizes?: string;
-  image?: string;
-  images?: string[];
-  mainImage?: string;
-  category?: string;
-  isNewArrival?: boolean;
-  subcategory?: string;
-  gender?: string;
-}
+import type { FormattedProduct } from "@/app/lib/format-product";
 
 const standardCategories = [
   "Ndriçim i brendshëm",
@@ -30,13 +12,13 @@ const standardCategories = [
 ];
 
 interface OtherProductsProps {
-  initialProducts?: Product[];
+  initialProducts?: FormattedProduct[];
 }
 
 const OtherProducts = ({ initialProducts }: OtherProductsProps) => {
   const hasServerProducts =
     Array.isArray(initialProducts) && initialProducts.length > 0;
-  const [products, setProducts] = useState<Product[]>(
+  const [products, setProducts] = useState<FormattedProduct[]>(
     hasServerProducts ? initialProducts : []
   );
   const [isLoading, setIsLoading] = useState(!hasServerProducts);
@@ -49,7 +31,7 @@ const OtherProducts = ({ initialProducts }: OtherProductsProps) => {
 
     const fetchProducts = async () => {
       try {
-        const data = await fetchJson<Product[]>('/api/products');
+        const data = await fetchJson<FormattedProduct[]>('/api/products');
         const filtered = data.filter(
           (product) =>
             product.category &&

@@ -13,7 +13,7 @@ interface Product {
   price?: number;
   originalPrice?: number;
   discountPercentage?: number;
-  stock?: number;
+  stock?: number | null;
   brand: string;
   sizes: string;
   image?: string;
