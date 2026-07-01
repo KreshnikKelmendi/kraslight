@@ -1,138 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDB } from '@/app/lib/mongodb';
-import { Product } from '@/app/models/Product';
+import { applyProductDiscountFields } from '@/app/lib/supabase/row-map';
+import { findProductById, findProducts, updateProduct } from '@/app/lib/supabase/products';
 
 export async function PUT(req: NextRequest) {
   try {
-    console.log('=== BULK DISCOUNT API START ===');
-    
-    // Test database connection
-    try {
-      await connectToDB();
-      console.log('Database connected successfully');
-    } catch (dbError) {
-      console.error('Database connection failed:', dbError);
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
-
     const body = await req.json();
-    console.log('Received request body:', body);
-    
     const { productIds, discountPercentage, bulkDiscountType, bulkDiscountTarget } = body;
 
     if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
-      console.log('Invalid productIds:', productIds);
-      return NextResponse.json(
-        { error: 'Product IDs are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Product IDs are required' }, { status: 400 });
     }
 
     if (discountPercentage === undefined || discountPercentage < 0 || discountPercentage > 99) {
-      console.log('Invalid discount percentage:', discountPercentage);
       return NextResponse.json(
         { error: 'Discount percentage must be between 0 and 99' },
         { status: 400 }
       );
     }
 
-    console.log(`Processing ${productIds.length} products with ${discountPercentage}% discount`);
-    console.log(`Bulk discount type: ${bulkDiscountType}, target: ${bulkDiscountTarget}`);
-
-    // Determine which products to update based on bulk discount type
     let productsToUpdate = productIds;
 
     if (bulkDiscountType === 'brand' && bulkDiscountTarget) {
-      // Filter products by brand
-      const brandProducts = await Product.find({ 
-        _id: { $in: productIds },
-        brand: bulkDiscountTarget 
-      }).select('_id');
-      productsToUpdate = brandProducts.map(p => p._id.toString());
-      console.log(`Filtered to ${productsToUpdate.length} products from brand: ${bulkDiscountTarget}`);
+      const brandProducts = (await findProducts({ adminView: true })).filter(
+        (p) =>
+          productIds.includes(p._id) &&
+          p.brand?.toLowerCase() === bulkDiscountTarget.toLowerCase()
+      );
+      productsToUpdate = brandProducts.map((p) => p._id);
     } else if (bulkDiscountType === 'category' && bulkDiscountTarget) {
-      // Filter products by category
-      const categoryProducts = await Product.find({ 
-        _id: { $in: productIds },
-        category: bulkDiscountTarget 
-      }).select('_id');
-      productsToUpdate = categoryProducts.map(p => p._id.toString());
-      console.log(`Filtered to ${productsToUpdate.length} products from category: ${bulkDiscountTarget}`);
+      const categoryProducts = (await findProducts({ adminView: true })).filter(
+        (p) => productIds.includes(p._id) && p.category === bulkDiscountTarget
+      );
+      productsToUpdate = categoryProducts.map((p) => p._id);
     }
 
     if (productsToUpdate.length === 0) {
-      console.log('No products match the specified criteria');
       return NextResponse.json(
         { error: 'No products match the specified criteria' },
         { status: 400 }
       );
     }
 
-    // Update all products with the discount
-    const updatePromises = productsToUpdate.map(async (productId: string) => {
-      try {
-        const product = await Product.findById(productId);
-        if (!product) {
-          console.log(`Product not found: ${productId}`);
-          return null;
-        }
+    let updatedCount = 0;
+    for (const productId of productsToUpdate) {
+      const product = await findProductById(productId);
+      if (!product) continue;
 
-        console.log(`Updating product: ${product.title}, current price: ${product.price}`);
+      const basePrice = product.originalPrice ?? product.price;
+      const pricing =
+        discountPercentage === 0
+          ? applyProductDiscountFields(basePrice, null)
+          : applyProductDiscountFields(basePrice, discountPercentage);
 
-        if (discountPercentage === 0) {
-          // Remove discount
-          product.discountPercentage = undefined;
-          if (product.originalPrice) {
-            product.price = product.originalPrice;
-            product.originalPrice = undefined;
-          }
-          console.log(`Removing discount from product: ${product.title}`);
-        } else {
-          // Apply discount
-          // Store original price if not already stored
-          if (!product.originalPrice) {
-            product.originalPrice = product.price;
-          }
+      await updateProduct(productId, {
+        ...product,
+        price: pricing.price,
+        originalPrice: pricing.original_price,
+        discountPercentage: pricing.discount_percentage,
+      });
+      updatedCount++;
+    }
 
-          // Apply discount
-          product.discountPercentage = discountPercentage;
-          // Let the pre-save middleware handle the price calculation
-          // product.price = product.originalPrice * (1 - discountPercentage / 100);
-
-          console.log(`Setting discount: ${product.discountPercentage}%, original price: ${product.originalPrice}`);
-        }
-
-        const savedProduct = await product.save();
-        console.log(`Product saved successfully: ${savedProduct.title}`);
-        return savedProduct;
-      } catch (productError) {
-        console.error(`Error updating product ${productId}:`, productError);
-        return null;
-      }
-    });
-
-    const results = await Promise.all(updatePromises);
-    const updatedCount = results.filter(result => result !== null).length;
-
-    const action = discountPercentage === 0 ? 'removed discount from' : `applied ${discountPercentage}% discount to`;
-    console.log(`Successfully ${action} ${updatedCount} products`);
-    console.log('=== BULK DISCOUNT API END ===');
+    const action =
+      discountPercentage === 0
+        ? 'removed discount from'
+        : `applied ${discountPercentage}% discount to`;
 
     return NextResponse.json({
       message: `Successfully ${action} ${updatedCount} products`,
       updatedCount,
       discountPercentage,
       bulkDiscountType,
-      bulkDiscountTarget
+      bulkDiscountTarget,
     });
-
   } catch (error) {
     console.error('Error applying bulk discount:', error);
     return NextResponse.json(
-      { error: 'Failed to apply bulk discount', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to apply bulk discount',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -140,31 +87,30 @@ export async function PUT(req: NextRequest) {
 
 export async function GET() {
   try {
-    await connectToDB();
-    // Find all products
-    const products = await Product.find({}, 'discountPercentage');
+    const products = await findProducts({ adminView: true });
     if (!products.length) {
       return NextResponse.json({ isGlobalDiscount: false });
     }
-    // Get the first product's discount
+
     const firstDiscount = products[0].discountPercentage;
     if (!firstDiscount || firstDiscount <= 0) {
       return NextResponse.json({ isGlobalDiscount: false });
     }
-    // Check if all products have the same discountPercentage
-    const allSame = products.every(
-      (p) => p.discountPercentage === firstDiscount
-    );
+
+    const allSame = products.every((p) => p.discountPercentage === firstDiscount);
     if (allSame) {
       return NextResponse.json({ isGlobalDiscount: true, discountPercentage: firstDiscount });
-    } else {
-      return NextResponse.json({ isGlobalDiscount: false });
     }
+
+    return NextResponse.json({ isGlobalDiscount: false });
   } catch (error) {
     console.error('Error checking global discount:', error);
     return NextResponse.json(
-      { error: 'Failed to check global discount', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to check global discount',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
-} 
+}

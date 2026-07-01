@@ -3,6 +3,8 @@ import type { CompressionStats, ImagePreset } from './images';
 import { compressionStatsFromSizes, MAX_IMAGE_UPLOAD_BYTES } from './images';
 import { compressImageBuffer } from './images-server';
 
+import { deleteProductStorageAssets } from '@/app/lib/supabase/storage';
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -67,7 +69,7 @@ export async function uploadImageDetailed(
   const result = await cloudinary.uploader.upload(base64, {
     folder,
     resource_type: 'image',
-    quality: 90,
+    quality: 85,
     fetch_format: 'auto',
     flags: 'progressive',
   });
@@ -177,4 +179,21 @@ export async function deleteProductCloudinaryAssets(product: {
   );
 
   return { deleted, skipped: publicIds.length - deleted };
+}
+
+/** Remove product images from Supabase Storage and/or Cloudinary */
+export async function deleteProductImageAssets(product: {
+  image?: string | null;
+  mainImage?: string | null;
+  images?: string[] | null;
+}): Promise<{ deleted: number; skipped: number }> {
+  const [supabaseResult, cloudinaryResult] = await Promise.all([
+    deleteProductStorageAssets(product),
+    deleteProductCloudinaryAssets(product),
+  ]);
+
+  return {
+    deleted: supabaseResult.deleted + cloudinaryResult.deleted,
+    skipped: supabaseResult.skipped + cloudinaryResult.skipped,
+  };
 }

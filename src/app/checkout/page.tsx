@@ -1,10 +1,51 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../lib/store';
 import { clearCart } from '../../lib/cartSlice';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
+import { FaCheck } from 'react-icons/fa';
+import {
+  displayMoney,
+  formatEuroPrice,
+  hasDisplayPrice,
+  sumPricedCartItems,
+} from '@/app/lib/images';
+
+const inputClass =
+  'w-full rounded-md border border-neutral-200 bg-white px-4 py-3 font-bwseidoround text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors focus:border-neutral-400 focus:outline-none';
+
+function parseShippingAddress(fullAddress: string) {
+  const parts = fullAddress
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length >= 3) {
+    return {
+      address: fullAddress.trim(),
+      city: parts[parts.length - 2],
+      postalCode: parts[parts.length - 1],
+    };
+  }
+
+  if (parts.length === 2) {
+    return {
+      address: fullAddress.trim(),
+      city: parts[0],
+      postalCode: parts[1],
+    };
+  }
+
+  return {
+    address: fullAddress.trim(),
+    city: '',
+    postalCode: fullAddress.trim() || '00000',
+  };
+}
 
 export default function CheckoutPage() {
   const cart = useSelector((state: RootState) => state.cart.items);
@@ -16,31 +57,38 @@ export default function CheckoutPage() {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('Kosovë');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [postalCode, setPostalCode] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  let shipping = 0;
-  if (["Shqipëri", "Maqedoni e Veriut", "Mali i Zi"].includes(country)) {
-    shipping = 10;
-  }
-  const itemsTotal = cart.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
+  const shipping = ['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(country) ? 10 : 0;
+  const itemsTotal = sumPricedCartItems(cart);
   const totalWithShipping = itemsTotal + shipping;
+  const showSubtotal = itemsTotal > 0;
+  const showTotal = totalWithShipping > 0;
 
-  // Scroll to top when success message shows
+  const canSubmit =
+    !loading &&
+    cart.length > 0 &&
+    email &&
+    firstName &&
+    lastName &&
+    phone &&
+    shippingAddress.trim() &&
+    country;
+
   useEffect(() => {
-    if (success) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (success) window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [success]);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
+
+    const { address, city, postalCode } = parseShippingAddress(shippingAddress);
+
     setLoading(true);
     setError('');
     try {
@@ -58,12 +106,12 @@ export default function CheckoutPage() {
           postalCode,
           notes,
           items: cart,
-          paymentMethod,
+          paymentMethod: 'cash',
         }),
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to place order');
+        setError(data.error || 'Porosia dështoi');
         setLoading(false);
         return;
       }
@@ -71,7 +119,7 @@ export default function CheckoutPage() {
       dispatch(clearCart());
       setTimeout(() => router.push('/'), 2500);
     } catch {
-      setError('Failed to place order');
+      setError('Porosia dështoi');
     } finally {
       setLoading(false);
     }
@@ -79,314 +127,235 @@ export default function CheckoutPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center border-2 border-green-700">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4">
+        <div className="w-full max-w-md px-6 py-14 text-center">
+          <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
+            <FaCheck className="h-4 w-4" />
           </div>
-          <h2 className="text-2xl font-bold mb-4 text-blue-700">Porosia u dërgua me sukses!</h2>
-          <p className="text-gray-600 mb-6">Do të kontaktoheni së shpejti për konfirmim.</p>
-          <div className="w-full bg-blue-50 border border-green-700 rounded-lg p-4">
-            <p className="text-sm text-blue-700">Duke ju ridrejtuar në faqen kryesore...</p>
-          </div>
+          <p className="font-serif text-3xl text-neutral-900">Porosia u dërgua</p>
+          <p className="mt-3 font-bwseidoround text-sm leading-relaxed text-neutral-500">
+            Faleminderit! Do të kontaktoheni së shpejti për konfirmim.
+          </p>
+          <p className="mt-8 font-bwseidoround text-[11px] uppercase tracking-[0.2em] text-neutral-400">
+            Duke ju ridrejtuar...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-10">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Përfundo Porosinë</h1>
-          <p className="text-gray-600">Plotëso detajet për të përfunduar blerjen</p>
-        </div>
+    <div className="min-h-screen w-full bg-white">
+      <div className="grid w-full lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+        {/* Left — form */}
+        <form onSubmit={handleCheckout} className="min-w-0 border-b border-neutral-200 px-5 py-10 sm:px-8 lg:border-b-0 lg:border-r lg:px-12 lg:py-12 xl:px-16">
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="font-serif text-4xl text-neutral-900 sm:text-[2.75rem]">Pagesa</h1>
+              <p className="mt-3 font-bwseidoround text-[11px] uppercase tracking-[0.22em] text-neutral-400">
+                Detajet e kontaktit dhe dërgesës
+              </p>
+            </div>
+            <Link
+              href="/cart"
+              className="font-bwseidoround text-xs text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline"
+            >
+              ← Kthehu te shporta
+            </Link>
+          </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left: Form */}
-          <div className="lg:w-2/3">
-            <form onSubmit={handleCheckout} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-              {/* Customer Details Section */}
-              <div className="border-b border-gray-200 pb-6">
-                <h3 className="text-2xl font-semibold mb-6 text-gray-900 flex items-center">
-                  <svg className="w-6 h-6 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Detajet e klientit
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                    <input 
-                      type="email" 
-                      placeholder="email@example.com" 
-                      value={email} 
-                      onChange={e => setEmail(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefoni *</label>
-                    <input 
-                      type="tel" 
-                      placeholder="+383 44 123 456" 
-                      value={phone} 
-                      onChange={e => setPhone(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Emri *</label>
-                    <input 
-                      type="text" 
-                      placeholder="Emri juaj" 
-                      value={firstName} 
-                      onChange={e => setFirstName(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Mbiemri *</label>
-                    <input 
-                      type="text" 
-                      placeholder="Mbiemri juaj" 
-                      value={lastName} 
-                      onChange={e => setLastName(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required 
-                    />
-                  </div>
+          <div className="space-y-10">
+            <section>
+              <h2 className="mb-4 font-bwseidoround text-sm font-semibold text-neutral-900">
+                Informacioni i kontaktit
+              </h2>
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Emri"
+                    className={inputClass}
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Mbiemri"
+                    className={inputClass}
+                    required
+                  />
                 </div>
-              </div>
-
-              {/* Shipping Details Section */}
-              <div className="border-b border-gray-200 pb-6">
-                <h3 className="text-2xl font-semibold mb-6 text-gray-900 flex items-center">
-                  <svg className="w-6 h-6 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Detajet e transportit
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shteti *</label>
-                    <select 
-                      value={country} 
-                      onChange={e => setCountry(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required
-                    >
-                      <option value="Kosovë">Kosovë</option>
-                      <option value="Shqipëri">Shqipëri</option>
-                      <option value="Maqedoni e Veriut">Maqedoni e Veriut</option>
-                      <option value="Mali i Zi">Mali i Zi</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Qyteti</label>
-                    <input 
-                      type="text" 
-                      placeholder="Qyteti juaj" 
-                      value={city} 
-                      onChange={e => setCity(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                    />
-                  </div>
-                </div>
-
-                {/* Warning for non-Kosovo countries */}
-                {country !== 'Kosovë' && (
-                  <div className="mt-4 w-full mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                    <div className="flex items-start">
-                      <svg className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      <div>
-                        <h4 className="text-sm font-medium text-yellow-800">Transporti ndërkombëtar</h4>
-                        <p className="text-sm text-yellow-700 mt-1">
-                          Për transportin në {country}, kostoja shtesë është €{shipping}. Koha e dorëzimit mund të jetë 3-7 ditë pune.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Adresa *</label>
-                    <input 
-                      type="text" 
-                      placeholder="Adresa e plotë" 
-                      value={address} 
-                      onChange={e => setAddress(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Kodi postar *</label>
-                    <input 
-                      type="text" 
-                      placeholder="10000" 
-                      value={postalCode} 
-                      onChange={e => setPostalCode(e.target.value)} 
-                      className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                      required 
-                    />
-                  </div>
-                </div>
-
-             
-              </div>
-
-              {/* Additional Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Shënime shtesë</label>
-                <textarea 
-                  placeholder="Shënime të veçanta për porosinë..." 
-                  value={notes} 
-                  onChange={e => setNotes(e.target.value)} 
-                  className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none" 
-                  rows={3} 
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  className={inputClass}
+                  required
+                />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Numri i telefonit"
+                  className={inputClass}
+                  required
                 />
               </div>
+            </section>
 
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-red-700">{error}</span>
-                  </div>
-                </div>
-              )}
-
-              <button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-xl text-lg font-semibold transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 
-                disabled={loading || cart.length === 0 || !email || !firstName || !lastName || !phone || !country || !address || !postalCode}
+            <section>
+              <h2 className="mb-4 font-bwseidoround text-sm font-semibold text-neutral-900">
+                Shteti i dërgimit
+              </h2>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className={inputClass}
+                required
               >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Duke dërguar...
-                  </div>
-                ) : (
-                  'Dërgo Porosinë'
-                )}
-              </button>
-              
-              {cart.length === 0 && (
-                <div className="text-center p-4 bg-gray-50 rounded-xl">
-                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                  <p className="text-gray-500">Shporta është bosh.</p>
-                </div>
-              )}
-            </form>
-          </div>
+                <option value="Kosovë">Kosovë — transport falas</option>
+                <option value="Shqipëri">Shqipëri — {displayMoney(10)} transport</option>
+                <option value="Maqedoni e Veriut">Maqedoni e Veriut — {displayMoney(10)} transport</option>
+                <option value="Mali i Zi">Mali i Zi — {displayMoney(10)} transport</option>
+              </select>
+            </section>
 
-          {/* Right: Order Summary */}
-          <div className="lg:w-1/3">
-            <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
-              <h3 className="text-2xl font-semibold mb-6 text-gray-900 flex items-center">
-                <svg className="w-6 h-6 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                Përmbledhje e porosisë ({cart.length})
-              </h3>
-              
-              <div className="space-y-4 mb-6">
-                {cart.map(item => (
-                  <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
-                    {item.image && (
-                      <Image src={item.image} alt={item.name} width={64} height={64} className="w-16 h-16 object-cover rounded-lg border flex-shrink-0" />
+            <section>
+              <h2 className="mb-4 font-bwseidoround text-sm font-semibold text-neutral-900">
+                Adresa e dërgimit
+              </h2>
+              <textarea
+                value={shippingAddress}
+                onChange={(e) => setShippingAddress(e.target.value)}
+                placeholder="Rruga, qyteti, kodi postar"
+                rows={4}
+                className={`${inputClass} resize-none`}
+                required
+              />
+            </section>
+
+            <section>
+              <p className="mb-4 font-bwseidoround text-[11px] uppercase tracking-[0.22em] text-neutral-400">
+                Pagesa
+              </p>
+              <div className="rounded-md border border-neutral-200 px-4 py-3.5">
+                <p className="font-bwseidoround text-sm text-neutral-800">
+                  Pagesa CASH (paguani në momentin kur pranoni porosinë)
+                </p>
+              </div>
+            </section>
+
+            <section>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Shënime shtesë (opsionale)"
+                rows={2}
+                className={`${inputClass} resize-none`}
+              />
+            </section>
+
+            {error && (
+              <p className="rounded-md bg-red-50 px-4 py-3 font-bwseidoround text-sm text-red-700">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className={`w-full rounded-md border py-3.5 font-bwseidoround text-sm transition-colors duration-300 ${
+                canSubmit
+                  ? 'border-neutral-900 bg-white text-neutral-900 hover:bg-neutral-900 hover:text-white'
+                  : 'cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400'
+              }`}
+            >
+              {loading ? 'Duke dërguar...' : 'Dërgo porosinë'}
+            </button>
+
+            {cart.length === 0 && (
+              <p className="text-center font-bwseidoround text-sm text-neutral-400">
+                Shporta është bosh.
+              </p>
+            )}
+          </div>
+        </form>
+
+        {/* Right — order summary */}
+        <aside className="min-w-0 self-start px-5 py-10 sm:px-8 lg:sticky lg:top-28 lg:px-10 lg:py-12 xl:px-12">
+          <h2 className="font-serif text-3xl text-neutral-900 sm:text-4xl">Porosia juaj</h2>
+
+          <div className="mt-8 space-y-4">
+            {cart.length === 0 ? (
+              <p className="py-8 text-center font-bwseidoround text-sm text-neutral-400">
+                Nuk ka produkte në shportë.
+              </p>
+            ) : (
+              cart.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex gap-4 rounded-md border border-neutral-200 p-4"
+                >
+                  {item.image && (
+                    <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-sm bg-neutral-50">
+                      <Image src={item.image} alt={item.name} fill className="object-cover" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-bwseidoround text-sm font-medium leading-snug text-neutral-900 line-clamp-2">
+                        {item.name}
+                      </p>
+                      {hasDisplayPrice(item.price) && (
+                        <p className="shrink-0 font-bwseidoround text-sm text-neutral-900">
+                          {formatEuroPrice(item.price! * item.quantity)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-2 space-y-0.5 font-bwseidoround text-[11px] uppercase tracking-wider text-neutral-500">
+                      {item.brand && <p>Marka: {item.brand}</p>}
+                      {item.size && <p>Madhësia: {item.size}</p>}
+                    </div>
+                    {hasDisplayPrice(item.price) && (
+                      <p className="mt-2 font-bwseidoround text-xs text-neutral-500">
+                        {item.quantity} × {formatEuroPrice(item.price)}
+                      </p>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 mb-1 truncate">{item.name}</h4>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            {item.brand}
-                          </span>
-                          {item.size && (
-                            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Size: {item.size}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-500">Sasia: {item.quantity}</span>
-                          {item.discountPercentage && item.discountPercentage > 0 ? (
-                            <div className="text-right">
-                              <div className="text-sm line-through text-gray-400">€{item.originalPrice?.toFixed(2)}</div>
-                              <div className="font-semibold text-red-600">€{item.price.toFixed(2)}</div>
-                              <div className="text-xs text-red-600">-{item.discountPercentage}%</div>
-                            </div>
-                          ) : (
-                            <div className="font-semibold text-gray-900">€{item.price.toFixed(2)}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Price Summary */}
-              <div className="space-y-3 border-t border-gray-200 pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Nëntotali</span>
-                  <span className="font-semibold text-gray-900">€{itemsTotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Transporti</span>
-                  <span className="font-semibold text-gray-900">
-                    {shipping === 0 ? 'Falas' : `€${shipping.toFixed(2)}`}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-lg font-bold border-t border-gray-200 pt-3">
-                  <span className="text-gray-900">Totali</span>
-                  <span className="text-blue-600">€{totalWithShipping.toFixed(2)}</span>
-                </div>
-              </div>
-              
-              {/* Payment Method */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                <h4 className="font-semibold mb-4 text-gray-900">Mënyra e pagesës</h4>
-                <div className="space-y-3">
-                  <label className="flex items-center p-3 bg-white rounded-lg border-2 border-blue-500 cursor-default transition-all">
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="cash" 
-                      checked={true} 
-                      readOnly
-                      className="mr-3 text-blue-600 focus:ring-blue-500" 
-                    />
-                    <div>
-                      <div className="font-medium">Paguaj kur merr porosinë</div>
-                      <div className="text-sm text-gray-500">Pagesa bëhet në dorëzim</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
-        </div>
+
+          <div className="mt-8 space-y-3 border-t border-neutral-200 pt-6 font-bwseidoround text-sm">
+            {showSubtotal && (
+              <div className="flex justify-between text-neutral-600">
+                <span>Nëntotali</span>
+                <span className="text-neutral-900">{displayMoney(itemsTotal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between gap-4 text-neutral-600">
+              <span className="min-w-0">
+                Dërgimi në {country}
+                {shipping > 0 ? ` (${displayMoney(shipping)})` : ' (Falas)'}
+              </span>
+              <span className="shrink-0 text-neutral-900">
+                {shipping === 0 ? 'Falas' : displayMoney(shipping)}
+              </span>
+            </div>
+            {showTotal && (
+              <div className="flex justify-between border-t border-neutral-200 pt-4 font-bwseidoround text-lg text-neutral-900">
+                <span className="font-semibold">Totali</span>
+                <span className="font-semibold">{displayMoney(totalWithShipping)}</span>
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );
-} 
+}

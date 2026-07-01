@@ -9,7 +9,7 @@ export interface FormattedProduct {
   image?: string;
   mainImage?: string;
   images: string[];
-  stock: number;
+  stock?: number | null;
   brand: string;
   sizes: string;
   gender: string;
@@ -56,7 +56,7 @@ export function formatProduct(product: any): FormattedProduct {
   const image = mainImage ?? images[0];
 
   return {
-    _id: product._id.toString(),
+    _id: typeof product._id === 'string' ? product._id : product._id.toString(),
     title: product.title,
     price: product.price,
     originalPrice: product.originalPrice,
@@ -64,7 +64,7 @@ export function formatProduct(product: any): FormattedProduct {
     image,
     mainImage,
     images,
-    stock: product.stock ?? 0,
+    stock: product.stock ?? null,
     brand: product.brand || 'No Brand',
     sizes: product.sizes || '',
     gender: product.gender || 'Meshkuj',

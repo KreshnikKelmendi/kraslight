@@ -1,85 +1,54 @@
 import { NextResponse } from 'next/server';
-import { Collection } from '../../models/Collection';
-import { Product } from '../../models/Product';
-import { connectToDB } from '../../lib/mongodb';
 import { sanitizeImageUrl } from '@/app/lib/images';
+import {
+  createCollection,
+  deleteAllCollections,
+  findCollectionsWithProducts,
+} from '@/app/lib/supabase/collections';
 
 export async function GET() {
   try {
-    await connectToDB();
-    const collections = await Collection.find({}).populate('products');
-    
-    // For each collection, if it has categories, fetch products from those categories
-    const collectionsWithProducts = await Promise.all(
-      collections.map(async (collection) => {
-        if (collection.categories && collection.categories.length > 0) {
-          // Fetch products from the selected categories
-          const categoryProducts = await Product.find({
-            category: { $in: collection.categories }
-          });
-          // Update the collection with the fetched products
-          collection.products = categoryProducts;
-        }
-        const doc = collection.toObject ? collection.toObject() : collection;
-        return {
-          ...doc,
-          image: sanitizeImageUrl(doc.image as string) ?? '',
-        };
-      })
-    );
+    const collectionsWithProducts = await findCollectionsWithProducts();
+    const collections = collectionsWithProducts.map((collection) => ({
+      ...collection,
+      image: sanitizeImageUrl(collection.image as string) ?? '',
+    }));
 
-    return NextResponse.json(collectionsWithProducts);
+    return NextResponse.json(collections);
   } catch (error) {
     console.error('Error fetching collections:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch collections', details: error instanceof Error ? error.message : String(error) },
+      {
+        error: 'Failed to fetch collections',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
 }
 
 export async function POST(req: Request) {
-  await connectToDB();
-  const data = await req.json();
-  
-  // If categories are provided, fetch products from those categories
-  if (data.categories && data.categories.length > 0) {
-    let categoryProducts: unknown[] = [];
-    // Handle virtual 'On Sale' category
-    if (data.categories.includes('Produktet ne Zbritje')) {
-      const onSaleProducts = await Product.find({
-        $or: [
-          { discountPercentage: { $gt: 0 } },
-          { $expr: { $lt: ["$price", "$originalPrice"] } }
-        ]
-      });
-      categoryProducts = categoryProducts.concat(onSaleProducts);
-    }
-    // Handle real categories (excluding the virtual one)
-    const realCategories = data.categories.filter((cat: unknown) => cat !== 'Produktet ne Zbritje');
-    if (realCategories.length > 0) {
-      const realCategoryProducts = await Product.find({
-        category: { $in: realCategories }
-      });
-      categoryProducts = categoryProducts.concat(realCategoryProducts);
-    }
-    // Remove duplicates by _id
-    const uniqueProducts = Array.from(
-      new Map(
-        (categoryProducts as unknown[])
-          .filter((p): p is { _id: { toString: () => string } } => typeof p === 'object' && p !== null && '_id' in p && typeof (p as unknown as { _id?: { toString?: () => string } })._id?.toString === 'function')
-          .map(p => [(p as { _id: { toString: () => string } })._id.toString(), p])
-      ).values()
+  try {
+    const data = await req.json();
+    const collection = await createCollection(data);
+    return NextResponse.json(collection);
+  } catch (error) {
+    console.error('Error creating collection:', error);
+    return NextResponse.json(
+      { error: 'Failed to create collection', details: (error as Error)?.message },
+      { status: 500 }
     );
-    data.products = uniqueProducts.map((p) => (p as { _id: string })._id);
   }
-  
-  const collection = await Collection.create(data);
-  return NextResponse.json(collection);
 }
 
 export async function DELETE() {
-  await connectToDB();
-  await Collection.deleteMany({});
-  return NextResponse.json({ message: 'All collections deleted' });
-} 
+  try {
+    await deleteAllCollections();
+    return NextResponse.json({ message: 'All collections deleted' });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to delete collections', details: (error as Error)?.message },
+      { status: 500 }
+    );
+  }
+}

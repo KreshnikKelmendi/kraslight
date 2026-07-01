@@ -1,15 +1,16 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaEye } from 'react-icons/fa';
-import { motion } from 'framer-motion';
-import { getValidImage, optimizeImageUrl } from '@/app/lib/images';
+import { getValidImage, optimizeImageUrl, hasDisplayPrice } from '@/app/lib/images';
+
+const SCROLL_RESTORE_KEY = 'listingScrollRestore';
 
 interface Product {
   _id: string;
   title: string;
-  price?: number; // Made optional
+  price?: number;
   originalPrice?: number;
   discountPercentage?: number;
   stock?: number;
@@ -21,8 +22,8 @@ interface Product {
   category: string;
   description: string;
   isNewArrival?: boolean;
-  subcategory?: string; // Added subcategory to the interface
-  gender?: string; // Added gender to the interface
+  subcategory?: string;
+  gender?: string;
 }
 
 interface ProductCardProps {
@@ -33,160 +34,177 @@ interface ProductCardProps {
   isWishlisted?: boolean;
 }
 
-// Format product title for better display
 function formatProductTitle(title: string) {
   return title
-    .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
 
-export default function ProductCard({ 
-  product, 
-  // removed unused props: variant, onWishlistClick, isWishlisted
-  className = ''
-}: ProductCardProps) {
-  const {
-    _id,
-    title,
-    price,
-    originalPrice,
-    discountPercentage,
-    brand
-  } = product;
+function collectImages(product: Product): string[] {
+  const candidates = [
+    product.mainImage,
+    ...(product.images ?? []),
+    product.image,
+  ].filter((img): img is string => Boolean(img && img.trim()));
 
+  return [...new Set(candidates)];
+}
+
+export function saveListingScrollAndGoTop() {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(
+    SCROLL_RESTORE_KEY,
+    JSON.stringify({
+      path: window.location.pathname + window.location.search,
+      y: window.scrollY,
+    })
+  );
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+export default function ProductCard({ product, className = '' }: ProductCardProps) {
+  const { _id, title, price, originalPrice, discountPercentage, brand } = product;
   const [isHovered, setIsHovered] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Use mainImage, images[0], image, or placeholder
-  const displayImage = optimizeImageUrl(
-    getValidImage(product.mainImage, product.images?.[0], product.image),
-    { width: 600, quality: 'auto:good' }
+  const images = useMemo(() => collectImages(product), [product]);
+  const primaryImage = optimizeImageUrl(
+    images[0] ?? getValidImage(product.mainImage, product.images?.[0], product.image),
+    { width: 700, quality: 'auto:good' }
   );
   const hoverImage = optimizeImageUrl(
-    getValidImage(product.images?.[1], product.mainImage, product.images?.[0], product.image),
-    { width: 600, quality: 'auto:good' }
+    images.length > 1 ? images[1] : images[0],
+    { width: 700, quality: 'auto:good' }
   );
+  const hasHoverImage = images.length > 1 && hoverImage !== primaryImage;
 
-  // Calculate discount price
-  const discountPrice = originalPrice && discountPercentage
-    ? originalPrice * (1 - discountPercentage / 100)
-    : price;
+  const discountPrice =
+    originalPrice && discountPercentage
+      ? originalPrice * (1 - discountPercentage / 100)
+      : price;
+
+  const productHref = `/products/${_id}`;
+
+  const handleImageClick = () => {
+    saveListingScrollAndGoTop();
+    setIsNavigating(true);
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className={`group relative bg-white border border-gray-100 rounded-xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:border-[#0a9945]/30 cursor-pointer ${className}`}
+    <article
+      className={`group relative bg-white ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Product Image Container */}
-      <Link href={`/products/${_id}`} className="block">
-        <div className="relative h-[25vh] lg:h-[40vh] overflow-hidden flex items-center justify-center">
-          <Image
-            src={isHovered ? hoverImage : displayImage}
-            alt={title}
-            fill
-            sizes="100vw"
-            className={`transition-all duration-500 ${isHovered ? 'object-cover' : 'object-contain'}`}
-            priority={false}
-          />
-          {/* Subtle overlay on hover */}
-          <div className={`absolute inset-0 bg-black/5 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
-        
-        {/* Badges */}
-        <div className="absolute top-0 left-0 flex flex-col gap-1">
-          {/* Discount Badge */}
-          {discountPercentage && discountPercentage > 0 && (
-            <div className="bg-red-500 text-white font-bwseidoround font-medium px-1.5 py-0.5 rounded text-xs shadow-sm">
-              -{discountPercentage}%
-            </div>
-          )}
-          
-          {/* New Arrivals Badge */}
-          {product.isNewArrival && (
-            <div className="bg-emerald-500 text-white font-medium px-1.5 py-0.5 rounded text-xs shadow-sm">
-              NEW
-            </div>
-          )}
-        </div>
+      <Link
+        href={productHref}
+        className="block cursor-pointer"
+        onClick={handleImageClick}
+        aria-busy={isNavigating}
+      >
+        <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100">
+          <div
+            className={`absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+              isHovered && hasHoverImage ? '-translate-y-full' : 'translate-y-0'
+            }`}
+          >
+            <Image
+              src={primaryImage}
+              alt={title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover"
+              priority={false}
+            />
+          </div>
 
-        {/* Stock Status - Hidden on client side */}
-        {/* {stock !== undefined && stock > 0 && (
-          <div className="absolute bottom-2 left-2">
-            <span className="bg-white/90 backdrop-blur-sm text-green-600 px-1.5 py-0.5 rounded text-xs font-medium shadow-sm">
-              In Stock
+          {hasHoverImage && (
+            <div
+              className={`absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+                isHovered ? 'translate-y-0' : 'translate-y-full'
+              }`}
+            >
+              <Image
+                src={hoverImage}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="object-cover"
+                aria-hidden
+              />
+            </div>
+          )}
+
+          {discountPercentage && discountPercentage > 0 && (
+            <span className="absolute left-3 top-3 z-10 bg-neutral-900 px-2 py-0.5 font-bwseidoround text-[10px] uppercase tracking-wider text-white">
+              -{discountPercentage}%
+            </span>
+          )}
+
+          <div
+            className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-center bg-gradient-to-t from-black/50 via-black/20 to-transparent px-4 pb-4 pt-16 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isHovered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+            }`}
+          >
+            <span className="font-bwseidoround text-xs uppercase tracking-[0.2em] text-white">
+              Shiko më shumë
             </span>
           </div>
-        )} */}
 
-        {/* Quick View Button */}
-        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-lg font-medium shadow-lg hover:bg-white transition-all duration-300">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Shiko më shumë</span>
-              <FaEye className="text-xs" />
-            </div>
+          <div
+            className={`pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-[2px] transition-opacity duration-200 ${
+              isNavigating ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div
+              className={`h-9 w-9 rounded-full border-2 border-neutral-200 border-t-neutral-900 transition-opacity duration-200 ${
+                isNavigating ? 'animate-spin opacity-100' : 'opacity-0'
+              }`}
+            />
           </div>
         </div>
-      </div>
       </Link>
 
-      {/* Product Info */}
-      <div className="p-4">
-        {/* Brand */}
-        <div className="mb-2">
-          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {brand}
-          </span>
-        </div>
+      <div className="space-y-2 px-1 pt-4">
+        <p className="font-bwseidoround text-[10px] uppercase tracking-[0.18em] text-neutral-400">
+          {brand}
+        </p>
 
-        {/* Title */}
-        <Link href={`/products/${_id}`} className="block">
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1 group-hover:text-gray-700 transition-colors leading-tight">
+        <Link href={productHref} className="block cursor-pointer">
+          <h3 className="font-bwseidoround text-sm leading-snug text-neutral-900 line-clamp-2 transition-colors group-hover:text-neutral-600">
             {formatProductTitle(title)}
           </h3>
         </Link>
-        {/* Subcategory Badge */}
+
         {product.subcategory && (
-          <div className="inline-block mb-2 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-semibold">
+          <span className="inline-block font-bwseidoround text-[10px] uppercase tracking-wider text-neutral-500">
             {product.subcategory}
-          </div>
+          </span>
         )}
 
-        {/* Price - Only show if price exists */}
-        {price !== undefined && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {discountPercentage && discountPercentage > 0 ? (
-                <>
-                  <span className="text-lg font-semibold text-gray-900">
-                    €{discountPrice?.toFixed(2)}
-                  </span>
-                  <span className="text-sm line-through text-gray-400">
-                    €{originalPrice?.toFixed(2)}
-                  </span>
-                </>
-              ) : (
-                <span className="text-lg font-semibold text-gray-900">
-                  €{price.toFixed(2)}
+        {hasDisplayPrice(price) && (
+          <div className="flex items-baseline gap-2 pt-1">
+            {discountPercentage && discountPercentage > 0 && hasDisplayPrice(originalPrice) ? (
+              <>
+                <span className="font-bwseidoround text-base text-neutral-900">
+                  €{discountPrice?.toFixed(2)}
                 </span>
-              )}
-            </div>
-
-            {/* Subtle arrow indicator */}
-            <div className={`w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 ${isHovered ? 'bg-gray-200' : ''}`}>
-              <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
+                <span className="font-bwseidoround text-xs text-neutral-400 line-through">
+                  €{originalPrice?.toFixed(2)}
+                </span>
+              </>
+            ) : (
+              <span className="font-bwseidoround text-base text-neutral-900">
+                €{price!.toFixed(2)}
+              </span>
+            )}
           </div>
         )}
       </div>
-    </motion.div>
+    </article>
   );
-} 
+}

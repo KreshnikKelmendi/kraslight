@@ -1,19 +1,20 @@
 /** Server-only — do not import from client components (uses sharp). */
 import type { ImagePreset } from './images';
 
-/** High visual quality; resize only when larger than max dimensions */
+/** Balanced: smaller files, still sharp on screen (WebP + sensible max dimensions) */
 const PRESET_CONFIG: Record<
   ImagePreset,
   { maxWidth: number; maxHeight: number; quality: number }
 > = {
-  product: { maxWidth: 2000, maxHeight: 2000, quality: 92 },
-  slider: { maxWidth: 1920, maxHeight: 1080, quality: 90 },
-  brand: { maxWidth: 512, maxHeight: 512, quality: 90 },
-  collection: { maxWidth: 1600, maxHeight: 1600, quality: 91 },
+  product: { maxWidth: 1600, maxHeight: 1600, quality: 84 },
+  slider: { maxWidth: 1600, maxHeight: 900, quality: 82 },
+  brand: { maxWidth: 400, maxHeight: 400, quality: 85 },
+  collection: { maxWidth: 1400, maxHeight: 1400, quality: 84 },
 };
 
 /**
- * Resize and compress before Cloudinary upload (server-only).
+ * Resize and compress before upload (server-only).
+ * Uses WebP for photos; PNG only when alpha is required.
  */
 export async function compressImageBuffer(
   buffer: Buffer,
@@ -34,13 +35,13 @@ export async function compressImageBuffer(
 
   if (hasAlpha) {
     const out = await pipeline
-      .png({ compressionLevel: 6, quality: 95, effort: 7 })
+      .png({ compressionLevel: 9, quality: 90, effort: 8 })
       .toBuffer();
     return { buffer: out, mimeType: 'image/png' };
   }
 
   const out = await pipeline
-    .jpeg({ quality, mozjpeg: true, progressive: true })
+    .webp({ quality, effort: 5, smartSubsample: true })
     .toBuffer();
-  return { buffer: out, mimeType: 'image/jpeg' };
+  return { buffer: out, mimeType: 'image/webp' };
 }

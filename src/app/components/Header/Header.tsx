@@ -1,7 +1,7 @@
 // src/app/components/layout/Header/Header.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FiSearch, FiShoppingBag, FiUser, FiMenu, FiX, FiChevronDown, FiInstagram, FiFacebook } from 'react-icons/fi';
@@ -12,12 +12,9 @@ import { RootState } from '../../../lib/store';
 import Cart from '../../../components/Cart';
 import Searchbar from '../Search/Searchbar';
 import GlobalDiscountRibbon from './GlobalDiscountRibbon';
-import CatalogDropdown from './CatalogDropdown';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
-
-// Add Collection type for dynamic collections dropdown
 interface Collection {
   _id: string;
   name: string;
@@ -25,14 +22,41 @@ interface Collection {
   image: string;
 }
 
+const MOBILE_MENU_TRANSITION_MS = 420;
+const MOBILE_MENU_STAGGER_MS = 75;
+const MOBILE_MENU_ITEM_DURATION_MS = 500;
+
+function MobileMenuReveal({
+  children,
+  orderFromBottom,
+  isOpen,
+}: {
+  children: React.ReactNode;
+  orderFromBottom: number;
+  isOpen: boolean;
+}) {
+  return (
+    <div
+      className={`transform transition-all ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+      }`}
+      style={{
+        transitionDuration: isOpen ? `${MOBILE_MENU_ITEM_DURATION_MS}ms` : '200ms',
+        transitionDelay: isOpen ? `${orderFromBottom * MOBILE_MENU_STAGGER_MS}ms` : '0ms',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileMenuMounted, setMobileMenuMounted] = useState(false);
   const [isProduktetNdricimitOpen, setIsProduktetNdricimitOpen] = useState(false);
   const [isMobileProduktetNdricimitOpen, setIsMobileProduktetNdricimitOpen] = useState(false);
-  const [isKataloguOpen, setIsKataloguOpen] = useState(false);
-  const [isMobileKataloguOpen, setIsMobileKataloguOpen] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoadingCollections, setIsLoadingCollections] = useState(true);
   const [showCart, setShowCart] = useState(false);
@@ -41,14 +65,32 @@ const Header = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const cartCount = useSelector((state: RootState) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const [globalDiscount, setGlobalDiscount] = useState<{ isGlobalDiscount: boolean; discountPercentage?: number }>({ isGlobalDiscount: false });
-  // Static catalog - no need for dynamic state
+
+  const closeMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(false);
+    setIsMobileProduktetNdricimitOpen(false);
+  }, []);
+
+  const openMobileMenu = useCallback(() => {
+    setMobileMenuMounted(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setIsMobileMenuOpen(true));
+    });
+  }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    if (isMobileMenuOpen || mobileMenuMounted) {
+      closeMobileMenu();
+    } else {
+      openMobileMenu();
+    }
+  }, [closeMobileMenu, isMobileMenuOpen, mobileMenuMounted, openMobileMenu]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setIsMobileMenuOpen(false);
+    closeMobileMenu();
   };
 
-  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -56,7 +98,6 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
 
   useEffect(() => {
     const loadHeaderData = async () => {
@@ -79,31 +120,44 @@ const Header = () => {
     loadHeaderData();
   }, []);
 
-
   useEffect(() => {
     const handleOpenCart = () => setShowCart(true);
     window.addEventListener('open-cart', handleOpenCart);
     return () => window.removeEventListener('open-cart', handleOpenCart);
   }, []);
 
-  // Handle click outside to close dropdowns
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+
+    if (!mobileMenuMounted) return;
+
+    const timer = window.setTimeout(() => {
+      setMobileMenuMounted(false);
+      document.body.style.overflow = '';
+    }, MOBILE_MENU_TRANSITION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isMobileMenuOpen, mobileMenuMounted]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('.dropdown-container')) {
         setIsProduktetNdricimitOpen(false);
-        setIsKataloguOpen(false);
       }
     };
 
-    if (isProduktetNdricimitOpen || isKataloguOpen) {
+    if (isProduktetNdricimitOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProduktetNdricimitOpen, isKataloguOpen]);
+  }, [isProduktetNdricimitOpen]);
 
   const handleUserIconClick = () => {
     if (isAuthenticated) {
@@ -113,43 +167,35 @@ const Header = () => {
     }
   };
 
-
-  // Handler to close all dropdowns and mobile menu (mobile)
   const closeAllMobileDropdowns = () => {
-    setIsMobileProduktetNdricimitOpen(false);
-    setIsMobileKataloguOpen(false);
-    setIsMobileMenuOpen(false);
+    closeMobileMenu();
   };
 
-  // Removed unused nextSlide and prevSlide
+  const mobileMenuVisible = isMobileMenuOpen || mobileMenuMounted;
 
   return (
-    <header className={`sticky top-0 left-0 right-0 z-40 transition-all duration-300 font-bwseidoround ${
+    <header className={`sticky top-0 left-0 right-0 z-40 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] font-bwseidoround ${
       isScrolled 
         ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
         : 'bg-white shadow-sm'
     }`}>
-      {/* Global Discount Ribbon */}
       {globalDiscount.isGlobalDiscount && globalDiscount.discountPercentage && (
         <GlobalDiscountRibbon discountPercentage={globalDiscount.discountPercentage} />
       )}
-      {/* Top info bar */}
       <div
         className={`header-topbar-transition overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-[60px] opacity-100 mb-0 lg:mb-2'}`}
         style={{ transition: 'max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s, margin 0.4s' }}
       >
         <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:px-10">
           <div className="flex items-center justify-between text-[12px] lg:text-sm">
-            {/* Store Address */}
             <div className="flex items-center space-x-3">
               <span className="text-gray-300 font-medium">Rruga e Pejës, Sllatinë e Madhe, Fushë Kosovë</span>
             </div>
-            {/* Social Media Links */}
             <div className="flex items-center space-x-4">
-              <a href="https://instagram.com/yourpage" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200" aria-label="Instagram">
+              <a href="https://www.instagram.com/kraslight.ks/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200" aria-label="Instagram">
                 <FiInstagram size={16} />
               </a>
-              <a href="https://facebook.com/yourpage" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200" aria-label="Facebook">
+              <a href="https://www.facebook.com/kraslight" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200" aria-label="Facebook">
                 <FiFacebook size={16} />
               </a>
             </div>
@@ -157,22 +203,24 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Main header content */}
-      <div className={`bg-white border-b border-gray-100 transition-all duration-300 ${isScrolled ? 'py-0' : 'py-0 lg:py-0'}`}>
+      <div className="bg-white border-b border-gray-100 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] py-0">
         <div className="mx-auto px-2 lg:px-10">
-            <div className="flex items-center justify-between h-20 lg:h-28">
-              {/* Mobile: Hamburger menu on left */}
+            <div
+              className={`flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                isScrolled ? 'h-16 lg:h-20' : 'h-20 lg:h-28'
+              }`}
+            >
               <div className="lg:hidden">
                 <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  onClick={toggleMobileMenu}
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#0a9945]"
-                  aria-label="Open menu"
+                  aria-label={mobileMenuVisible ? 'Close menu' : 'Open menu'}
+                  aria-expanded={isMobileMenuOpen}
                 >
-                  {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                  {mobileMenuVisible ? <FiX size={24} /> : <FiMenu size={24} />}
                 </button>
               </div>
 
-              {/* Desktop: Logo on left */}
               <Link href="/" className="hidden lg:block flex-shrink-0">
                 <Image
                   src="/assets/logo/kraslight-logo.png"
@@ -180,11 +228,12 @@ const Header = () => {
                   width={160}
                   height={56}
                   priority
-                  className="h-auto"
+                  className={`h-auto object-contain transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    isScrolled ? 'w-[148px]' : 'w-[160px]'
+                  }`}
                 />
               </Link>
 
-              {/* Mobile: Centered logo */}
               <div className="lg:hidden absolute left-1/2 transform -translate-x-1/2">
                 <Link href="/" className="flex-shrink-0">
                   <Image
@@ -193,12 +242,13 @@ const Header = () => {
                     width={120}
                     height={42}
                     priority
-                    className="h-auto"
+                    className={`h-auto object-contain transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      isScrolled ? 'w-[112px]' : 'w-[120px]'
+                    }`}
                   />
                 </Link>
               </div>
 
-              {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center space-x-6 2xl:space-x-8 uppercase">
                 <Link 
                   href="/" 
@@ -209,7 +259,6 @@ const Header = () => {
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-800 transition-all duration-200 group-hover:w-full"></span>
                 </Link>
 
-                {/* Produktet e Ndricimit dropdown (dynamic collections) */}
                 <div className="relative dropdown-container">
                   <button 
                     className="text-gray-800 hover:text-gray-600 font-medium transition-colors duration-200 flex items-center space-x-1 relative"
@@ -246,7 +295,7 @@ const Header = () => {
                               href={`/collections/${col._id}`}
                               onClick={() => {
                                 scrollToTop();
-                                setIsProduktetNdricimitOpen(false); // Close desktop collections dropdown
+                                setIsProduktetNdricimitOpen(false);
                               }}
                               className="group flex flex-row rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition bg-white border border-gray-100"
                             >
@@ -269,32 +318,9 @@ const Header = () => {
                     </div>
                   </div>
                 </div>
-
-                <Link 
-                  href="/shop/new-arrivals" 
-                  className="text-gray-800 hover:text-gray-600 font-medium transition-colors duration-200 relative group"
-                  onClick={scrollToTop}
-                >
-                  <span className="relative">
-                    Arritjet e reja
-                    {/* <span className="absolute -top-2 -right-9 font-bwseidoround bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-[8px] px-2 py-1">
-                      NEW
-                    </span> */}
-                  </span>
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-800 transition-all duration-200 group-hover:w-full"></span>
-                </Link>
-
-                {/* Katalogu dropdown */}
-                <CatalogDropdown 
-                  isOpen={isKataloguOpen}
-                  onToggle={() => setIsKataloguOpen(!isKataloguOpen)}
-                  onClose={() => setIsKataloguOpen(false)}
-                />
               </nav>
 
-              {/* Right side icons */}
               <div className="flex items-center space-x-2">
-                {/* Search */}
                 <button 
                   onClick={() => setShowSearch((prev) => !prev)}
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer relative"
@@ -307,7 +333,6 @@ const Header = () => {
                   </div>
                 )}
 
-                {/* User account */}
                 <div className="relative hidden lg:block">
                   <button 
                     onClick={handleUserIconClick}
@@ -343,7 +368,6 @@ const Header = () => {
                   )}
                 </div>
 
-                {/* Cart */}
                 <div className="relative">
                   <button 
                     onClick={() => setShowCart(!showCart)} 
@@ -362,120 +386,170 @@ const Header = () => {
           </div>
         </div>
 
-      {/* Mobile menu overlay */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/40 flex flex-col items-center justify-start lg:hidden z-50">
-          <div className="bg-white w-full h-screen flex flex-col shadow-2xl border border-gray-200">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-              <Link href="/" className="flex-shrink-0" onClick={() => setIsMobileMenuOpen(false)}>
-                <Image
-                  src="/assets/logo/kraslight-logo.png"
-                  alt="Kraslight Logo"
-                  width={120}
-                  height={40}
-                  priority
-                  className="h-auto"
-                />
-              </Link>
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-              >
-                <FiX size={24} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-6">
-                <Link href="/" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={scrollToTop}>
-                  BALLINA
+      {mobileMenuMounted && (
+        <div className="fixed inset-0 z-50 lg:hidden" aria-hidden={!isMobileMenuOpen}>
+          <button
+            type="button"
+            aria-label="Close menu"
+            className={`absolute inset-0 bg-black/40 transition-opacity duration-[420ms] ease-out ${
+              isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={closeMobileMenu}
+          />
+          <div
+            className={`absolute inset-y-0 left-0 flex h-full w-full flex-col bg-white shadow-2xl transition-transform duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <MobileMenuReveal orderFromBottom={4} isOpen={isMobileMenuOpen}>
+              <div className="flex items-center justify-between border-b border-gray-200 bg-white p-4">
+                <Link href="/" className="flex-shrink-0" onClick={closeMobileMenu}>
+                  <Image
+                    src="/assets/logo/kraslight-logo.png"
+                    alt="Kraslight Logo"
+                    width={120}
+                    height={40}
+                    priority
+                    className="h-auto"
+                  />
                 </Link>
-                {/* Produktet e Ndricimit dropdown in mobile menu (dynamic collections) */}
-                <div>
-                  <button
-                    onClick={() => setIsMobileProduktetNdricimitOpen(!isMobileProduktetNdricimitOpen)}
-                    className="w-full text-left py-4 px-4 text-xl font-bold text-gray-800 rounded-xl hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#0a9945]"
+                <button
+                  onClick={closeMobileMenu}
+                  className="rounded-lg p-2 transition-colors duration-200 hover:bg-gray-100"
+                  aria-label="Close menu"
+                >
+                  <FiX size={24} />
+                </button>
+              </div>
+            </MobileMenuReveal>
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="flex min-h-full flex-col space-y-2 p-6">
+                <MobileMenuReveal orderFromBottom={3} isOpen={isMobileMenuOpen}>
+                  <Link
+                    href="/"
+                    className="block rounded-xl px-4 py-4 text-xl font-bold text-gray-800 transition-colors duration-200 hover:bg-gray-50"
+                    onClick={scrollToTop}
                   >
-                    PRODUKTET E NDRIÇIMIT
-                    <FiChevronDown className={`transition-transform duration-200 ${isMobileProduktetNdricimitOpen ? 'rotate-180' : ''}`} size={20} />
-                  </button>
-                  <div className={`overflow-hidden transition-all duration-300 ${isMobileProduktetNdricimitOpen ? 'max-h-[70vh] opacity-100' : 'max-h-0 opacity-0'}`}> 
-                    <div className="mt-3 pb-4">
-                      {isLoadingCollections ? (
-                        <div className="flex flex-col gap-2 px-4 py-4">
-                          {[...Array(4)].map((_, i) => (
-                            <div key={i} className="flex items-center gap-3 animate-pulse">
-                              <div className="w-10 h-10 bg-gray-200 rounded-lg" />
-                              <div className="flex-1 h-4 bg-gray-200 rounded" />
+                    BALLINA
+                  </Link>
+                </MobileMenuReveal>
+
+                <MobileMenuReveal orderFromBottom={2} isOpen={isMobileMenuOpen}>
+                  <div>
+                    <button
+                      onClick={() => setIsMobileProduktetNdricimitOpen(!isMobileProduktetNdricimitOpen)}
+                      className="flex w-full items-center justify-between rounded-xl px-4 py-4 text-left text-xl font-bold text-gray-800 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0a9945]"
+                    >
+                      PRODUKTET E NDRIÇIMIT
+                      <FiChevronDown
+                        className={`transition-transform duration-300 ease-out ${
+                          isMobileProduktetNdricimitOpen ? 'rotate-180' : 'rotate-0'
+                        }`}
+                        size={20}
+                      />
+                    </button>
+                    <div
+                      className={`grid transition-all duration-300 ease-out ${
+                        isMobileProduktetNdricimitOpen
+                          ? 'grid-rows-[1fr] opacity-100'
+                          : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="mt-2 pb-4">
+                          {isLoadingCollections ? (
+                            <div className="flex flex-col gap-2 px-4 py-4">
+                              {[...Array(4)].map((_, i) => (
+                                <div key={i} className="flex animate-pulse items-center gap-3">
+                                  <div className="h-10 w-10 rounded-lg bg-gray-200" />
+                                  <div className="h-4 flex-1 rounded bg-gray-200" />
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          ) : collections.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-3 px-2 py-2">
+                              {collections.map((col, index) => (
+                                <MobileMenuReveal
+                                  key={col._id}
+                                  orderFromBottom={collections.length - 1 - index}
+                                  isOpen={isMobileMenuOpen && isMobileProduktetNdricimitOpen}
+                                >
+                                  <Link
+                                    href={`/collections/${col._id}`}
+                                    onClick={() => {
+                                      scrollToTop();
+                                      closeAllMobileDropdowns();
+                                    }}
+                                    className="group mb-2 flex flex-row items-center rounded-xl border border-gray-100 bg-white p-2 shadow transition hover:shadow-lg"
+                                  >
+                                    <div className="relative mr-3 h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                      <Image src={optimizeImageUrl(col.image || IMAGE_PLACEHOLDER, { width: 320, quality: 'auto:good' })} alt={col.name} fill className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
+                                    </div>
+                                    <div className="flex flex-1 flex-col justify-center">
+                                      <span className="mb-1 w-full text-left text-sm font-bold text-gray-900">{col.name}</span>
+                                      <div className="mb-1 h-1 w-6 rounded-full bg-[#0a9945]" />
+                                      <span className="text-xs tracking-wider text-[#0a9945]">Eksploroni koleksionin</span>
+                                    </div>
+                                  </Link>
+                                </MobileMenuReveal>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-6">
+                              <p className="text-base font-semibold text-gray-500">Nuk ka koleksione të disponueshme</p>
+                            </div>
+                          )}
                         </div>
-                      ) : collections.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-3 px-2 py-2">
-                          {collections.map((col) => (
-                            <Link
-                              key={col._id}
-                              href={`/collections/${col._id}`}
-                              onClick={() => {
-                                scrollToTop();
-                                closeAllMobileDropdowns(); // Close mobile collections dropdown and menu
-                              }}
-                              className="group flex flex-row rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white border border-gray-100 mb-2 p-2 items-center"
-                            >
-                              <div className="w-12 h-12 bg-gray-100 relative flex-shrink-0 mr-3 rounded-lg overflow-hidden">
-                                <Image src={optimizeImageUrl(col.image || IMAGE_PLACEHOLDER, { width: 320, quality: 'auto:good' })} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
-                              </div>
-                              <div className="flex flex-col justify-center flex-1">
-                                <span className="text-gray-900 font-bold text-sm mb-1 text-left w-full">{col.name}</span>
-                                  <div className="w-6 h-1 bg-[#0a9945] rounded-full mb-1"></div>
-                                <span className="text-xs text-[#0a9945] tracking-wider">Eksploroni koleksionin</span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-6">
-                          <p className="text-gray-500 text-base font-semibold">Nuk ka koleksione të disponueshme</p>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <Link href="/shop/new-arrivals" className="block text-xl font-bold text-gray-800 py-4 px-4 rounded-xl hover:bg-gray-50 transition-colors duration-200" onClick={scrollToTop}>
-                  <span className="flex items-center gap-3">
-                    ARRITJET E REJA
-                    {/* <span className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white text-xs px-2 py-1 font-bwseidoround">NEW</span> */}
-                  </span>
-                </Link>
+                </MobileMenuReveal>
 
-                {/* Katalogu dropdown in mobile menu */}
-                <CatalogDropdown 
-                  isOpen={isMobileKataloguOpen}
-                  onToggle={() => setIsMobileKataloguOpen(!isMobileKataloguOpen)}
-                  onClose={() => closeAllMobileDropdowns()}
-                  isMobile={true}
-                />
-                {/* Account section */}
-                <div className="pt-6 border-t border-gray-200 mt-6">
-                  {!isAuthenticated ? (
-                    <Link 
-                      href="/signin" 
-                      className="block py-4 px-4 text-xl font-bold text-gray-800 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                      onClick={scrollToTop}
-                    >
-                      SIGN IN TO GET REWARDS
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        logout();
-                        scrollToTop();
-                      }}
-                      className="w-full text-left py-4 px-4 text-xl font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-200"
-                    >
-                      SIGN OUT
-                    </button>
-                  )}
+                <div className="mt-auto space-y-4 border-t border-gray-200 pt-6">
+                  <MobileMenuReveal orderFromBottom={1} isOpen={isMobileMenuOpen}>
+                    <div className="flex items-center gap-4 px-4">
+                      <a
+                        href="https://www.instagram.com/kraslight.ks/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Instagram"
+                        className="text-gray-600 transition-colors hover:text-[#0a9945]"
+                      >
+                        <FiInstagram size={22} />
+                      </a>
+                      <a
+                        href="https://www.facebook.com/kraslight"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Facebook"
+                        className="text-gray-600 transition-colors hover:text-[#0a9945]"
+                      >
+                        <FiFacebook size={22} />
+                      </a>
+                    </div>
+                  </MobileMenuReveal>
+
+                  <MobileMenuReveal orderFromBottom={0} isOpen={isMobileMenuOpen}>
+                    {!isAuthenticated ? (
+                      <Link 
+                        href="/signin" 
+                        className="block rounded-xl px-4 py-4 text-xl font-bold text-gray-800 transition-colors duration-200 hover:bg-gray-50"
+                        onClick={scrollToTop}
+                      >
+                        SIGN IN TO GET REWARDS
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          logout();
+                          scrollToTop();
+                        }}
+                        className="w-full rounded-xl px-4 py-4 text-left text-xl font-bold text-red-600 transition-colors duration-200 hover:bg-red-50"
+                      >
+                        SIGN OUT
+                      </button>
+                    )}
+                  </MobileMenuReveal>
                 </div>
               </div>
             </div>
@@ -483,12 +557,9 @@ const Header = () => {
         </div>
       )}
 
-      {/* Cart modal */}
       {showCart && (
         <Cart onClose={() => setShowCart(false)} />
       )}
-
-      {/* Search modal */}
     </header>
   );
 };

@@ -1,49 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDB } from '../../../lib/mongodb';
-import { Order } from '../../../models/Order';
-import { Product } from '../../../models/Product';
+import { deleteOrdersByIds } from '@/app/lib/supabase/orders';
+import { incrementProductStock } from '@/app/lib/supabase/products';
 
 export async function POST(request: NextRequest) {
   try {
-    await connectToDB();
     const body = await request.json();
     const { orderIds } = body;
 
     if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      return NextResponse.json(
-        { error: 'Order IDs array is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Order IDs array is required' }, { status: 400 });
     }
 
-    // Find all orders to get their items for stock restoration
-    const orders = await Order.find({ _id: { $in: orderIds } });
-    
+    const orders = await deleteOrdersByIds(orderIds);
     if (orders.length === 0) {
-      return NextResponse.json(
-        { error: 'No orders found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'No orders found' }, { status: 404 });
     }
 
-    // Restore stock for all ordered products
     for (const order of orders) {
-      for (const item of order.items) {
-        await Product.findByIdAndUpdate(
-          item.id,
-          { $inc: { stock: item.quantity } },
-          { new: true }
-        );
+      for (const item of order.items as { id: string; quantity: number }[]) {
+        await incrementProductStock(item.id, item.quantity);
       }
     }
 
-    // Delete all orders
-    const deleteResult = await Order.deleteMany({ _id: { $in: orderIds } });
-
     return NextResponse.json(
-      { 
-        message: `${deleteResult.deletedCount} orders deleted successfully`,
-        deletedCount: deleteResult.deletedCount
+      {
+        message: `${orders.length} orders deleted successfully`,
+        deletedCount: orders.length,
       },
       { status: 200 }
     );
@@ -54,4 +36,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

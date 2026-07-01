@@ -15,16 +15,19 @@ interface Slide {
   link: string;
 }
 
+interface CollectionOption {
+  _id: string;
+  name: string;
+}
+
 export default function SliderAdmin() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [brands, setBrands] = useState<string[]>([]);
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState<number | null>(null);
-  const [showBrandDropdown, setShowBrandDropdown] = useState<number | null>(null);
+  const [collections, setCollections] = useState<CollectionOption[]>([]);
+  const [showCollectionDropdown, setShowCollectionDropdown] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [lastCompression, setLastCompression] = useState<CompressionStats | null>(null);
 
@@ -57,32 +60,24 @@ export default function SliderAdmin() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    // Fetch collections for the dropdown
     const fetchCollections = async () => {
       try {
-        await fetch('/api/collections');
-        // const data = await res.json(); // Remove this line since data is unused
-        // setCollections(data.map((c: { _id: string; name: string }) => ({ _id: c._id, name: c.name }))); // still commented out
+        const res = await fetch('/api/collections');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setCollections(
+            data.map((c: { _id: string; name: string }) => ({
+              _id: c._id,
+              name: c.name,
+            }))
+          );
+        }
       } catch {
         // ignore error
       }
     };
     fetchCollections();
-
-    // Fetch products to extract unique categories and brands
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        const uniqueCategories = Array.from(new Set(data.map((p: { category: string }) => p.category).filter((c: string): c is string => typeof c === 'string' && !!c))) as string[];
-        const uniqueBrands = Array.from(new Set(data.map((p: { brand: string }) => p.brand).filter((b: string): b is string => typeof b === 'string' && !!b))) as string[];
-        setCategories(uniqueCategories);
-        setBrands(uniqueBrands);
-      } catch {
-        // ignore error
-      }
-    };
-    fetchProducts();
   }, []);
 
   // Show loading if not authenticated
@@ -341,106 +336,43 @@ export default function SliderAdmin() {
                             value={slide.link}
                             onChange={isEditing ? (e) => updateSlide(index, 'link', e.target.value) : undefined}
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:outline-none disabled:bg-gray-100 text-lg"
-                            placeholder="e.g. /blog, /shop, or leave empty"
+                            placeholder="Zgjidhni një koleksion ose lini bosh"
                             disabled={!isEditing}
                           />
-                          <div className="mt-3 flex gap-2">
+                          <div className="mt-3">
                             <button
                               type="button"
-                              className={`px-4 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-200 hover:bg-gray-200 transition-colors text-sm font-medium ${showCategoryDropdown === index ? 'ring-2 ring-gray-300' : ''}`}
+                              className={`px-4 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-200 hover:bg-gray-200 transition-colors text-sm font-medium ${showCollectionDropdown === index ? 'ring-2 ring-gray-300' : ''}`}
                               onClick={isEditing ? () => {
-                                setShowCategoryDropdown(showCategoryDropdown === index ? null : index);
-                                setShowBrandDropdown(null);
+                                setShowCollectionDropdown(showCollectionDropdown === index ? null : index);
                               } : undefined}
                               disabled={!isEditing}
                             >
-                              Category
-                            </button>
-                            <button
-                              type="button"
-                              className={`px-4 py-2 bg-gray-100 text-gray-800 rounded-md border border-gray-200 hover:bg-gray-200 transition-colors text-sm font-medium ${showBrandDropdown === index ? 'ring-2 ring-gray-300' : ''}`}
-                              onClick={isEditing ? () => {
-                                setShowBrandDropdown(showBrandDropdown === index ? null : index);
-                                setShowCategoryDropdown(null);
-                              } : undefined}
-                              disabled={!isEditing}
-                            >
-                              Brand
+                              Zgjidh Koleksion
                             </button>
                           </div>
                           <div className="relative z-20">
-                            {showCategoryDropdown === index && (
-                              <div className="absolute left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow max-h-56 overflow-y-auto divide-y divide-gray-100">
-                                <button
-                                  type="button"
-                                  className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
-                                  onClick={() => {
-                                    updateSlide(index, 'link', '/shop/new-arrivals');
-                                    setShowCategoryDropdown(null);
-                                  }}
-                                >
-                                  New Arrivals
-                                </button>
-                                <button
-                                  type="button"
-                                  className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
-                                  onClick={() => {
-                                    updateSlide(index, 'link', '/collections/685ffbb0bf9f854bf7948a02');
-                                    setShowCategoryDropdown(null);
-                                  }}
-                                >
-                                  Ndriqim i Brendshem
-                                </button>
-                                <button
-                                  type="button"
-                                  className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
-                                  onClick={() => {
-                                    updateSlide(index, 'link', '/collections/685ffbb0bf9f854bf7948a02');
-                                    setShowCategoryDropdown(null);
-                                  }}
-                                >
-                                  Ndriqim i Jashtem
-                                </button>
-                                <button
-                                  type="button"
-                                  className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
-                                  onClick={() => {
-                                    updateSlide(index, 'link', '/collections/materiale-elektrike');
-                                    setShowCategoryDropdown(null);
-                                  }}
-                                >
-                                  Materiale Elektrike
-                                </button>
-                                {categories.map((cat) => (
-                                  <button
-                                    key={cat}
-                                    type="button"
-                                    className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-800 text-base"
-                                    onClick={() => {
-                                      updateSlide(index, 'link', `/collections/category/${encodeURIComponent(cat)}`);
-                                      setShowCategoryDropdown(null);
-                                    }}
-                                  >
-                                    {cat}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                            {showBrandDropdown === index && brands.length > 0 && (
-                              <div className="absolute left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow max-h-56 overflow-y-auto divide-y divide-gray-100">
-                                {brands.map((brand) => (
-                                  <button
-                                    key={brand}
-                                    type="button"
-                                    className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
-                                    onClick={() => {
-                                      updateSlide(index, 'link', `/shop/brand/${encodeURIComponent(brand)}`);
-                                      setShowBrandDropdown(null);
-                                    }}
-                                  >
-                                    {brand}
-                                  </button>
-                                ))}
+                            {showCollectionDropdown === index && (
+                              <div className="absolute left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow max-h-56 overflow-y-auto divide-y divide-gray-100">
+                                {collections.length === 0 ? (
+                                  <p className="px-5 py-3 text-gray-500 text-sm">
+                                    Nuk ka koleksione. Shtoni nga Menaxho Koleksionet.
+                                  </p>
+                                ) : (
+                                  collections.map((collection) => (
+                                    <button
+                                      key={collection._id}
+                                      type="button"
+                                      className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
+                                      onClick={() => {
+                                        updateSlide(index, 'link', `/collections/${collection._id}`);
+                                        setShowCollectionDropdown(null);
+                                      }}
+                                    >
+                                      {collection.name}
+                                    </button>
+                                  ))
+                                )}
                               </div>
                             )}
                           </div>

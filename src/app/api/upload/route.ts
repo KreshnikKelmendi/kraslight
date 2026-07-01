@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { uploadImageDetailed } from '@/app/lib/cloudinary';
+import { uploadImageDetailed } from '@/app/lib/upload-image';
 import {
-  folderToCloudinaryPath,
   folderToPreset,
   MAX_IMAGE_UPLOAD_BYTES,
 } from '@/app/lib/images';
@@ -33,12 +32,7 @@ export async function POST(request: Request) {
     }
 
     const preset = folderToPreset(folder);
-    const cloudinaryFolder = folderToCloudinaryPath(folder);
-    const upload = await uploadImageDetailed(
-      file,
-      cloudinaryFolder,
-      preset
-    );
+    const upload = await uploadImageDetailed(file, folder, preset);
 
     return NextResponse.json({
       path: upload.url,
@@ -46,6 +40,7 @@ export async function POST(request: Request) {
       publicId: upload.publicId,
       bytes: upload.bytes,
       compression: upload.compression,
+      provider: upload.provider,
     });
   } catch (error) {
     console.error('Error uploading file:', error);

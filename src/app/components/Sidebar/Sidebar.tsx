@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../lib/AuthContext';
-import { FiShoppingBag, FiList, FiHome, FiLogOut, FiImage, FiClipboard, FiMail } from 'react-icons/fi';
+import { FiList, FiHome, FiLogOut, FiImage, FiClipboard, FiMail, FiBookOpen } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 
 const Sidebar = () => {
@@ -54,14 +54,6 @@ const Sidebar = () => {
           </Link>
 
           <Link
-            href="/admin/products/add"
-            className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200 group"
-          >
-            <FiShoppingBag className="w-5 h-5 group-hover:text-purple-400 transition-colors" />
-            <span className="font-medium">Shto Produkt</span>
-          </Link>
-          
-          <Link
             href="/admin/products/list"
             className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200 group"
           >
@@ -95,8 +87,16 @@ const Sidebar = () => {
 
         </nav>
 
-        {/* Sign Out Button */}
-        <div className="p-6 border-t border-slate-700">
+        {/* Udhëzime + Sign Out */}
+        <div className="p-6 border-t border-slate-700 space-y-2">
+          <Link
+            href="/admin/udhezime"
+            className="flex items-center space-x-3 px-4 py-3 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 hover:text-amber-200 rounded-xl transition-all duration-200 group border border-amber-500/30"
+          >
+            <FiBookOpen className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
+            <span className="font-semibold">Udhëzime</span>
+          </Link>
+
           <button
             onClick={handleSignOut}
             className="w-full text-sm text-white hover:text-red-400 flex items-center justify-center gap-2 py-3 px-4 rounded-xl hover:bg-slate-700 transition-all duration-200 font-medium"

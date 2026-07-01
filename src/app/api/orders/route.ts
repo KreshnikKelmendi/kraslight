@@ -1,51 +1,71 @@
 import { NextResponse } from 'next/server';
-import { connectToDB } from '../../lib/mongodb';
-import { Order } from '../../models/Order';
-import { Product } from '../../models/Product';
-import { sendOrderNotification, sendOrderConfirmationToCustomer } from '../../lib/email';
+import { sendOrderConfirmationToCustomer, sendOrderNotification } from '../../lib/email';
+import { hasTrackedStock } from '@/app/lib/images';
+import { createOrder, findOrders } from '@/app/lib/supabase/orders';
+import { findProductById, incrementProductStock } from '@/app/lib/supabase/products';
 
 export async function POST(req: Request) {
   try {
-    await connectToDB();
     const body = await req.json();
-    // Validate required fields
-    const requiredFields = ['email', 'firstName', 'lastName', 'phone', 'country', 'address', 'postalCode', 'items'];
+    const requiredFields = [
+      'email',
+      'firstName',
+      'lastName',
+      'phone',
+      'country',
+      'address',
+      'postalCode',
+      'items',
+    ];
     for (const field of requiredFields) {
-      if (!body[field] || (field === 'items' && (!Array.isArray(body.items) || body.items.length === 0))) {
-        return NextResponse.json({ error: `Fusha '${field}' është e detyrueshme.` }, { status: 400 });
+      if (
+        !body[field] ||
+        (field === 'items' && (!Array.isArray(body.items) || body.items.length === 0))
+      ) {
+        return NextResponse.json(
+          { error: `Fusha '${field}' është e detyrueshme.` },
+          { status: 400 }
+        );
       }
     }
 
-    // Validate stock availability and fetch product barcodes
     const itemsWithBarcodes = [];
     for (const item of body.items) {
-      const product = await Product.findById(item.id);
+      const product = await findProductById(item.id);
       if (!product) {
-        return NextResponse.json({ error: `Produkti me ID '${item.id}' nuk u gjet.` }, { status: 400 });
+        return NextResponse.json(
+          { error: `Produkti me ID '${item.id}' nuk u gjet.` },
+          { status: 400 }
+        );
       }
-      if (product.stock < item.quantity) {
-        return NextResponse.json({ 
-          error: `Stoku i pamjaftueshëm për produktin '${product.title}'. Në stok: ${product.stock}, Kërkuar: ${item.quantity}` 
-        }, { status: 400 });
+      if (hasTrackedStock(product.stock) && product.stock! < item.quantity) {
+        return NextResponse.json(
+          {
+            error: `Stoku i pamjaftueshëm për produktin '${product.title}'. Në stok: ${product.stock}, Kërkuar: ${item.quantity}`,
+          },
+          { status: 400 }
+        );
       }
-      
-      // Add barcode to the item
+
       itemsWithBarcodes.push({
         ...item,
-        barcode: product.barcode || ''
+        barcode: product.barcode || '',
       });
     }
 
-    // Calculate shipping
     let shipping = 0;
     if (['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(body.country)) {
       shipping = 10;
     }
-    // Calculate total with shipping
-    const itemsTotal = itemsWithBarcodes.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
+
+    const itemsTotal = itemsWithBarcodes.reduce(
+      (sum: number, item: { price: number; quantity: number }) =>
+        sum + item.price * item.quantity,
+      0
+    );
     const total = itemsTotal + shipping;
-    
-    const order = await Order.create({
+
+    const order = await createOrder({
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -60,62 +80,43 @@ export async function POST(req: Request) {
       total,
       status: 'pending',
     });
-    
-    // Decrement stock for each ordered product
+
     for (const item of body.items) {
-      await Product.findByIdAndUpdate(
-        item.id,
-        { $inc: { stock: -item.quantity } },
-        { new: true }
-      );
+      await incrementProductStock(item.id, -item.quantity);
     }
-    
-    console.log('Order created successfully:', order._id);
-    
-    // Send admin notification email (do not block order creation if email fails)
+
     try {
-      console.log('=== SENDING ADMIN NOTIFICATION EMAIL ===');
-      console.log('Attempting to send admin notification email...');
       await sendOrderNotification(order);
-      console.log('✅ Admin notification email sent successfully');
     } catch (emailError) {
-      console.error('❌ Failed to send admin notification email:', emailError);
-      console.error('Email error details:', {
-        message: emailError instanceof Error ? emailError.message : 'Unknown error',
-        stack: emailError instanceof Error ? emailError.stack : undefined
-      });
+      console.error('Failed to send admin notification email:', emailError);
     }
 
-    // Small delay to separate the emails
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Send customer confirmation email (do not block order creation if email fails)
     try {
-      console.log('=== SENDING CUSTOMER CONFIRMATION EMAIL ===');
-      console.log('Attempting to send customer confirmation email to:', order.email);
       await sendOrderConfirmationToCustomer(order);
-      console.log('✅ Customer confirmation email sent successfully');
     } catch (emailError) {
-      console.error('❌ Failed to send customer confirmation email:', emailError);
-      console.error('Email error details:', {
-        message: emailError instanceof Error ? emailError.message : 'Unknown error',
-        stack: emailError instanceof Error ? emailError.stack : undefined
-      });
+      console.error('Failed to send customer confirmation email:', emailError);
     }
-    
+
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error('Error creating order:', error);
-    return NextResponse.json({ error: 'Failed to create order', details: (error as Error)?.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create order', details: (error as Error)?.message },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET() {
   try {
-    await connectToDB();
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await findOrders();
     return NextResponse.json(orders);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch orders', details: (error as Error)?.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch orders', details: (error as Error)?.message },
+      { status: 500 }
+    );
   }
-} 
+}

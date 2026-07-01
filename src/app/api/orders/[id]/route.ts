@@ -1,24 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDB } from '../../../lib/mongodb';
-import { Order } from '../../../models/Order';
-import { Product } from '../../../models/Product';
 import { sendOrderStatusUpdateEmail } from '../../../lib/email';
+import {
+  deleteOrderById,
+  findOrderById,
+  updateOrderStatus,
+} from '@/app/lib/supabase/orders';
+import { incrementProductStock } from '@/app/lib/supabase/products';
 
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDB();
     const body = await request.json();
     const { status } = body;
     const { id } = await context.params;
 
     if (!status) {
-      return NextResponse.json(
-        { error: 'Status is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Status is required' }, { status: 400 });
     }
 
     if (!['pending', 'delivered'].includes(status)) {
@@ -28,55 +27,22 @@ export async function PUT(
       );
     }
 
-    // Find the order first to get the old status
-    const existingOrder = await Order.findById(id);
+    const existingOrder = await findOrderById(id);
     if (!existingOrder) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     const oldStatus = existingOrder.status;
-
-    // Update the order status
-    const updatedOrder = await Order.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
-
+    const updatedOrder = await updateOrderStatus(id, status);
     if (!updatedOrder) {
-      return NextResponse.json(
-        { error: 'Failed to update order' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
     }
 
-    // Send status update email to customer if status changed
     if (oldStatus !== status) {
       try {
-        console.log(`Order status changed from ${oldStatus} to ${status}`);
-        console.log('Sending status update email to customer:', updatedOrder.email);
-        console.log('Email configuration check:', {
-          EMAIL_USER: process.env.EMAIL_USER,
-          customerEmail: updatedOrder.email,
-          orderId: updatedOrder._id
-        });
-        console.log('Full order details for status update:', {
-          _id: updatedOrder._id,
-          email: updatedOrder.email,
-          firstName: updatedOrder.firstName,
-          lastName: updatedOrder.lastName,
-          oldStatus,
-          newStatus: status
-        });
-        
         await sendOrderStatusUpdateEmail(updatedOrder, oldStatus, status);
-        console.log('Status update email sent successfully');
       } catch (emailError) {
         console.error('Failed to send status update email:', emailError);
-        // Don't fail the request if email fails
       }
     }
 
@@ -95,15 +61,11 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDB();
     const { id } = await context.params;
-    const order = await Order.findById(id);
-    
+    const order = await findOrderById(id);
+
     if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json(order);
@@ -114,41 +76,25 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDB();
     const { id } = await context.params;
+    const order = await deleteOrderById(id);
 
-    // Find the order first to get the items for stock restoration
-    const order = await Order.findById(id);
     if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Restore stock for each ordered product
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(
-        item.id,
-        { $inc: { stock: item.quantity } },
-        { new: true }
-      );
+    for (const item of order.items as { id: string; quantity: number }[]) {
+      await incrementProductStock(item.id, item.quantity);
     }
 
-    // Delete the order
-    await Order.findByIdAndDelete(id);
-
-    return NextResponse.json(
-      { message: 'Order deleted successfully' },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Order deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error('Error deleting order:', error);
     return NextResponse.json(
@@ -156,4 +102,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-} 
+}

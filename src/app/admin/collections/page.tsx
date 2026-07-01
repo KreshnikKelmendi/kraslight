@@ -166,7 +166,7 @@ export default function CollectionsAdminPage() {
           name,
           description,
           image: imageUrl,
-          categories: selectedCategories,
+          categories: [...new Set([...selectedCategories, ...(name.trim() ? [name.trim()] : [])])],
         }),
       });
 
@@ -271,7 +271,7 @@ export default function CollectionsAdminPage() {
           name: editName,
           description: editDescription,
           image: imageUrl,
-          categories: editSelectedCategories,
+          categories: [...new Set([...editSelectedCategories, ...(editName.trim() ? [editName.trim()] : [])])],
         }),
       });
 

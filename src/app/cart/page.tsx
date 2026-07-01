@@ -7,17 +7,15 @@ import { removeFromCart, updateQuantity, clearCart } from '../../lib/cartSlice';
 import { FaTrash, FaArrowRight } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { displayMoney, formatEuroPrice, hasDisplayPrice, hasTrackedStock, sumPricedCartItems } from '@/app/lib/images';
 
 export default function CartPage() {
   const cart = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
   const router = useRouter();
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  let shipping = 0;
-  if (["Shqipëri", "Maqedoni e Veriut", "Mali i Zi"].includes('Kosovë')) {
-    shipping = 10;
-  }
-  const totalWithShipping = total + shipping;
+  const itemsTotal = sumPricedCartItems(cart);
+  const shipping = 0;
+  const totalWithShipping = itemsTotal + shipping;
 
   return (
     <div className="min-h-screen w-full bg-gray-100 py-10 px-4 lg:px-10 flex justify-center">
@@ -38,7 +36,7 @@ export default function CartPage() {
               <p className="text-xl text-gray-700 font-semibold mb-2">Shporta juaj është bosh</p>
               <p className="text-gray-500 mb-6">Shto produkte për të vazhduar me porosinë.</p>
               <button
-                onClick={() => router.push('/shop/new-arrivals')}
+                onClick={() => router.push('/')}
                 className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white px-8 py-3 rounded-lg font-semibold shadow hover:from-[#0a9945]/90 hover:to-gray-800/90 transition-all cursor-pointer"
               >
                 Shfleto produktet
@@ -78,23 +76,28 @@ export default function CartPage() {
                           <button
                             onClick={() => dispatch(updateQuantity({ id: item.id, quantity: item.quantity + 1 }))}
                             className="px-2 py-1 text-gray-600 border border-gray-200 rounded hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
-                            disabled={item.stock !== undefined && item.quantity >= item.stock}
+                            disabled={hasTrackedStock(item.stock) && item.quantity >= (item.stock ?? 0)}
                           >+
                           </button>
-                          <span className="text-xs text-gray-500 ml-2">{item.stock !== undefined ? `${item.stock} në stok` : ''}</span>
+                          <span className="text-xs text-gray-500 ml-2">
+                            {hasTrackedStock(item.stock) ? `${item.stock} në stok` : ''}
+                          </span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2 min-w-[120px]">
-                        {item.discountPercentage && item.discountPercentage > 0 ? (
+                        {hasDisplayPrice(item.price) && (
                           <>
-                            <span className="text-xs line-through text-gray-400">€{item.originalPrice?.toFixed(2)}</span>
-                            <span className="font-bold text-lg text-red-600">€{item.price.toFixed(2)}</span>
-                            <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 font-bold rounded">-{item.discountPercentage}%</span>
+                            {item.discountPercentage && item.discountPercentage > 0 && hasDisplayPrice(item.originalPrice) ? (
+                              <>
+                                <span className="text-xs line-through text-gray-400">{formatEuroPrice(item.originalPrice)}</span>
+                                <span className="font-bold text-lg text-gray-900">{formatEuroPrice(item.price)}</span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-lg text-gray-900">{formatEuroPrice(item.price)}</span>
+                            )}
+                            <span className="text-xs text-gray-500">{displayMoney(item.price! * item.quantity)} total</span>
                           </>
-                        ) : (
-                          <span className="font-bold text-lg text-gray-900">€{item.price.toFixed(2)}</span>
                         )}
-                        <span className="text-xs text-gray-500">€{(item.price * item.quantity).toFixed(2)} total</span>
                         <button
                           onClick={() => dispatch(removeFromCart(item.id))}
                           className="mt-2 text-red-500 hover:text-red-700 flex items-center gap-1 text-xs font-semibold cursor-pointer"
@@ -123,18 +126,22 @@ export default function CartPage() {
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center lg:text-left">Përmbledhje</h2>
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 font-medium text-base">Nëntotali:</span>
-                  <span className="font-bold text-gray-900 text-base">€{total.toFixed(2)}</span>
-                </div>
+                {itemsTotal > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 font-medium text-base">Nëntotali:</span>
+                    <span className="font-bold text-gray-900 text-base">{displayMoney(itemsTotal)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 font-medium text-base">Transporti:</span>
-                  <span className="font-bold text-gray-900 text-base">{shipping === 0 ? 'Falas' : `€${shipping}`}</span>
+                  <span className="font-bold text-gray-900 text-base">Falas</span>
                 </div>
-                <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-                  <span className="font-bold text-lg text-gray-900">Totali:</span>
-                  <span className="text-2xl font-extrabold bg-gradient-to-r from-[#0a9945] to-gray-800 bg-clip-text text-transparent">€{totalWithShipping.toFixed(2)}</span>
-                </div>
+                {totalWithShipping > 0 && (
+                  <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
+                    <span className="font-bold text-lg text-gray-900">Totali:</span>
+                    <span className="text-2xl font-extrabold text-gray-900">{displayMoney(totalWithShipping)}</span>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => router.push('/checkout')}

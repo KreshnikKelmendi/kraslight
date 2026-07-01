@@ -1,4 +1,10 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
+
+// Local Windows DNS often refuses SRV lookups that mongodb+srv:// requires.
+if (process.env.NODE_ENV === 'development') {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+}
 
 function getMongoUri(): string {
   const uri = process.env.MONGODB_URI?.trim();

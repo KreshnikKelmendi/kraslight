@@ -6,6 +6,7 @@ import { HiOutlineDocumentArrowDown, HiOutlineMagnifyingGlass, HiOutlineFunnel, 
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
+import { formatEuroPrice, hasDisplayPrice } from '@/app/lib/images';
 
 interface OrderItem {
   id: string;
@@ -84,8 +85,25 @@ const calculateShipping = (country: string): number => {
 
 // Calculate items total
 const calculateItemsTotal = (items: OrderItem[]): number => {
-  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return items.reduce((sum, item) => {
+    if (!hasDisplayPrice(item.price)) return sum;
+    return sum + item.price * item.quantity;
+  }, 0);
 };
+
+function displayItemUnitPrice(price?: number): string {
+  return formatEuroPrice(price) ?? '—';
+}
+
+function displayItemLineTotal(item: OrderItem): string {
+  if (!hasDisplayPrice(item.price)) return '—';
+  return formatEuroPrice(item.price * item.quantity) ?? '—';
+}
+
+function displayOrderMoney(amount: number): string {
+  if (!hasDisplayPrice(amount)) return '—';
+  return `€${amount.toFixed(2)}`;
+}
 
 // Helper to map Albanian country names to ISO country codes
 const countryToCode: Record<string, string> = {
@@ -188,15 +206,15 @@ const InvoicePDFDocument: React.FC<InvoicePDFDocumentProps> = ({ order }) => (
           <Text style={pdfStyles.tableCell}>{idx + 1}</Text>
           <Text style={pdfStyles.tableCell}>{item.name}</Text>
           <Text style={pdfStyles.tableCell}>{item.quantity}</Text>
-          <Text style={pdfStyles.tableCell}>€{item.price.toFixed(2)}</Text>
-          <Text style={pdfStyles.tableCell}>€{(item.price * item.quantity).toFixed(2)}</Text>
+          <Text style={pdfStyles.tableCell}>{displayItemUnitPrice(item.price)}</Text>
+          <Text style={pdfStyles.tableCell}>{displayItemLineTotal(item)}</Text>
         </View>
       ))}
       
       <View style={pdfStyles.summaryBox}>
-        <Text style={pdfStyles.summaryText}>Nëntotali: €{calculateItemsTotal(order.items).toFixed(2)}</Text>
-        <Text style={pdfStyles.summaryText}>Transporti: {calculateShipping(order.country) === 0 ? 'Falas' : `€${calculateShipping(order.country).toFixed(2)}`}</Text>
-        <Text style={pdfStyles.total}>Totali: €{order.total.toFixed(2)}</Text>
+        <Text style={pdfStyles.summaryText}>Nëntotali: {displayOrderMoney(calculateItemsTotal(order.items))}</Text>
+        <Text style={pdfStyles.summaryText}>Transporti: {calculateShipping(order.country) === 0 ? 'Falas' : displayOrderMoney(calculateShipping(order.country))}</Text>
+        <Text style={pdfStyles.total}>Totali: {displayOrderMoney(order.total)}</Text>
       </View>
       
       <Text style={pdfStyles.payment}>Mënyra e Pagesës: {paymentMethodLabels[order.paymentMethod] || order.paymentMethod}</Text>
@@ -1032,7 +1050,7 @@ export default function OrdersPage() {
                         <span>•</span>
                         <span>Produkte: {order.items.length}</span>
                         <span>•</span>
-                        <span className='font-bold text-black'>Totali: <span className="font-bold text-slate-900 bg-gray-200 p-1">{order.total.toFixed(2)} €</span></span>
+                        <span className='font-bold text-black'>Totali: <span className="font-bold text-slate-900 bg-gray-200 p-1">{displayOrderMoney(order.total)}</span></span>
                       </div>
                       {/* Product Images Preview */}
                       <div className="flex flex-col gap-2 mt-1">
@@ -1051,7 +1069,11 @@ export default function OrdersPage() {
                                 {item.brand && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[10px]">{item.brand}</span>}
                                 {item.size && <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">{item.size}</span>}
                                 <span className="text-slate-500 text-[10px]">x{item.quantity}</span>
-                                <span className="text-emerald-700 font-bold text-xs ml-2">{item.price.toFixed(2)} €</span>
+                                {displayItemUnitPrice(item.price) !== '—' && (
+                                  <span className="text-neutral-800 font-medium text-xs ml-2">
+                                    {displayItemUnitPrice(item.price)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1392,8 +1414,8 @@ export default function OrdersPage() {
                             {item.category && <div style={{ color: '#888', fontSize: 11 }}>Kategoria: {item.category}</div>}
                           </td>
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>{item.quantity}</td>
-                          <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'right' }}>€{item.price.toFixed(2)}</td>
-                          <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'right' }}>€{(item.price * item.quantity).toFixed(2)}</td>
+                          <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'right' }}>{displayItemUnitPrice(item.price)}</td>
+                          <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'right' }}>{displayItemLineTotal(item)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1406,15 +1428,15 @@ export default function OrdersPage() {
                       <tbody>
                         <tr>
                           <td style={{ padding: 6, color: '#666' }}>Nëntotali:</td>
-                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 600 }}>€{calculateItemsTotal(selectedOrder.items).toFixed(2)}</td>
+                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 600 }}>{displayOrderMoney(calculateItemsTotal(selectedOrder.items))}</td>
                         </tr>
                         <tr>
                           <td style={{ padding: 6, color: '#666' }}>Transporti:</td>
-                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 600 }}>{calculateShipping(selectedOrder.country) === 0 ? 'Falas' : `€${calculateShipping(selectedOrder.country).toFixed(2)}`}</td>
+                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 600 }}>{calculateShipping(selectedOrder.country) === 0 ? 'Falas' : displayOrderMoney(calculateShipping(selectedOrder.country))}</td>
                         </tr>
                         <tr style={{ borderTop: '2px solid #cccccc' }}>
                           <td style={{ padding: 6, color: '#444', fontWeight: 700, fontSize: 17 }}>Totali:</td>
-                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 700, fontSize: 17 }}>€{selectedOrder.total.toFixed(2)}</td>
+                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 700, fontSize: 17 }}>{displayOrderMoney(selectedOrder.total)}</td>
                         </tr>
                       </tbody>
                     </table>

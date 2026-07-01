@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDB } from '@/app/lib/mongodb';
-import { Product } from '@/app/models/Product';
-import { uploadImageDetailed } from '@/app/lib/cloudinary';
+import { createProduct } from '@/app/lib/supabase/products';
+import { uploadImageDetailed } from '@/app/lib/upload-image';
 import type { CompressionStats } from '@/app/lib/images';
 
 export async function POST(req: NextRequest) {
   try {
-    await connectToDB();
     const formData = await req.formData();
     
     // Get form data
     const title = formData.get('title') as string;
     const priceStr = formData.get('price') as string;
-    const price = priceStr ? parseFloat(priceStr) : undefined;
-    const stock = parseInt(formData.get('stock') as string);
+    const price = priceStr?.trim() ? parseFloat(priceStr) : undefined;
+    const stockStr = (formData.get('stock') as string)?.trim();
+    const stock = stockStr ? parseInt(stockStr, 10) : null;
     const brand = formData.get('brand') as string;
     const sizes = (formData.get('sizes') as string) || '';
     const gender = (formData.get('gender') as string) || 'Të Gjitha';
@@ -35,14 +34,13 @@ export async function POST(req: NextRequest) {
     console.log('Files count:', files?.length);
 
     // Validate required fields
-    if (!title || isNaN(stock) || !files.length) {
+    if (!title || !files.length) {
       console.log('Validation failed:', {
         title: !title,
-        stock: isNaN(stock),
         files: !files.length
       });
       return NextResponse.json(
-        { error: 'Missing or invalid fields. Please check title, stock, and images.' }, 
+        { error: 'Missing or invalid fields. Please check title and images.' }, 
         { status: 400 }
       );
     }
@@ -61,22 +59,23 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        const uploaded = await uploadImageDetailed(
-          file,
-          'kraslight/products',
-          'product'
-        );
+        const uploaded = await uploadImageDetailed(file, 'products', 'product');
         imageUrls.push(uploaded.url);
         compression.push(uploaded.compression);
 
         console.log(
-          `✅ File ${i + 1}: ${file.name} ${uploaded.compression.originalBytes} → ${uploaded.compression.compressedBytes} bytes`
+          `✅ File ${i + 1}: ${file.name} → ${uploaded.provider} (${uploaded.url})`
         );
       }
     } catch (fileError) {
-      console.error('Cloudinary upload error:', fileError);
+      console.error('Image upload error:', fileError);
       return NextResponse.json(
-        { error: 'Image upload failed. Please try again.' }, 
+        {
+          error:
+            fileError instanceof Error
+              ? fileError.message
+              : 'Image upload failed. Please try again.',
+        },
         { status: 500 }
       );
     }
@@ -92,16 +91,11 @@ export async function POST(req: NextRequest) {
           );
         }
         
-        // Upload brand logo to Cloudinary
-        const logoUpload = await uploadImageDetailed(
-          brandLogoFile,
-          'kraslight/brands',
-          'brand'
-        );
+        const logoUpload = await uploadImageDetailed(brandLogoFile, 'brands', 'brand');
         brandLogoUrl = logoUpload.url;
         compression.push(logoUpload.compression);
 
-        console.log(`✅ Brand logo: ${brandLogoFile.name} -> ${brandLogoUrl}`);
+        console.log(`✅ Brand logo: ${brandLogoFile.name} → ${logoUpload.provider}`);
       } catch (logoError) {
         console.error('Brand logo upload error:', logoError);
         // Continue without brand logo
@@ -111,8 +105,8 @@ export async function POST(req: NextRequest) {
     // Create product data
     const productData = {
       title: title.trim(),
-      price,
-      stock,
+      ...(price != null && !Number.isNaN(price) ? { price } : {}),
+      stock: stock != null && !Number.isNaN(stock) ? stock : undefined,
       brand: brand || 'Të tjera',
       sizes: sizes || '',
       gender: gender || 'Të Gjitha',
@@ -139,7 +133,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Create the product in database
-    const newProduct = await Product.create(productData);
+    const newProduct = await createProduct(productData);
 
     console.log('✅ Product created successfully with ID:', newProduct._id);
 
@@ -156,41 +150,53 @@ export async function POST(req: NextRequest) {
         category: newProduct.category,
         isNewArrival: newProduct.isNewArrival,
         images: newProduct.images,
-        createdAt: newProduct.createdAt
-      }
+        createdAt: newProduct.createdAt,
+      },
     });
     
   } catch (err) {
     console.error('❌ Error in product creation:', err);
-    
-    // Provide specific error messages
+
+    const pgError = err as { code?: string; message?: string };
+    const rawMessage =
+      err instanceof Error ? err.message : pgError.message ?? 'Unknown error';
+
     let errorMessage = 'Product creation failed';
     let statusCode = 500;
-    
-    if (err instanceof Error) {
-      if (err.message.includes('validation failed')) {
-        errorMessage = 'Invalid product data. Please check all required fields.';
-        statusCode = 400;
-      } else if (err.message.includes('duplicate key')) {
-        errorMessage = 'A product with this title already exists. Please use a different title.';
-        statusCode = 409;
-      } else if (err.message.includes('MongoDB')) {
-        errorMessage = 'Database connection error. Please try again.';
-        statusCode = 503;
-      } else if (err.message.includes('Cloudinary')) {
-        errorMessage = 'Image upload service error. Please try again.';
-        statusCode = 503;
-      } else {
-        errorMessage = err.message;
-      }
+
+    if (
+      pgError.code === '23502' &&
+      rawMessage.includes('stock')
+    ) {
+      errorMessage =
+        'Stoku bosh kërkon një përditësim të databazës. Ekzekutoni supabase/migrations/allow-null-stock.sql në Supabase SQL Editor, pastaj provoni përsëri.';
+      statusCode = 400;
+    } else if (rawMessage.includes('null value in column "stock"')) {
+      errorMessage =
+        'Stoku bosh kërkon një përditësim të databazës. Ekzekutoni supabase/migrations/allow-null-stock.sql në Supabase SQL Editor, pastaj provoni përsëri.';
+      statusCode = 400;
+    } else if (rawMessage.includes('validation failed')) {
+      errorMessage = 'Invalid product data. Please check all required fields.';
+      statusCode = 400;
+    } else if (rawMessage.includes('duplicate key')) {
+      errorMessage = 'A product with this title already exists. Please use a different title.';
+      statusCode = 409;
+    } else if (rawMessage.includes('MongoDB')) {
+      errorMessage = 'Database connection error. Please try again.';
+      statusCode = 503;
+    } else if (rawMessage.includes('Cloudinary')) {
+      errorMessage = 'Image upload service error. Please try again.';
+      statusCode = 503;
+    } else {
+      errorMessage = rawMessage;
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: errorMessage, 
-        details: err instanceof Error ? err.message : 'Unknown error' 
-      }, 
+        error: errorMessage,
+        details: rawMessage,
+      },
       { status: statusCode }
     );
   }

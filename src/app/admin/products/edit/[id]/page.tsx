@@ -7,6 +7,10 @@ import axios from 'axios';
 import { FaUpload, FaSpinner, FaTrash, FaImage, FaPlus, FaMinus } from 'react-icons/fa';
 import Image from 'next/image';
 import { useAuth } from '../../../../lib/AuthContext';
+import CollectionSelect, {
+  categoryFromCollection,
+  type AdminCollection,
+} from '../../../../components/admin/CollectionSelect';
 import UploadCompressionInfo from '../../../../components/admin/UploadCompressionInfo';
 import { formatFileSize, type CompressionStats } from '@/app/lib/images';
 
@@ -37,11 +41,10 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   const [discountPercentage, setDiscountPercentage] = useState('');
   const [stock, setStock] = useState('');
   const [brand, setBrand] = useState('');
+  const [collectionId, setCollectionId] = useState('');
   const [category, setCategory] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
   const [description, setDescription] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [isNewArrival, setIsNewArrival] = useState(false);
   const [characteristics, setCharacteristics] = useState<Array<{key: string, value: string}>>([{key: '', value: ''}]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -71,29 +74,29 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           setTitle(productData.title);
           setPrice(productData.originalPrice?.toString() || productData.price?.toString() || '');
           setDiscountPercentage(productData.discountPercentage && productData.discountPercentage > 0 ? productData.discountPercentage.toString() : '');
-          setStock(productData.stock.toString());
+          setStock(productData.stock != null ? productData.stock.toString() : '');
           setBrand(productData.brand || '');
-          setCategory(
-            [
-              'Ndriçim i brendshëm',
-              'Ndriçim i jashtëm',
-              'Materiale ELEKTRIKE',
-            ].includes(productData.category)
-              ? productData.category
-              : 'Other'
-          );
-          setCustomCategory(
-            [
-              'Ndriçim i brendshëm',
-              'Ndriçim i jashtëm',
-              'Materiale ELEKTRIKE',
-            ].includes(productData.category)
-              ? ''
-              : productData.category || ''
-          );
+          setCategory(productData.category || '');
+
+          try {
+            const colRes = await fetch('/api/collections');
+            const cols = await colRes.json();
+            if (Array.isArray(cols)) {
+              const cat = productData.category || '';
+              const match = cols.find(
+                (c: AdminCollection) =>
+                  c.name === cat ||
+                  c.categories?.includes(cat) ||
+                  categoryFromCollection(c) === cat
+              );
+              if (match) setCollectionId(match._id);
+            }
+          } catch {
+            /* collections optional for display */
+          }
+
           setDescription(productData.description || '');
           setBarcode(productData.barcode || '');
-          setIsNewArrival(productData.isNewArrival || false);
           setCharacteristics(productData.characteristics && productData.characteristics.length > 0 ? productData.characteristics : [{key: '', value: ''}]);
           setProduct(productData);
           
@@ -166,10 +169,9 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     formData.append('discountPercentage', discountPercentage);
     formData.append('stock', stock);
     formData.append('brand', brand);
-    formData.append('category', category === 'Other' ? customCategory : category || 'Other');
+    formData.append('category', category || 'Other');
     formData.append('description', description);
     formData.append('barcode', barcode);
-    formData.append('isNewArrival', isNewArrival.toString());
     
     // Append characteristics
     const filteredCharacteristics = characteristics.filter(char => char.key.trim() !== '' && char.value.trim() !== '');
@@ -265,29 +267,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Kategoria e Produktit
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              >
-                <option value="">Zgjidh kategorinë</option>
-                <option value="Ndriçim i brendshëm">Ndriçim i brendshëm</option>
-                <option value="Ndriçim i jashtëm">Ndriçim i jashtëm</option>
-                <option value="Materiale ELEKTRIKE">Materiale ELEKTRIKE</option>
-                <option value="Other">Tjetër...</option>
-              </select>
-              {category === 'Other' && (
-                <input
-                  type="text"
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Shkruani kategorinë e produktit"
-                />
-              )}
+              <CollectionSelect
+                value={collectionId}
+                onChange={(id, cat) => {
+                  setCollectionId(id);
+                  setCategory(cat);
+                }}
+              />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -297,11 +283,10 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 type="number"
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
-                required
                 min="0"
                 step="1"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="0"
+                placeholder="Lëreni bosh"
               />
             </div>
           </div>
@@ -434,19 +419,6 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
             <p className="mt-3 text-sm text-gray-500">
               Shtoni karakteristikat e produktit të ndriçimit (p.sh. Ngjyra: E bardhë, Fuqia: 60W, etj.)
             </p>
-          </div>
-          {/* New Arrival Checkbox */}
-          <div className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              id="isNewArrival"
-              checked={isNewArrival}
-              onChange={(e) => setIsNewArrival(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <label htmlFor="isNewArrival" className="text-sm font-medium text-gray-700">
-              Produkt i Ri (New Arrival)
-            </label>
           </div>
           {/* Images Section */}
           <div>

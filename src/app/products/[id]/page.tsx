@@ -1,29 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { use } from 'react';
 import axios from 'axios';
-// import Image from 'next/image';
-import { FaShoppingCart, FaTruck, FaShieldAlt, FaUndo } from 'react-icons/fa';
-import ProductPageSkeleton from './ProductPageSkeleton';
+import { FaTruck, FaShieldAlt, FaUndo, FaInstagram, FaFacebookF } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
 import Image from 'next/image';
-import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
+import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice } from '@/app/lib/images';
+import ProductPageSkeleton from './ProductPageSkeleton';
 
 const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
 
 interface Product {
   _id: string;
   title: string;
-  price?: number; // Made optional
+  price?: number;
   originalPrice?: number;
   discountPercentage?: number;
   image?: string;
   images?: string[];
   mainImage?: string;
-  stock: number;
+  stock?: number;
   brand: string;
   sizes: string;
   gender: string;
@@ -31,54 +30,59 @@ interface Product {
   description?: string;
   barcode?: string;
   isNewArrival?: boolean;
-  characteristics?: Array<{key: string, value: string}>;
+  characteristics?: Array<{ key: string; value: string }>;
+}
+
+function formatTitle(title: string) {
+  return title
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<string>(DEFAULT_IMAGE);
-  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [mobileIndex, setMobileIndex] = useState(0);
+  const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [alert, setAlert] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<'success' | 'info'>('success');
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const dispatch = useDispatch();
   const cart = useSelector((state: RootState) => state.cart.items);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [id]);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`/api/products/${id}`);
         const productData = res.data;
-        console.log('Product data:', productData); // Debug log
-        console.log('Stock value:', productData.stock, 'Type:', typeof productData.stock); // Debug stock
-        
-        // Handle both old and new image formats
+
         const availableImages = [
           ...(productData.images || []),
-          ...(productData.image ? [productData.image] : [])
-        ].filter((img): img is string => Boolean(img) && (
-          img.startsWith('/') || 
-          img.startsWith('http://') || 
-          img.startsWith('https://')
-        ));
+          ...(productData.image ? [productData.image] : []),
+        ].filter(
+          (img): img is string =>
+            Boolean(img) &&
+            (img.startsWith('/') || img.startsWith('http://') || img.startsWith('https://'))
+        );
 
-        // Set the product with transformed image data
-        const transformedProduct = {
+        const uniqueImages = [...new Set(availableImages.length > 0 ? availableImages : [DEFAULT_IMAGE])];
+
+        setProduct({
           ...productData,
-          images: availableImages.length > 0 ? availableImages : [DEFAULT_IMAGE],
-          mainImage: productData.mainImage || availableImages[0] || DEFAULT_IMAGE
-        };
-        
-        setProduct(transformedProduct);
-        
-        // Set the initial selected image
-        const initialImage = transformedProduct.mainImage || availableImages[0] || DEFAULT_IMAGE;
-        setSelectedImage(initialImage);
+          images: uniqueImages,
+          mainImage: productData.mainImage || uniqueImages[0] || DEFAULT_IMAGE,
+        });
+        setMobileIndex(0);
       } catch {
-        console.error('Error fetching product');
         setProduct(null);
       } finally {
         setLoading(false);
@@ -88,427 +92,405 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     fetchProduct();
   }, [id]);
 
-  if (loading) {
-    return <ProductPageSkeleton />;
-  }
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = IMAGE_PLACEHOLDER;
+  }, []);
+
+  if (loading) return <ProductPageSkeleton />;
 
   if (!product) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-gray-50 border border-gray-200 text-gray-700 p-6 font-bwseidoround">
-          Produkti nuk u gjet
-        </div>
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="font-bwseidoround text-gray-600">Produkti nuk u gjet</p>
       </div>
     );
   }
 
-  // Debug logs
-  console.log('Product images:', product.images);
-  console.log('Selected image:', selectedImage);
-
-  // Handle sizes - check if product has sizes
   const hasSizes = product.sizes && product.sizes.trim() !== '';
-  const sizes = hasSizes ? product.sizes.split(',').map(size => size.trim()).filter(size => size !== '') : [];
-  
-  const discountPrice = product.price && product.originalPrice 
-    ? product.originalPrice * (1 - (product.discountPercentage || 0) / 100)
-    : product.price;
+  const sizes = hasSizes
+    ? product.sizes.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
 
-  // Ensure we have images array and selectedImage is always a string
-  const productImages = (product.images || [product.image].filter(Boolean) || [DEFAULT_IMAGE]) as string[];
-  const rawCurrentImage = selectedImage || product.mainImage || productImages[0] || DEFAULT_IMAGE;
-  const currentImage = optimizeImageUrl(rawCurrentImage, { width: 900, quality: 'auto:good' });
+  const discountPrice =
+    product.price && product.originalPrice
+      ? product.originalPrice * (1 - (product.discountPercentage || 0) / 100)
+      : product.price;
 
-  // Filter out the main image from thumbnails to avoid duplicate display
-  const thumbnailImages = productImages.filter(img => img !== currentImage);
+  const productImages = (product.images?.length
+    ? product.images
+    : [product.mainImage || product.image || DEFAULT_IMAGE].filter(Boolean)) as string[];
 
-  // Fallback handler for broken images
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = IMAGE_PLACEHOLDER;
+  const canAddToCart = !hasSizes || !!selectedSize;
+
+  const handleAddToCart = () => {
+    if (!canAddToCart) return;
+
+    const existingItem = cart.find((item) => item.id === product._id);
+    if (existingItem) {
+      setAlertType('info');
+      setAlert('Ky produkt është shtuar më herët në shportë.');
+      setTimeout(() => {
+        setAlert(null);
+        setAlertType('success');
+      }, 4000);
+      return;
+    }
+
+    const imageForCart = optimizeImageUrl(
+      productImages[mobileIndex] || product.mainImage || productImages[0],
+      { width: 600, quality: 'auto:good' }
+    );
+
+    dispatch(
+      addToCart({
+        id: product._id,
+        name: product.title,
+        ...(hasDisplayPrice(discountPrice || product.price)
+          ? { price: (discountPrice || product.price)! }
+          : {}),
+        originalPrice: product.originalPrice,
+        discountPercentage: product.discountPercentage,
+        image: imageForCart,
+        quantity,
+        brand: product.brand,
+        ...(selectedSize && { size: selectedSize }),
+        category: product.category,
+        gender: product.gender,
+        stock: product.stock,
+        description: product.description,
+      })
+    );
+
+    setAlertType('success');
+    setAlert(`"${formatTitle(product.title)}" u shtua në shportë.`);
+    setTimeout(() => {
+      setAlert(null);
+      setAlertType('success');
+    }, 4000);
   };
 
-  // Check if add to cart button should be enabled
-  const canAddToCart = (!hasSizes || selectedSize) && product.stock > 0;
+  const detailsText = product.description?.trim();
+  const hasDetails =
+    !!detailsText || (product.characteristics && product.characteristics.length > 0);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Notification - Positioned at bottom left */}
+    <div className="min-h-screen w-full bg-white">
       {alert && (
-        <div className={`fixed bottom-6 left-6 bg-white border px-6 py-3 z-50 animate-slide-in font-bwseidoround max-w-sm rounded-xl ${
-          alertType === 'success' 
-            ? 'border-green-200 text-green-800' 
-            : 'border-blue-200 text-blue-800'
-        }`}>
-          <div className="flex items-center space-x-3">
-            <div className={`w-2 h-2 rounded-full ${
-              alertType === 'success' ? 'bg-green-500' : 'bg-blue-500'
-            }`}></div>
-            <span className="text-sm font-medium">{alert}</span>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none px-4">
+          <div
+            role="status"
+            className={`pointer-events-auto animate-fade-in-up border px-4 py-2 font-bwseidoround text-xs shadow-md transition-all ${
+              alertType === 'success'
+                ? 'border-neutral-800 bg-neutral-900 text-white'
+                : 'border-neutral-300 bg-white text-neutral-900'
+            }`}
+          >
+            {alert}
           </div>
         </div>
       )}
 
-      <div className="mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16">
-          {/* Product Images */}
-          <div className="space-y-3 sm:space-y-6">
-            {/* Main Image */}
-            <div className="relative aspect-square w-full sm:max-w-full mx-auto overflow-hidden bg-gray-50 rounded-xl">
+      <div className="w-full min-w-0 px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+        <div className="w-full min-w-0 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-8 xl:gap-12">
+          {/* Desktop: scrollable image grid */}
+          <div className="hidden min-w-0 lg:block">
+            <div className="grid min-w-0 grid-cols-2 gap-1">
+              {productImages.map((image, index) => (
+                <div key={`${image}-${index}`} className="relative aspect-[3/4] overflow-hidden bg-neutral-50">
+                  <Image
+                    src={optimizeImageUrl(image, { width: 800, quality: 'auto:good' })}
+                    alt={`${product.title} - ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    onError={handleImageError}
+                    sizes="(min-width: 1024px) 29vw, 50vw"
+                    unoptimized
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right column: stretches to image column height so sticky works */}
+          <div className="min-w-0 lg:relative">
+          {/* Mobile: image carousel */}
+          <div className="min-w-0 lg:hidden mb-8">
+            <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-50">
               <Image
-                src={currentImage}
+                src={optimizeImageUrl(productImages[mobileIndex], { width: 800, quality: 'auto:good' })}
                 alt={product.title}
-                className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-xl"
+                fill
+                className="object-cover"
                 onError={handleImageError}
-                width={600}
-                height={600}
+                priority
+                sizes="100vw"
                 unoptimized
               />
-              {/* Discount Badge */}
-              {product.discountPercentage && (
-                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-bwseidoround font-bold text-xs rounded-xl">
+              {product.discountPercentage ? (
+                <span className="absolute left-3 top-3 bg-black px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
                   -{product.discountPercentage}%
-                </div>
-              )}
-              {/* New Arrivals Badge */}
-              {product.isNewArrival && (
-                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-green-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-bwseidoround font-bold text-xs rounded-xl">
-                  NEW
-                </div>
-              )}
+                </span>
+              ) : null}
             </div>
-            {/* Thumbnail Images - horizontal scroll on mobile */}
-            {thumbnailImages.length > 0 && (
-              <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 overflow-x-auto pb-1 hide-scrollbar">
-                {thumbnailImages.map((image, index) => (
+            {productImages.length > 1 && (
+              <div className="mt-3 flex justify-center gap-1.5">
+                {productImages.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImage(image)}
-                    className={`relative aspect-square w-14 h-14 sm:w-auto sm:h-auto overflow-hidden transition-all duration-300 rounded-xl ${
-                      selectedImage === image 
-                        ? 'ring-2 ring-gray-900' 
-                        : 'hover:ring-1 hover:ring-gray-300'
+                    type="button"
+                    aria-label={`Imazhi ${index + 1}`}
+                    onClick={() => setMobileIndex(index)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      mobileIndex === index ? 'w-6 bg-neutral-900' : 'w-1.5 bg-neutral-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+            {productImages.length > 1 && (
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {productImages.map((image, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setMobileIndex(index)}
+                    className={`relative h-16 w-16 flex-shrink-0 overflow-hidden border ${
+                      mobileIndex === index ? 'border-neutral-900' : 'border-neutral-200'
                     }`}
                   >
                     <Image
                       src={optimizeImageUrl(image, { width: 120, quality: 'auto:good' })}
-                      alt={`${product.title} - Image ${index + 1}`}
-                      className="object-cover w-full h-full rounded-xl"
+                      alt=""
+                      fill
+                      className="object-cover"
                       onError={handleImageError}
-                      width={100}
-                      height={100}
                       unoptimized
                     />
                   </button>
                 ))}
               </div>
             )}
-            {/* Technical Specifications Table - Hidden on mobile, shown below on mobile */}
-            {product.characteristics && product.characteristics.length > 0 && (
-              <div className="bg-gray-50 p-2 sm:p-4 hidden lg:block rounded-xl">
-                <h2 className="font-bwseidoround text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Specifikimet Teknike</h2>
-                <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl">
-                  <table className="w-full">
-                    <tbody>
-                      {product.characteristics.map((char, index) => (
-                        <tr key={index} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}> 
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 font-bwseidoround font-medium text-xs border-r border-gray-100">{char.key}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 font-bwseidoround font-semibold text-xs">{char.value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Product Info */}
-          <div className="space-y-3 sm:space-y-6">
-            {/* Brand & Title */}
-            <div className="space-y-2 sm:space-y-4">
-              <div className="inline-block">
-                <span className="font-bwseidoround font-bold text-xs uppercase tracking-wide bg-gradient-to-r from-[#0a9945] to-gray-800 bg-clip-text text-transparent">
-                  {product.brand}
-                </span>
-              </div>
-              <h1 className="font-bwseidoround text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                {product.title}
-              </h1>
-              {product.barcode && (
-                <div className="flex items-center space-x-2">
-                  <span className="font-bwseidoround text-sm text-gray-600">Barkodi:</span>
-                  <span className="font-bwseidoround text-sm font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">
-                    {product.barcode}
-                  </span>
-                </div>
-              )}
-            </div>
-            {/* Stock Status Section */}
-            <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-              <div className="flex items-center space-x-2 font-bwseidoround">
-                <div className={`w-3 h-3 rounded-full ${
-                  product.stock > 0 ? 'bg-green-500' : 'bg-red-500'
-                }`}></div>
-                <span className={`font-semibold text-sm sm:text-base ${
-                  product.stock > 0 ? 'text-green-700' : 'text-red-700'
-                }`}>
-                  {product.stock > 0 ? 'Në stok' : 'Jashtë Stokut'}
-                </span>
-              </div>
-            </div>
-
-            {/* Price Section */}
-            {product.price !== undefined && (
-              <div className="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                  <div className="flex items-center space-x-2 sm:space-x-4">
-                    {product.originalPrice && product.price ? (
-                      <>
-                        <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
-                          €{discountPrice?.toFixed(2)}
-                        </span>
-                        <span className="font-bwseidoround text-sm sm:text-lg text-gray-400 line-through">
-                          €{product.originalPrice.toFixed(2)}
-                        </span>
-                        <div className="bg-red-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold rounded-xl">
-                          -{product.discountPercentage}%
-                        </div>
-                      </>
-                    ) : product.price ? (
-                      <span className="font-bwseidoround text-xl sm:text-3xl font-bold text-gray-900">
-                        €{product.price.toFixed(2)}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Description */}
-            {product.description && (
-              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-                <h2 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
-                  Përshkrimi
-                </h2>
-                <div className="space-y-2 sm:space-y-3">
-                  <p className="font-bwseidoround text-gray-700 leading-relaxed whitespace-pre-wrap text-xs sm:text-sm lg:text-base">
-                    {showFullDescription 
-                      ? product.description 
-                      : product.description.length > 250 
-                        ? `${product.description.slice(0, 250)}...` 
-                        : product.description
-                    }
+          {/* Sticky product info */}
+          <div className="lg:sticky lg:top-28 lg:z-10">
+            <div className="min-w-0 space-y-5 lg:space-y-6 lg:px-2">
+              <div className="space-y-2">
+                <p className="font-bwseidoround text-[11px] uppercase tracking-[0.2em] text-neutral-500 break-words">
+                  {product.category || product.brand}
+                </p>
+                <h1 className="font-bwseidoround text-3xl font-light leading-tight tracking-tight text-neutral-900 break-words sm:text-4xl">
+                  {formatTitle(product.title)}
+                </h1>
+                {product.barcode && (
+                  <p className="font-bwseidoround text-xs uppercase tracking-widest text-neutral-400">
+                    SKU: #{product.barcode}
                   </p>
-                  {product.description.length > 250 && (
-                    <button
-                      onClick={() => setShowFullDescription(!showFullDescription)}
-                      className="text-[#0a9945] hover:text-gray-800 font-bwseidoround font-semibold text-xs sm:text-sm transition-colors duration-300 rounded-xl"
-                    >
-                      {showFullDescription ? 'Më pak' : 'Më shumë'}
-                    </button>
+                )}
+              </div>
+
+              {hasDisplayPrice(product.price) && (
+                <div className="flex flex-wrap items-baseline gap-3">
+                  {product.originalPrice &&
+                  hasDisplayPrice(product.originalPrice) &&
+                  product.discountPercentage ? (
+                    <>
+                      <span className="font-bwseidoround text-xl text-neutral-900">
+                        €{discountPrice?.toFixed(2)}
+                      </span>
+                      <span className="font-bwseidoround text-sm text-neutral-400 line-through">
+                        €{product.originalPrice.toFixed(2)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-bwseidoround text-xl text-neutral-900">
+                      €{product.price!.toFixed(2)}
+                    </span>
                   )}
                 </div>
-              </div>
-            )}
-            {/* Size Selection */}
-            {hasSizes && sizes.length > 0 && (
-              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-                <h3 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
-                  Zgjidhni Madhësinë
-                </h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`font-bwseidoround relative px-2 sm:px-4 py-2 sm:py-3 border-2 text-xs sm:text-sm font-semibold transition-all duration-300 rounded-xl ${
-                        selectedSize === size
-                          ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white border-transparent shadow-lg transform scale-105'
-                          : 'border-gray-200 text-gray-700 hover:border-[#0a9945] hover:bg-gray-50 hover:shadow-md'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Quantity & Add to Cart */}
-            <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-              <div className="space-y-2 sm:space-y-4">
-                {/* Quantity Selector */}
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                    <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
-                    Sasia
-                  </h3>
-                  <div className="flex items-center bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold rounded-l-xl"
-                    >
-                      -
-                    </button>
-                    <span className="px-3 sm:px-6 py-2 sm:py-3 text-gray-900 font-bwseidoround font-semibold min-w-[36px] sm:min-w-[60px] text-center text-base sm:text-lg">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 hover:bg-gray-100 transition-colors font-bwseidoround font-bold rounded-r-xl"
-                    >
-                      +
-                    </button>
+              )}
+
+              {hasSizes && sizes.length > 0 && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-bwseidoround text-[11px] uppercase tracking-[0.15em] text-neutral-900">
+                      Madhësia *
+                    </p>
+                    {!selectedSize && (
+                      <p className="mt-1 font-bwseidoround text-xs text-neutral-400">
+                        Zgjidhni madhësinë para se të shtoni në shportë.
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setSelectedSize(size)}
+                        className={`min-w-[3rem] border px-4 py-2.5 font-bwseidoround text-xs uppercase tracking-wider transition-colors ${
+                          selectedSize === size
+                            ? 'border-neutral-900 bg-neutral-900 text-white'
+                            : 'border-neutral-300 text-neutral-800 hover:border-neutral-900'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                {/* Add to Cart Button */}
-                <button
-                  className={`w-full py-3 sm:py-4 px-4 sm:px-6 font-bwseidoround cursor-pointer text-base sm:text-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 shadow-lg rounded-xl ${
-                    canAddToCart
-                      ? 'bg-gradient-to-r from-[#0a9945] to-gray-800 text-white hover:from-[#0a8a3d] hover:to-gray-700 hover:shadow-xl'
-                      : 'bg-gray-300 text-gray-500 cursor-pointer'
-                  }`}
-                  disabled={!canAddToCart}
-                  onClick={() => {
-                    if (!canAddToCart) return;
-                    
-                    // Check if product is already in cart
-                    const existingItem = cart.find(item => item.id === product._id);
-                    
-                    if (existingItem) {
-                      // Product already exists in cart, show info message and don't add again
-                      setAlertType('info');
-                      setAlert('Ky produkt është shtuar më herët në shportë dhe ju mund ta rritni sasinë duke shkuar tek shporta');
-                      setTimeout(() => {
-                        setAlert(null);
-                        setAlertType('success');
-                      }, 4000);
-                      return; // Don't add the product again
-                    }
-                    
-                    // Only add if product is not already in cart
-                    dispatch(addToCart({
-                      id: product._id,
-                      name: product.title,
-                      price: discountPrice || product.price || 0,
-                      originalPrice: product.originalPrice,
-                      discountPercentage: product.discountPercentage,
-                      image: currentImage,
-                      quantity,
-                      brand: product.brand,
-                      ...(selectedSize && { size: selectedSize }),
-                      category: product.category,
-                      gender: product.gender,
-                      stock: product.stock,
-                      description: product.description,
-                    }));
-                    
-                    // Show success message without opening cart
-                    setAlertType('success');
-                    const sizeText = selectedSize ? ` (${selectedSize})` : '';
-                    setAlert(`Produkti '${product.title}'${sizeText} (sasia: ${quantity}) u shtua me sukses në shportë!`);
-                    
-                    setTimeout(() => {
-                      setAlert(null);
-                      setAlertType('success');
-                    }, 4000);
-                  }}
-                >
-                  <FaShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>
-                    {product.stock <= 0
-                      ? 'Jashtë Stokut'
-                      : !hasSizes
-                      ? 'Shto në shportë'
-                      : !selectedSize
-                      ? 'Zgjidhni madhësinë'
-                      : 'Shto në shportë'}
+              )}
+
+              <div className="flex items-center gap-4">
+                <span className="font-bwseidoround text-[11px] uppercase tracking-[0.15em] text-neutral-900">
+                  Sasia
+                </span>
+                <div className="flex items-center border border-neutral-300">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-2 font-bwseidoround text-neutral-600 hover:bg-neutral-50"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[2.5rem] px-2 py-2 text-center font-bwseidoround text-sm">
+                    {quantity}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-3 py-2 font-bwseidoround text-neutral-600 hover:bg-neutral-50"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {hasDetails && (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center gap-4">
+                    <div className="h-px flex-1 bg-neutral-200" />
+                    <span className="font-bwseidoround text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                      Detajet
+                    </span>
+                    <div className="h-px flex-1 bg-neutral-200" />
+                  </div>
+                  {detailsText && (
+                    <p className="font-bwseidoround text-sm leading-relaxed text-neutral-600 whitespace-pre-wrap">
+                      {detailsText}
+                    </p>
+                  )}
+                  {product.characteristics && product.characteristics.length > 0 && (
+                    <dl className="space-y-2">
+                      {product.characteristics.map((char, index) => (
+                        <div key={index} className="flex justify-between gap-4 text-sm">
+                          <dt className="font-bwseidoround text-neutral-500">{char.key}</dt>
+                          <dd className="font-bwseidoround text-right text-neutral-900">{char.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-4">
+                <button
+                  type="button"
+                  disabled={!canAddToCart}
+                  onClick={handleAddToCart}
+                  className={`w-full border py-3.5 font-bwseidoround text-sm transition-colors duration-300 ${
+                    canAddToCart
+                      ? 'border-neutral-900 bg-white text-neutral-900 hover:bg-neutral-900 hover:text-white'
+                      : 'cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400'
+                  }`}
+                >
+                  Shto në shportë
                 </button>
+                {hasSizes && !selectedSize && (
+                  <p className="mt-2 text-center font-bwseidoround text-xs text-neutral-400">
+                    Zgjidhni madhësinë para se të shtoni në shportë
+                  </p>
+                )}
               </div>
-            </div>
-            {/* Technical Specifications Table - Mobile version as stacked rows */}
-            {product.characteristics && product.characteristics.length > 0 && (
-              <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 lg:hidden rounded-xl">
-                <h2 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
-                  Specifikimet Teknike
-                </h2>
-                <dl className="divide-y divide-gray-200">
-                  {product.characteristics.map((char, index) => (
-                    <div key={index} className="flex justify-between py-2 text-xs sm:text-sm">
-                      <dt className="font-bwseidoround text-gray-700 font-medium">{char.key}</dt>
-                      <dd className="font-bwseidoround text-gray-900 font-semibold">{char.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            )}
-            {/* Features */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 pt-2 sm:pt-6">
-              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600 rounded-xl">
-                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800 rounded-xl">
-                  <FaTruck className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+
+              <div className="space-y-4 border-t border-neutral-200 pt-6">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-neutral-600">
+                    <FaTruck className="h-4 w-4 shrink-0 text-neutral-400" />
+                    <span className="font-bwseidoround text-xs sm:text-sm">Transport i sigurtë</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-neutral-600">
+                    <FaShieldAlt className="h-4 w-4 shrink-0 text-neutral-400" />
+                    <span className="font-bwseidoround text-xs sm:text-sm">Garancion</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-neutral-600">
+                    <FaUndo className="h-4 w-4 shrink-0 text-neutral-400" />
+                    <span className="font-bwseidoround text-xs sm:text-sm">Kthim i lehtë</span>
+                  </li>
+                </ul>
+
+                <div className="space-y-2 border-t border-neutral-200 pt-4">
+                  <p className="font-bwseidoround text-[11px] uppercase tracking-[0.15em] text-neutral-900">
+                    Mënyra e pagesës
+                  </p>
+                  <p className="font-bwseidoround text-sm text-neutral-800">Para në dorë</p>
+                  <p className="font-bwseidoround text-xs text-neutral-500">Paguaj kur merr porosinë</p>
                 </div>
-                <span className="font-bwseidoround text-xs sm:text-sm font-medium">Transport i sigurtë</span>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600 rounded-xl">
-                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800 rounded-xl">
-                  <FaShieldAlt className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                </div>
-                <span className="font-bwseidoround text-xs sm:text-sm font-medium">Garancion</span>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-white p-2 sm:p-4 border border-gray-100 flex items-center space-x-2 sm:space-x-3 text-gray-600 rounded-xl">
-                <div className="p-1 sm:p-2 bg-gradient-to-r from-[#0a9945] to-gray-800 rounded-xl">
-                  <FaUndo className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                </div>
-                <span className="font-bwseidoround text-xs sm:text-sm font-medium">Kthim i lehtë</span>
-              </div>
-            </div>
-            {/* Payment Method */}
-            <div className="bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 border border-gray-100 rounded-xl">
-                              <h3 className="font-bwseidoround text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center">
-                  <div className="w-1 h-4 sm:h-6 bg-gradient-to-b from-[#0a9945] to-gray-800 mr-2 sm:mr-3 rounded-full"></div>
-                  Mënyra e Pagesës
-                </h3>
-              <div className="flex items-center space-x-2 sm:space-x-4 p-2 sm:p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-[#0a9945] to-gray-800 flex items-center justify-center rounded-xl">
-                  <span className="font-bwseidoround text-white font-bold text-base sm:text-lg">€</span>
-                </div>
-                <div>
-                  <p className="font-bwseidoround text-xs sm:text-base font-semibold text-gray-900">Para në dorë</p>
-                  <p className="font-bwseidoround text-xs sm:text-sm text-gray-600">Paguaj kur merr porosinë</p>
-                </div>
-              </div>
-            </div>
-            {/* Additional Info */}
-            <div className="bg-gray-50 p-3 sm:p-6 rounded-xl">
-              <div className="space-y-2 sm:space-y-4">
-                <div className="space-y-1 sm:space-y-2">
-                  <p className="font-bwseidoround text-xs text-gray-700 leading-relaxed">
+
+                <div className="space-y-3 border-t border-neutral-200 pt-4">
+                  <p className="font-bwseidoround text-xs leading-relaxed text-neutral-600">
                     Porosia mund të kthehet brenda 24 orëve.
                   </p>
-                 
-                </div>
-                <div className="space-y-1 sm:space-y-2">
-                  <p className="font-bwseidoround font-semibold text-xs text-green-900">
-                    Per çdo pyetje apo sqarime shtesë, mund të na kontaktoni në Whatsapp / Viber, në numrin tonë 
-                    <span className="font-semibold text-gray -900"> 049 111 111 </span>
-                    dhe në rrjetet tona sociale si Instagram, Facebook.
+                  <p className="font-bwseidoround text-xs leading-relaxed text-neutral-600">
+                    Për çdo pyetje apo sqarime shtesë, na kontaktoni në WhatsApp / Viber:{' '}
+                    <span className="text-neutral-900">049 111 111</span>, ose në{' '}
+                    <a
+                      href="https://www.instagram.com/kraslight.ks/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neutral-900 underline underline-offset-2 hover:text-neutral-600"
+                    >
+                      Instagram
+                    </a>{' '}
+                    dhe{' '}
+                    <a
+                      href="https://www.facebook.com/kraslight"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neutral-900 underline underline-offset-2 hover:text-neutral-600"
+                    >
+                      Facebook
+                    </a>
+                    .
                   </p>
-                </div>
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                  <p className="font-bwseidoround text-xs text-gray-700">
-                    Porositë tona realizohen me postë.
-                  </p>
-                
+                  <div className="flex items-center gap-4 pt-1">
+                    <a
+                      href="https://www.instagram.com/kraslight.ks/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="text-neutral-500 transition-colors hover:text-neutral-900"
+                    >
+                      <FaInstagram className="h-4 w-4" />
+                    </a>
+                    <a
+                      href="https://www.facebook.com/kraslight"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="text-neutral-500 transition-colors hover:text-neutral-900"
+                    >
+                      <FaFacebookF className="h-4 w-4" />
+                    </a>
+                  </div>
+                  <p className="font-bwseidoround text-xs text-neutral-600">Porositë tona realizohen me postë.</p>
                 </div>
               </div>
             </div>
           </div>
+          </div>
         </div>
-     
       </div>
     </div>
   );
-} 
+}

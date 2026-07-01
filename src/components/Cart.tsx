@@ -7,11 +7,11 @@ import { FaTimes, FaTrash, FaShoppingBag, FaArrowRight } from 'react-icons/fa';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
+import { displayMoney, formatEuroPrice, hasDisplayPrice, hasTrackedStock, sumPricedCartItems } from '@/app/lib/images';
 
 export default function Cart({ onClose }: { onClose?: () => void }) {
   const cart = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const [showCheckout, setShowCheckout] = useState(false);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -32,19 +32,17 @@ export default function Cart({ onClose }: { onClose?: () => void }) {
     setMounted(true);
   }, []);
 
-  // Calculate shipping
   let shipping = 0;
-  if (["Shqipëri", "Maqedoni e Veriut", "Mali i Zi"].includes(country)) {
+  if (['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(country)) {
     shipping = 10;
   }
-  const itemsTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemsTotal = sumPricedCartItems(cart);
   const totalWithShipping = itemsTotal + shipping;
 
   const handleQuantityUpdate = (itemId: string, newQuantity: number) => {
     const item = cart.find(i => i.id === itemId);
-    if (item && item.stock !== undefined) {
-      // Ensure quantity doesn't exceed stock
-      const maxQuantity = Math.min(newQuantity, item.stock);
+    if (item && hasTrackedStock(item.stock)) {
+      const maxQuantity = Math.min(newQuantity, item.stock!);
       if (maxQuantity > 0) {
         dispatch(updateQuantity({ id: itemId, quantity: maxQuantity }));
       }
@@ -210,23 +208,18 @@ export default function Cart({ onClose }: { onClose?: () => void }) {
                           </div>
                           
                           <div className="text-right">
-                            {item.price !== undefined ? (
-                              item.discountPercentage && item.discountPercentage > 0 ? (
+                            {hasDisplayPrice(item.price) && (
+                              item.discountPercentage && item.discountPercentage > 0 && hasDisplayPrice(item.originalPrice) ? (
                                 <div>
-                                  <p className="text-xs line-through text-gray-400">€{item.originalPrice?.toFixed(2)}</p>
-                                  <p className="font-bold text-base text-red-600">€{item.price.toFixed(2)}</p>
-                                  <div className="bg-red-500 text-white text-xs px-1.5 py-0.5 font-bold mt-0.5">
-                                    -{item.discountPercentage}%
-                                  </div>
+                                  <p className="text-xs line-through text-gray-400">{formatEuroPrice(item.originalPrice)}</p>
+                                  <p className="font-bold text-base text-gray-900">{formatEuroPrice(item.price)}</p>
                                 </div>
                               ) : (
-                                <p className="font-bold text-base text-gray-900">€{item.price.toFixed(2)}</p>
+                                <p className="font-bold text-base text-gray-900">{formatEuroPrice(item.price)}</p>
                               )
-                            ) : (
-                              <p className="text-sm text-gray-500 italic">Pa çmim</p>
                             )}
-                            {item.price !== undefined && (
-                              <p className="text-xs text-gray-500 mt-0.5">€{(item.price * item.quantity).toFixed(2)} total</p>
+                            {hasDisplayPrice(item.price) && (
+                              <p className="text-xs text-gray-500 mt-0.5">{displayMoney(item.price! * item.quantity)} total</p>
                             )}
                           </div>
                         </div>
@@ -245,18 +238,22 @@ export default function Cart({ onClose }: { onClose?: () => void }) {
             {cart.length > 0 && (
               <>
                 <div className="space-y-2 mb-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 font-medium text-sm">Nëntotali:</span>
-                    <span className="font-bold text-gray-900 text-sm">€{total.toFixed(2)}</span>
-                  </div>
+                  {itemsTotal > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 font-medium text-sm">Nëntotali:</span>
+                      <span className="font-bold text-gray-900 text-sm">{displayMoney(itemsTotal)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 font-medium text-sm">Transporti:</span>
-                    <span className="font-bold text-gray-900 text-sm">{shipping === 0 ? 'Falas' : `€${shipping}`}</span>
+                    <span className="font-bold text-gray-900 text-sm">{shipping === 0 ? 'Falas' : displayMoney(shipping)}</span>
                   </div>
-                  <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
-                    <span className="font-bold text-base text-gray-900">Totali:</span>
-                    <span className="text-xl font-bold bg-gradient-to-r from-[#0a9945] to-gray-800 bg-clip-text text-transparent">€{totalWithShipping.toFixed(2)}</span>
-                  </div>
+                  {totalWithShipping > 0 && (
+                    <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                      <span className="font-bold text-base text-gray-900">Totali:</span>
+                      <span className="text-xl font-bold text-gray-900">{displayMoney(totalWithShipping)}</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -383,7 +380,7 @@ export default function Cart({ onClose }: { onClose?: () => void }) {
                     </div>
                     <div className="flex justify-between font-bold text-base">
                       <span>Totali me transport:</span>
-                      <span className="text-black">€{totalWithShipping.toFixed(2)}</span>
+                      <span className="text-black">{displayMoney(totalWithShipping) ?? '—'}</span>
                     </div>
                   </div>
                   

@@ -1,3 +1,41 @@
+export function hasDisplayPrice(price?: number | null): boolean {
+  return typeof price === 'number' && !Number.isNaN(price) && price > 0;
+}
+
+export function formatEuroPrice(price?: number | null): string | null {
+  if (!hasDisplayPrice(price)) return null;
+  return `€${price!.toFixed(2)}`;
+}
+
+/** Stock was explicitly set to a positive amount in admin */
+export function hasTrackedStock(stock?: number | null): boolean {
+  return typeof stock === 'number' && !Number.isNaN(stock) && stock > 0;
+}
+
+export function formatStockBadge(stock?: number | null): { text: string; className: string } {
+  if (!hasTrackedStock(stock)) {
+    return { text: 'nuk është dhënë', className: 'text-red-600 bg-red-50' };
+  }
+  if (stock! <= 5) {
+    return { text: String(stock), className: 'text-amber-700 bg-amber-50' };
+  }
+  return { text: String(stock), className: 'text-neutral-700 bg-neutral-100' };
+}
+
+export function cartItemLineTotal(item: { price?: number; quantity: number }): number {
+  if (!hasDisplayPrice(item.price)) return 0;
+  return item.price! * item.quantity;
+}
+
+export function sumPricedCartItems(items: { price?: number; quantity: number }[]): number {
+  return items.reduce((sum, item) => sum + cartItemLineTotal(item), 0);
+}
+
+export function displayMoney(amount: number): string | null {
+  if (!hasDisplayPrice(amount)) return null;
+  return `€${amount.toFixed(2)}`;
+}
+
 /** Max upload size before compression (10 MB) */
 export const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -19,7 +57,11 @@ export function isCloudinaryUrl(url: string): boolean {
   return url.includes('res.cloudinary.com');
 }
 
-/** Only Cloudinary URLs and static /images/* assets (placeholder, logos) */
+export function isSupabaseStorageUrl(url: string): boolean {
+  return url.includes('.supabase.co/storage/v1/object/public/');
+}
+
+/** Cloudinary, Supabase Storage, and static /images/* assets */
 export function sanitizeImageUrl(
   url: string | undefined | null
 ): string | undefined {
@@ -30,6 +72,7 @@ export function sanitizeImageUrl(
   }
   if (trimmed.startsWith('/images/')) return trimmed;
   if (isCloudinaryUrl(trimmed)) return trimmed;
+  if (isSupabaseStorageUrl(trimmed)) return trimmed;
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return undefined;
   }
@@ -95,6 +138,16 @@ export function folderToCloudinaryPath(folder: string): string {
     collections: 'kraslight/collections',
   };
   return map[folder] ?? `kraslight/${folder}`;
+}
+
+export function folderToStoragePath(folder: string): string {
+  const map: Record<string, string> = {
+    products: 'products',
+    slider: 'slider',
+    brands: 'brands',
+    collections: 'collections',
+  };
+  return map[folder] ?? folder;
 }
 
 /** Pick first usable image path or URL (skips broken legacy /uploads paths) */

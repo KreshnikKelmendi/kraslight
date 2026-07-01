@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useAuth } from '../../../lib/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaChevronDown, FaFilter, FaTimes, FaPercent } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaChevronDown, FaFilter, FaTimes, FaPercent, FaPlus } from 'react-icons/fa';
+import AddProductModal from '@/app/components/admin/AddProductModal';
+import { hasDisplayPrice, formatStockBadge, hasTrackedStock } from '@/app/lib/images';
 
 interface Product {
   _id: string;
@@ -12,7 +14,7 @@ interface Product {
   price?: number; // Made optional to handle products without prices
   originalPrice?: number;
   discountPercentage?: number;
-  stock: number;
+  stock?: number | null;
   brand: string;
   image?: string;
   category: string;
@@ -32,7 +34,6 @@ interface Filters {
   minStock: number | '';
   maxStock: number | '';
   stockStatus: string;
-  newArrivals: boolean;
   onSale: boolean;
   // Bulk discount options
   showBulkDiscount: boolean;
@@ -53,7 +54,7 @@ function getValidImage(...candidates: (string | undefined)[]) {
   ) || '/images/placeholder.jpg';
 }
 
-export default function ProductsList() {
+function ProductsList() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -70,7 +71,6 @@ export default function ProductsList() {
     minStock: '',
     maxStock: '',
     stockStatus: '',
-    newArrivals: false,
     onSale: false,
     showBulkDiscount: false,
     bulkDiscountPercentage: 50,
@@ -85,6 +85,8 @@ export default function ProductsList() {
   const [bulkDiscountLoading, setBulkDiscountLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
 
   // Get unique brands and categories for filters
   const uniqueBrands = useMemo(() => {
@@ -116,6 +118,12 @@ export default function ProductsList() {
   };
 
   useEffect(() => {
+    if (searchParams.get('add') === '1') {
+      setShowAddModal(true);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -130,24 +138,21 @@ export default function ProductsList() {
       const matchesCategory = !filters.category || product.category === filters.category;
       const matchesPrice = (!filters.minPrice || (product.price !== undefined && product.price >= filters.minPrice)) &&
                           (!filters.maxPrice || (product.price !== undefined && product.price <= filters.maxPrice));
-      const matchesStock = (!filters.minStock || product.stock >= filters.minStock) &&
-                          (!filters.maxStock || product.stock <= filters.maxStock);
+      const matchesStock = (!filters.minStock || (product.stock != null && product.stock >= filters.minStock)) &&
+                          (!filters.maxStock || (product.stock != null && product.stock <= filters.maxStock));
       
       // Stock status filter
       let matchesStockStatus = true;
       if (filters.stockStatus === 'jashte-stokut') {
-        matchesStockStatus = product.stock === 0;
+        matchesStockStatus = !hasTrackedStock(product.stock);
       } else if (filters.stockStatus === 'ne-stok') {
-        matchesStockStatus = product.stock > 0;
+        matchesStockStatus = hasTrackedStock(product.stock);
       }
-
-      // New arrivals filter
-      const matchesNewArrivals = !filters.newArrivals || product.isNewArrival === true;
 
       // Sale filter
       const matchesSale = !filters.onSale || (product.discountPercentage && product.discountPercentage > 0);
 
-      return matchesSearch && matchesBrand && matchesCategory && matchesPrice && matchesStock && matchesStockStatus && matchesNewArrivals && matchesSale;
+      return matchesSearch && matchesBrand && matchesCategory && matchesPrice && matchesStock && matchesStockStatus && matchesSale;
     });
   }, [products, filters]);
 
@@ -385,7 +390,6 @@ export default function ProductsList() {
       minStock: '',
       maxStock: '',
       stockStatus: '',
-      newArrivals: false,
       onSale: false,
       showBulkDiscount: false,
       bulkDiscountPercentage: 50,
@@ -586,9 +590,10 @@ export default function ProductsList() {
             </button>
 
             <button
-              onClick={() => router.push('/admin/products/add')}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0a9945] hover:bg-[#088038] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0a9945]"
             >
+              <FaPlus className="mr-2 h-4 w-4" />
               Shto Produkt
             </button>
           </div>
@@ -598,13 +603,13 @@ export default function ProductsList() {
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-gray-500">
             {filteredProductsMemo.length} produkte
-            {(filters.brand || filters.category || filters.minPrice || filters.maxPrice || filters.minStock || filters.maxStock || filters.stockStatus || filters.newArrivals || filters.onSale) && (
+            {(filters.brand || filters.category || filters.minPrice || filters.maxPrice || filters.minStock || filters.maxStock || filters.stockStatus || filters.onSale) && (
               <span className="ml-2">
                 (duke përdorur filtra)
               </span>
             )}
           </div>
-          {(filters.brand || filters.category || filters.minPrice || filters.maxPrice || filters.minStock || filters.maxStock || filters.stockStatus || filters.newArrivals || filters.onSale) && (
+          {(filters.brand || filters.category || filters.minPrice || filters.maxPrice || filters.minStock || filters.maxStock || filters.stockStatus || filters.onSale) && (
             <button
               onClick={clearFilters}
               className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
@@ -717,23 +722,6 @@ export default function ProductsList() {
                   <option value="jashte-stokut">Jashtë stokut</option>
                   <option value="ne-stok">Në stok</option>
                 </select>
-              </div>
-
-              {/* New Arrivals Filter */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Produktet e Reja</h3>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id="newArrivals"
-                    checked={filters.newArrivals}
-                    onChange={(e) => handleFilterChange('newArrivals', e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <label htmlFor="newArrivals" className="text-sm text-gray-700">
-                    Vetëm produktet e reja
-                  </label>
-                </div>
               </div>
 
               {/* Sale Filter */}
@@ -1008,11 +996,6 @@ export default function ProductsList() {
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium text-gray-900">
                           {product.title}
-                          {product.isNewArrival && (
-                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              NEW
-                            </span>
-                          )}
                           {product.discountPercentage && product.discountPercentage > 0 && (
                             <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                               SALE
@@ -1036,20 +1019,20 @@ export default function ProductsList() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {product.price !== undefined ? (
+                        {hasDisplayPrice(product.price) ? (
                           product.discountPercentage && product.discountPercentage > 0 ? (
                             <div className="block">
                               <div className="text-sm line-through text-gray-500">
                                 €{product.originalPrice?.toFixed(2)}
                               </div>
                               <div className="text-sm font-bold text-red-600">
-                                €{product.price.toFixed(2)}
+                                €{product.price!.toFixed(2)}
                                 <span className="ml-1">(-{product.discountPercentage}%)</span>
                               </div>
                             </div>
                           ) : (
                             <div className="text-sm text-gray-900">
-                              €{product.price.toFixed(2)}
+                              €{product.price!.toFixed(2)}
                             </div>
                           )
                         ) : (
@@ -1060,15 +1043,16 @@ export default function ProductsList() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-md text-base font-medium ${
-                            product.stock === 0
-                              ? 'text-red-500 bg-red-100'
-                              : product.stock <= 5
-                              ? 'text-yellow-500 bg-yellow-100'
-                              : 'text-green-500 bg-green-100'
-                          }`}>
-                            {product.stock}
-                          </span>
+                          {(() => {
+                            const badge = formatStockBadge(product.stock);
+                            return (
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${badge.className}`}
+                              >
+                                {badge.text}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -1123,6 +1107,20 @@ export default function ProductsList() {
         )}
 
       </div>
+
+      <AddProductModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={fetchProducts}
+      />
     </div>
   );
-} 
+}
+
+export default function ProductsListPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsList />
+    </Suspense>
+  );
+}
