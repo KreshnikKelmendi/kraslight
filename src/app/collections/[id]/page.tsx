@@ -1,5 +1,6 @@
 "use client";
 
+import PageLoadingSpinner from '@/components/PageLoadingSpinner';
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown } from 'react-icons/fa';
@@ -407,11 +408,7 @@ export default function CollectionPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-200 border-t-neutral-900" />
-      </div>
-    );
+    return <PageLoadingSpinner className="min-h-screen" label="Duke ngarkuar koleksionin" />;
   }
 
   if (error) {
@@ -500,7 +497,7 @@ export default function CollectionPage() {
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="px-4 py-8 pb-28 lg:px-10 lg:py-12 lg:pb-12">
+        <div className="px-4 py-8 pb-28 lg:px-10 2xl:px-24 lg:py-12 lg:pb-12">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="font-bwseidoround text-2xl font-light tracking-tight text-neutral-900 sm:text-3xl">

@@ -363,7 +363,7 @@ export default function MaterialeElektrikePage() {
 
       {/* Products Area */}
       <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-4 lg:p-6 pb-20"> {/* Add extra bottom padding for mobile button */}
+        <div className="px-4 py-4 lg:px-10 lg:py-6 2xl:px-24 pb-20"> {/* Add extra bottom padding for mobile button */}
           {/* Results Header with Sort */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

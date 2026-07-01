@@ -279,7 +279,7 @@ export default function EyewearPage() {
           />
         </div>
 
-        <div className="relative mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div className="relative mx-auto px-4 sm:px-6 lg:px-8 2xl:px-24 py-12 lg:py-16">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -328,7 +328,7 @@ export default function EyewearPage() {
         </div>
       </div>
 
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 2xl:px-24 py-8">
         {/* Controls */}
         <div className="mb-8 space-y-6">
           {/* Controls Row */}

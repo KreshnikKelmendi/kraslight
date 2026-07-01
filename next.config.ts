@@ -35,6 +35,16 @@ const nextConfig = {
         destination: '/images/placeholder.svg',
         permanent: false,
       },
+      {
+        source: '/about',
+        destination: '/rreth-nesh',
+        permanent: true,
+      },
+      {
+        source: '/contact',
+        destination: '/kontakti',
+        permanent: true,
+      },
     ];
   },
   experimental: {

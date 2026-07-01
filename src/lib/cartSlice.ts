@@ -21,8 +21,17 @@ interface CartState {
 }
 
 const initialState: CartState = {
-  items: [], // Will be loaded in extraReducers or via useEffect in component
+  items: [],
 };
+
+function persistCart(items: CartItem[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('cart', JSON.stringify(items));
+}
+
+export function getCartUnitCount(items: CartItem[]) {
+  return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+}
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -30,30 +39,31 @@ const cartSlice = createSlice({
   reducers: {
     setCart(state, action: PayloadAction<CartItem[]>) {
       state.items = action.payload;
+      persistCart(state.items);
     },
     addToCart(state, action: PayloadAction<CartItem>) {
-      const item = state.items.find(i => i.id === action.payload.id);
+      const item = state.items.find((i) => i.id === action.payload.id);
       if (item) {
         item.quantity += action.payload.quantity;
       } else {
-        state.items.push(action.payload);
+        state.items.push({ ...action.payload, quantity: action.payload.quantity || 1 });
       }
-      localStorage.setItem('cart', JSON.stringify(state.items));
+      persistCart(state.items);
     },
     removeFromCart(state, action: PayloadAction<string>) {
-      state.items = state.items.filter(i => i.id !== action.payload);
-      localStorage.setItem('cart', JSON.stringify(state.items));
+      state.items = state.items.filter((i) => i.id !== action.payload);
+      persistCart(state.items);
     },
     updateQuantity(state, action: PayloadAction<{ id: string; quantity: number }>) {
-      const item = state.items.find(i => i.id === action.payload.id);
+      const item = state.items.find((i) => i.id === action.payload.id);
       if (item) {
         item.quantity = action.payload.quantity;
       }
-      localStorage.setItem('cart', JSON.stringify(state.items));
+      persistCart(state.items);
     },
     clearCart(state) {
       state.items = [];
-      localStorage.setItem('cart', JSON.stringify(state.items));
+      persistCart(state.items);
     },
   },
 });

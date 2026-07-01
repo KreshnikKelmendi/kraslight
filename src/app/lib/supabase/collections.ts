@@ -7,7 +7,8 @@ export async function findCollectionsWithProducts() {
   const { data, error } = await supabase
     .from('collections')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
   if (error) throw error;
 
   const collections = (data ?? []).map((row) => collectionRowToDoc(row));
@@ -76,6 +77,14 @@ export async function createCollection(input: {
     productIds = categoryProducts.map((p) => p._id);
   }
 
+  const { data: lastOrdered } = await supabase
+    .from('collections')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextSortOrder = (lastOrdered?.sort_order != null ? Number(lastOrdered.sort_order) : 0) + 1;
+
   const { data, error } = await supabase
     .from('collections')
     .insert({
@@ -84,6 +93,7 @@ export async function createCollection(input: {
       image: input.image,
       categories: input.categories ?? [],
       product_ids: productIds,
+      sort_order: nextSortOrder,
     })
     .select('*')
     .single();
@@ -136,4 +146,16 @@ export async function deleteAllCollections() {
   const supabase = createSupabaseServerClient();
   const { error } = await supabase.from('collections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   if (error) throw error;
+}
+
+export async function updateCollectionsOrder(orderedIds: string[]) {
+  const supabase = createSupabaseServerClient();
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from('collections')
+        .update({ sort_order: index + 1, updated_at: new Date().toISOString() })
+        .or(`id.eq.${id},legacy_mongo_id.eq.${id}`)
+    )
+  );
 }

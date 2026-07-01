@@ -1,7 +1,7 @@
 import Main from './components/Main/Main';
 import CollectionsShowcase from './components/Collections/CollectionsShowcase';
+import TextAnimation from './components/TextAnimation';
 import ShowRoom from './components/ShowRoom';
-import OtherProducts from '../components/OtherProducts';
 import { getHomePageData } from './lib/home-data';
 
 // Always load homepage data at request time (Vercel env + MongoDB available at runtime).
@@ -14,8 +14,8 @@ export default async function Home() {
     <main className="min-h-screen">
       <Main initialSlider={homeData.slider} />
       <CollectionsShowcase initialCollections={homeData.collections} />
+      <TextAnimation />
       <ShowRoom />
-      <OtherProducts initialProducts={homeData.otherProducts} />
     </main>
   );
 }

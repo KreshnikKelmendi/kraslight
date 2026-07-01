@@ -1,19 +1,9 @@
 -- Run this in Supabase SQL Editor AFTER schema.sql
 -- Creates public bucket + secure Storage policies (no public file listing)
 
--- ── 1. Table grants (API access) ─────────────────────────────────────────
-alter table if exists products disable row level security;
-alter table if exists collections disable row level security;
-alter table if exists orders disable row level security;
-alter table if exists sliders disable row level security;
-alter table if exists subscribers disable row level security;
-
-grant all on products to anon, authenticated, service_role;
-grant all on collections to anon, authenticated, service_role;
-grant all on orders to anon, authenticated, service_role;
-grant all on sliders to anon, authenticated, service_role;
-grant all on subscribers to anon, authenticated, service_role;
-
+-- ── 1. Table grants ─────────────────────────────────────────────────────────
+-- Do NOT grant all to anon/authenticated. Run rls-policies.sql after this file.
+-- See supabase/rls-policies.sql
 -- ── 2. Public storage bucket ───────────────────────────────────────────────
 -- Public bucket = files open via direct URL. No broad SELECT policy needed
 -- (that policy would let anyone LIST all files in the bucket).

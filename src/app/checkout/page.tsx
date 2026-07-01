@@ -62,6 +62,11 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [confirmedCustomer, setConfirmedCustomer] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null>(null);
 
   const shipping = ['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(country) ? 10 : 0;
   const itemsTotal = sumPricedCartItems(cart);
@@ -111,13 +116,14 @@ export default function CheckoutPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Porosia dështoi');
+        setError(data.details ? `${data.error}: ${data.details}` : data.error || 'Porosia dështoi');
         setLoading(false);
         return;
       }
+      setConfirmedCustomer({ firstName, lastName, email });
       setSuccess(true);
       dispatch(clearCart());
-      setTimeout(() => router.push('/'), 2500);
+      setTimeout(() => router.push('/'), 6000);
     } catch {
       setError('Porosia dështoi');
     } finally {
@@ -125,17 +131,28 @@ export default function CheckoutPage() {
     }
   };
 
-  if (success) {
+  if (success && confirmedCustomer) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4">
-        <div className="w-full max-w-md px-6 py-14 text-center">
-          <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white">
-            <FaCheck className="h-4 w-4" />
+      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4 2xl:px-24">
+        <div className="w-full max-w-lg px-6 py-14 text-center">
+          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#0a9945] text-white">
+            <FaCheck className="h-5 w-5" />
           </div>
-          <p className="font-serif text-3xl text-neutral-900">Porosia u dërgua</p>
-          <p className="mt-3 font-bwseidoround text-sm leading-relaxed text-neutral-500">
-            Faleminderit! Do të kontaktoheni së shpejti për konfirmim.
+          <p className="font-serif text-3xl text-neutral-900 sm:text-4xl">
+            Faleminderit, {confirmedCustomer.firstName} {confirmedCustomer.lastName}!
           </p>
+          <p className="mt-4 font-bwseidoround text-base leading-relaxed text-neutral-600">
+            Porosia juaj u dërgua me sukses. Do të kontaktoheni së shpejti për konfirmim.
+          </p>
+          <div className="mx-auto mt-8 max-w-md rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-left">
+            <p className="font-bwseidoround text-sm leading-relaxed text-neutral-700">
+              Kontrolloni email-in tuaj{' '}
+              <span className="font-semibold text-neutral-900">{confirmedCustomer.email}</span>.
+            </p>
+            <p className="mt-2 font-bwseidoround text-sm leading-relaxed text-neutral-500">
+              Nëse nuk e gjeni në inbox, kontrolloni në spam ose junk.
+            </p>
+          </div>
           <p className="mt-8 font-bwseidoround text-[11px] uppercase tracking-[0.2em] text-neutral-400">
             Duke ju ridrejtuar...
           </p>
@@ -148,7 +165,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen w-full bg-white">
       <div className="grid w-full lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
         {/* Left — form */}
-        <form onSubmit={handleCheckout} className="min-w-0 border-b border-neutral-200 px-5 py-10 sm:px-8 lg:border-b-0 lg:border-r lg:px-12 lg:py-12 xl:px-16">
+        <form onSubmit={handleCheckout} className="min-w-0 border-b border-neutral-200 px-5 py-10 sm:px-8 lg:border-b-0 lg:border-r lg:px-12 lg:py-12 xl:px-16 2xl:px-24">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="font-serif text-4xl text-neutral-900 sm:text-[2.75rem]">Pagesa</h1>
@@ -286,7 +303,7 @@ export default function CheckoutPage() {
         </form>
 
         {/* Right — order summary */}
-        <aside className="min-w-0 self-start px-5 py-10 sm:px-8 lg:sticky lg:top-28 lg:px-10 lg:py-12 xl:px-12">
+        <aside className="min-w-0 self-start px-5 py-10 sm:px-8 lg:sticky lg:top-28 lg:px-10 lg:py-12 xl:px-12 2xl:px-24">
           <h2 className="font-serif text-3xl text-neutral-900 sm:text-4xl">Porosia juaj</h2>
 
           <div className="mt-8 space-y-4">
@@ -317,6 +334,7 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div className="mt-2 space-y-0.5 font-bwseidoround text-[11px] uppercase tracking-wider text-neutral-500">
+                      <p>Sasia: {item.quantity}</p>
                       {item.brand && <p>Marka: {item.brand}</p>}
                       {item.size && <p>Madhësia: {item.size}</p>}
                     </div>

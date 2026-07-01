@@ -82,7 +82,7 @@ export default function AllProducts() {
   });
 
   return (
-    <div className="px-4 lg:px-10 py-12 md:py-16">
+    <div className="px-4 lg:px-10 2xl:px-24 py-12 md:py-16">
       {/* Elegant Header */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Collection</h1>

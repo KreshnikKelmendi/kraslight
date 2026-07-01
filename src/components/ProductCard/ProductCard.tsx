@@ -89,7 +89,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
 
   const productHref = `/products/${_id}`;
 
-  const handleImageClick = () => {
+  const handleNavigate = () => {
     saveListingScrollAndGoTop();
     setIsNavigating(true);
   };
@@ -103,7 +103,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       <Link
         href={productHref}
         className="block cursor-pointer"
-        onClick={handleImageClick}
+        onClick={handleNavigate}
         aria-busy={isNavigating}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100">
@@ -140,7 +140,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           )}
 
           {discountPercentage && discountPercentage > 0 && (
-            <span className="absolute left-3 top-3 z-10 bg-neutral-900 px-2 py-0.5 font-bwseidoround text-[10px] uppercase tracking-wider text-white">
+            <span className="absolute left-3 top-3 z-10 bg-red-600 px-2 py-0.5 font-bwseidoround text-[10px] uppercase tracking-wider text-white">
               -{discountPercentage}%
             </span>
           )}
@@ -174,7 +174,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           {brand}
         </p>
 
-        <Link href={productHref} className="block cursor-pointer">
+        <Link href={productHref} className="block cursor-pointer" onClick={handleNavigate}>
           <h3 className="font-bwseidoround text-sm leading-snug text-neutral-900 line-clamp-2 transition-colors group-hover:text-neutral-600">
             {formatProductTitle(title)}
           </h3>

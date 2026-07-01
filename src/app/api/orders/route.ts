@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '../../lib/email';
-import { hasTrackedStock } from '@/app/lib/images';
+import { hasDisplayPrice, hasTrackedStock, sumPricedCartItems } from '@/app/lib/images';
 import { createOrder, findOrders } from '@/app/lib/supabase/orders';
 import { findProductById, incrementProductStock } from '@/app/lib/supabase/products';
 
@@ -50,6 +50,11 @@ export async function POST(req: Request) {
       itemsWithBarcodes.push({
         ...item,
         barcode: product.barcode || '',
+        price: hasDisplayPrice(item.price)
+          ? item.price
+          : hasDisplayPrice(product.price)
+            ? product.price
+            : undefined,
       });
     }
 
@@ -58,12 +63,8 @@ export async function POST(req: Request) {
       shipping = 10;
     }
 
-    const itemsTotal = itemsWithBarcodes.reduce(
-      (sum: number, item: { price: number; quantity: number }) =>
-        sum + item.price * item.quantity,
-      0
-    );
-    const total = itemsTotal + shipping;
+    const itemsTotal = sumPricedCartItems(itemsWithBarcodes);
+    const total = Number((itemsTotal + shipping).toFixed(2));
 
     const order = await createOrder({
       email: body.email,
@@ -82,7 +83,11 @@ export async function POST(req: Request) {
     });
 
     for (const item of body.items) {
-      await incrementProductStock(item.id, -item.quantity);
+      try {
+        await incrementProductStock(item.id, -item.quantity);
+      } catch (stockError) {
+        console.error('Failed to update stock for item:', item.id, stockError);
+      }
     }
 
     try {
@@ -102,8 +107,12 @@ export async function POST(req: Request) {
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error('Error creating order:', error);
+    const message =
+      error && typeof error === 'object' && 'message' in error
+        ? String((error as { message: string }).message)
+        : 'Porosia dështoi';
     return NextResponse.json(
-      { error: 'Failed to create order', details: (error as Error)?.message },
+      { error: 'Porosia dështoi', details: message },
       { status: 500 }
     );
   }

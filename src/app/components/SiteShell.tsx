@@ -1,16 +1,21 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense } from 'react';
+import { ReactNode, Suspense, useEffect } from 'react';
 import Header from './Header/Header';
 import Footer from './Footer/Footer';
 import WhatsAppButton from './WhatsAppButton/WhatsAppButton';
 
 export default function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
+  const isStorefrontShell =
+    !pathname?.startsWith('/admin') && pathname !== '/signin';
 
-  if (isAdmin) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [pathname]);
+
+  if (!isStorefrontShell) {
     return <>{children}</>;
   }
 

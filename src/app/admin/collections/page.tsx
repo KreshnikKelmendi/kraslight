@@ -28,6 +28,7 @@ interface Collection {
   image: string;
   categories: string[];
   products: Product[];
+  sortOrder?: number;
 }
 
 interface CategoryGroup {
@@ -60,6 +61,7 @@ export default function CollectionsAdminPage() {
   const [editSelectedCategories, setEditSelectedCategories] = useState<string[]>([]);
   const [editLoading, setEditLoading] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [orderSaving, setOrderSaving] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -115,7 +117,10 @@ export default function CollectionsAdminPage() {
   async function fetchCollections() {
     const res = await fetch("/api/collections");
     const data = await res.json();
-    setCollections(data);
+    const sorted = Array.isArray(data)
+      ? [...data].sort((a: Collection, b: Collection) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      : [];
+    setCollections(sorted);
   }
 
   async function fetchProducts() {
@@ -240,7 +245,6 @@ export default function CollectionsAdminPage() {
     setShowEditForm(false);
   };
 
-  // Handle edit submission
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCollection) return;
@@ -289,18 +293,47 @@ export default function CollectionsAdminPage() {
     }
   };
 
+  async function moveCollection(index: number, direction: "up" | "down") {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= collections.length) return;
+
+    const reordered = [...collections];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+
+    setOrderSaving(true);
+    try {
+      const response = await fetch("/api/collections/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: reordered.map((c) => c._id) }),
+      });
+      if (response.ok) {
+        setCollections(reordered.map((c, i) => ({ ...c, sortOrder: i + 1 })));
+        showSuccessAlert("✅ Renditja u përditësua!");
+      } else {
+        showErrorAlert("❌ Gabim gjatë ndryshimit të renditjes!");
+      }
+    } catch {
+      showErrorAlert("❌ Gabim gjatë ndryshimit të renditjes!");
+    } finally {
+      setOrderSaving(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur shadow-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+    <div className="min-h-screen w-full bg-gray-50">
+      <header className="sticky top-0 z-30 w-full border-b border-gray-200 bg-white">
+        <div className="flex w-full items-center justify-between px-4 py-5 lg:px-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Koleksionet</h1>
-            <p className="mt-1 text-gray-500 text-sm">Menaxho koleksionet e produkteve sipas kategorive</p>
+            <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">Menaxho Koleksionet</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Renditja (#1, #2…) shfaqet njësoj në website
+            </p>
           </div>
           <button
+            type="button"
             onClick={() => setShowForm(!showForm)}
-            className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+            className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
           >
             {showForm ? "Mbyll" : "Shto Koleksion"}
           </button>
@@ -309,28 +342,23 @@ export default function CollectionsAdminPage() {
 
       {/* Alert */}
       {showAlert && (
-        <div className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl transform transition-all duration-300 ${
-          alertType === "success" 
-            ? "bg-gradient-to-r from-green-500 to-green-600 text-white" 
-            : "bg-gradient-to-r from-red-500 to-red-600 text-white"
+        <div className={`fixed top-6 right-6 z-50 rounded-lg px-4 py-3 shadow-lg ${
+          alertType === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
         }`}>
-          <div className="flex items-center gap-3">
-            <span className="text-lg">{alertType === "success" ? "✅" : "❌"}</span>
-            <span className="font-medium">{alertMessage}</span>
-          </div>
+          <span className="font-medium">{alertMessage}</span>
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="w-full px-4 py-8 lg:px-8">
         {lastCompression && (
           <UploadCompressionInfo stats={lastCompression} className="mb-6" />
         )}
 
         {/* Add Collection Form */}
         {showForm && (
-          <div className="mb-8 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-              <h2 className="text-xl font-semibold text-white">Shto Koleksion të Ri</h2>
+          <div className="mb-8 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Shto Koleksion të Ri</h2>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -432,7 +460,7 @@ export default function CollectionsAdminPage() {
               <div className="flex gap-4 pt-4 border-t border-gray-200">
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="rounded-lg bg-gray-900 px-8 py-3 font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2"
                   disabled={loading}
                 >
                   {loading ? (
@@ -461,9 +489,9 @@ export default function CollectionsAdminPage() {
 
         {/* Edit Collection Form */}
         {showEditForm && editingCollection && (
-          <div className="mb-8 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-              <h2 className="text-xl font-semibold text-white">Përditëso Koleksionin</h2>
+          <div className="mb-8 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Përditëso Koleksionin</h2>
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -577,7 +605,7 @@ export default function CollectionsAdminPage() {
               <div className="flex gap-4 pt-4 border-t border-gray-200">
                 <button
                   type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="rounded-lg bg-[#0a9945] px-8 py-3 font-medium text-white transition-colors hover:bg-[#088038] disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2"
                   disabled={editLoading}
                 >
                   {editLoading ? (
@@ -604,115 +632,127 @@ export default function CollectionsAdminPage() {
           </div>
         )}
 
-        {/* Collections Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {collections.map(collection => (
-            <div key={collection._id} className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-transform duration-300 transform hover:-translate-y-1 group relative">
-              <div className="relative w-full h-52 bg-gradient-to-br from-blue-100 to-green-100">
-                {collection.image ? (
-                  <Image 
-                    src={collection.image} 
-                    alt={collection.name} 
-                    fill 
-                    className="object-cover rounded-t-3xl group-hover:scale-105 transition-transform duration-300" 
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400">Nuk ka imazh</span>
-                  </div>
-                )}
-                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        {/* Collections List */}
+        <div className="w-full space-y-4">
+          {collections.map((collection, index) => (
+            <div
+              key={collection._id}
+              className="flex w-full flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center lg:p-5"
+            >
+              <div className="flex shrink-0 items-center gap-3 sm:w-28">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900 text-sm font-bold text-white">
+                  #{index + 1}
+                </span>
+                <div className="flex flex-col gap-1">
                   <button
-                    onClick={() => startEdit(collection)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
-                    title="Përditëso koleksionin"
+                    type="button"
+                    disabled={index === 0 || orderSaving}
+                    onClick={() => moveCollection(index, "up")}
+                    className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label="Lart"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                    ↑
                   </button>
                   <button
-                    onClick={async () => {
-                      if (window.confirm('A je i sigurt që do ta fshish këtë koleksion?')) {
-                        try {
-                          const response = await fetch(`/api/collections/${collection._id}`, { method: 'DELETE' });
-                          if (response.ok) {
-                            showSuccessAlert("✅ Koleksioni u fshi me sukses!");
-                            await fetchCollections();
-                          } else {
-                            showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
-                          }
-                        } catch {
-                          showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
-                        }
-                      }
-                    }}
-                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
-                    title="Fshi koleksionin"
+                    type="button"
+                    disabled={index === collections.length - 1 || orderSaving}
+                    onClick={() => moveCollection(index, "down")}
+                    className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label="Poshtë"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    ↓
                   </button>
                 </div>
               </div>
-              <div className="p-7">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2 truncate">{collection.name}</h3>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+
+              <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:h-24 sm:w-36">
+                {collection.image ? (
+                  <Image
+                    src={collection.image}
+                    alt={collection.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                    Nuk ka imazh
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-lg font-bold text-gray-900">{collection.name}</h3>
+                {collection.description && (
+                  <p className="mt-1 line-clamp-2 text-sm text-gray-500">{collection.description}</p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
                     {collection.products.length} produkte
                   </span>
-                  {collection.categories && collection.categories.length > 0 && (
-                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
+                  {collection.categories?.length > 0 && (
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
                       {collection.categories.length} kategori
                     </span>
                   )}
                 </div>
-                {collection.categories && collection.categories.length > 0 && (
-                  <div className="space-y-2 mb-4">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kategoritë:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {collection.categories.map(category => (
-                        <span key={category} className={`px-2 py-1 rounded-md text-xs font-medium ${category === 'Produktet ne Zbritje' ? 'bg-yellow-200 text-yellow-900 border border-yellow-400' : 'bg-purple-100 text-purple-700'}`}>
-                          {category}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Produktet:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {collection.products.slice(0, 3).map(product => (
-                      <span key={product._id} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-md">
-                        {product.title}
+                {collection.categories?.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {collection.categories.slice(0, 4).map((category) => (
+                      <span
+                        key={category}
+                        className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-600"
+                      >
+                        {category}
                       </span>
                     ))}
-                    {collection.products.length > 3 && (
-                      <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-md">
-                        +{collection.products.length - 3} më shumë
-                      </span>
-                    )}
                   </div>
-                </div>
+                )}
+              </div>
+
+              <div className="flex shrink-0 gap-2 sm:flex-col lg:flex-row">
+                <button
+                  type="button"
+                  onClick={() => startEdit(collection)}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                >
+                  Ndrysho
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm("A je i sigurt që do ta fshish këtë koleksion?")) {
+                      try {
+                        const response = await fetch(`/api/collections/${collection._id}`, {
+                          method: "DELETE",
+                        });
+                        if (response.ok) {
+                          showSuccessAlert("✅ Koleksioni u fshi me sukses!");
+                          await fetchCollections();
+                        } else {
+                          showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
+                        }
+                      } catch {
+                        showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
+                      }
+                    }
+                  }}
+                  className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                >
+                  Fshi
+                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Empty State */}
         {collections.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nuk ka koleksione</h3>
-            <p className="text-gray-600 mb-6">Krijo koleksionin tënd të parë për të filluar</p>
+          <div className="w-full py-16 text-center">
+            <h3 className="mb-2 text-lg font-medium text-gray-900">Nuk ka koleksione</h3>
+            <p className="mb-6 text-gray-600">Krijo koleksionin tënd të parë për të filluar</p>
             <button
+              type="button"
               onClick={() => setShowForm(true)}
-              className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200"
+              className="rounded-lg bg-gray-900 px-6 py-3 font-semibold text-white transition-colors hover:bg-gray-800"
             >
               Shto Koleksion të Parë
             </button>

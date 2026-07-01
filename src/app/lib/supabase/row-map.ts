@@ -145,6 +145,7 @@ export interface CollectionDoc {
   image: string;
   categories: string[];
   products: string[];
+  sortOrder: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -158,6 +159,7 @@ export function collectionRowToDoc(row: Record<string, unknown>): CollectionDoc 
     image: String(row.image),
     categories: Array.isArray(row.categories) ? row.categories.map(String) : [],
     products: Array.isArray(row.product_ids) ? row.product_ids.map(String) : [],
+    sortOrder: row.sort_order != null ? Number(row.sort_order) : 0,
     createdAt: row.created_at ? String(row.created_at) : undefined,
     updatedAt: row.updated_at ? String(row.updated_at) : undefined,
   };

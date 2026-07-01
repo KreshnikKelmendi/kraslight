@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '../components/Sidebar/Sidebar';
 
 export default function AdminLayout({
@@ -12,28 +12,27 @@ export default function AdminLayout({
 }) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/signin');
+      const from = pathname ? `?from=${encodeURIComponent(pathname)}` : '';
+      router.replace(`/signin${from}`);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, pathname, router]);
 
-  // Show loading or redirect if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+      <div className="flex min-h-screen items-center justify-center bg-neutral-100">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-neutral-200 border-t-neutral-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="flex min-h-screen bg-neutral-100">
       <Sidebar />
-      <main className="flex-1 ml-64">
-        {children}
-      </main>
+      <main className="ml-64 flex-1">{children}</main>
     </div>
   );
-} 
+}

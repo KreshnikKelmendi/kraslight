@@ -1,14 +1,14 @@
 // src/app/components/layout/Header/Header.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FiSearch, FiShoppingBag, FiUser, FiMenu, FiX, FiChevronDown, FiInstagram, FiFacebook } from 'react-icons/fi';
-import { useAuth } from '../../lib/AuthContext';
-import { useRouter } from 'next/navigation';
+import { FiSearch, FiShoppingBag, FiMenu, FiX, FiChevronDown, FiInstagram, FiFacebook, FiArrowRight } from 'react-icons/fi';
+import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../lib/store';
+import { getCartUnitCount } from '../../../lib/cartSlice';
 import Cart from '../../../components/Cart';
 import Searchbar from '../Search/Searchbar';
 import GlobalDiscountRibbon from './GlobalDiscountRibbon';
@@ -51,8 +51,7 @@ function MobileMenuReveal({
 }
 
 const Header = () => {
-  const { isAuthenticated, user, logout } = useAuth();
-  const router = useRouter();
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileMenuMounted, setMobileMenuMounted] = useState(false);
   const [isProduktetNdricimitOpen, setIsProduktetNdricimitOpen] = useState(false);
@@ -62,9 +61,32 @@ const Header = () => {
   const [showCart, setShowCart] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const cartCount = useSelector((state: RootState) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartCount = getCartUnitCount(cartItems);
   const [globalDiscount, setGlobalDiscount] = useState<{ isGlobalDiscount: boolean; discountPercentage?: number }>({ isGlobalDiscount: false });
+  const [navigatingCollectionId, setNavigatingCollectionId] = useState<string | null>(null);
+  const [cartHighlightId, setCartHighlightId] = useState<string | null>(null);
+  const dropdownCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openProduktetDropdown = useCallback(() => {
+    if (dropdownCloseTimer.current) {
+      clearTimeout(dropdownCloseTimer.current);
+      dropdownCloseTimer.current = null;
+    }
+    setIsProduktetNdricimitOpen(true);
+  }, []);
+
+  const closeProduktetDropdown = useCallback(() => {
+    dropdownCloseTimer.current = setTimeout(() => {
+      setIsProduktetNdricimitOpen(false);
+    }, 120);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dropdownCloseTimer.current) clearTimeout(dropdownCloseTimer.current);
+    };
+  }, []);
 
   const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false);
@@ -79,12 +101,12 @@ const Header = () => {
   }, []);
 
   const toggleMobileMenu = useCallback(() => {
-    if (isMobileMenuOpen || mobileMenuMounted) {
+    if (isMobileMenuOpen) {
       closeMobileMenu();
     } else {
       openMobileMenu();
     }
-  }, [closeMobileMenu, isMobileMenuOpen, mobileMenuMounted, openMobileMenu]);
+  }, [closeMobileMenu, isMobileMenuOpen, openMobileMenu]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -98,6 +120,10 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setNavigatingCollectionId(null);
+  }, [pathname]);
 
   useEffect(() => {
     const loadHeaderData = async () => {
@@ -121,7 +147,11 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
-    const handleOpenCart = () => setShowCart(true);
+    const handleOpenCart = (event: Event) => {
+      const detail = (event as CustomEvent<{ highlightId?: string }>).detail;
+      setCartHighlightId(detail?.highlightId ?? null);
+      setShowCart(true);
+    };
     window.addEventListener('open-cart', handleOpenCart);
     return () => window.removeEventListener('open-cart', handleOpenCart);
   }, []);
@@ -142,75 +172,77 @@ const Header = () => {
     return () => window.clearTimeout(timer);
   }, [isMobileMenuOpen, mobileMenuMounted]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.dropdown-container')) {
-        setIsProduktetNdricimitOpen(false);
-      }
-    };
-
-    if (isProduktetNdricimitOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isProduktetNdricimitOpen]);
-
-  const handleUserIconClick = () => {
-    if (isAuthenticated) {
-      setShowUserDropdown(!showUserDropdown);
-    } else {
-      router.push('/signin');
-    }
-  };
-
   const closeAllMobileDropdowns = () => {
     closeMobileMenu();
   };
 
   const mobileMenuVisible = isMobileMenuOpen || mobileMenuMounted;
 
+  const isNavActive = (href: string, exact = true) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
+  const desktopNavLinkClass = (href: string, exact = true) => {
+    const active = isNavActive(href, exact);
+    return `${
+      active ? 'text-[#0a9945]' : 'text-gray-800 hover:text-[#0a9945]'
+    } font-medium transition-colors duration-200 relative group`;
+  };
+
+  const desktopNavUnderlineClass = (href: string, exact = true) => {
+    const active = isNavActive(href, exact);
+    return `absolute bottom-0 left-0 h-0.5 bg-[#0a9945] transition-all duration-200 ${
+      active ? 'w-full' : 'w-0 group-hover:w-full'
+    }`;
+  };
+
+  const mobileNavLinkClass = (href: string, exact = true) => {
+    const active = isNavActive(href, exact);
+    return `block rounded-xl px-4 py-4 text-xl font-bold transition-colors duration-200 ${
+      active ? 'text-[#0a9945] bg-[#0a9945]/5' : 'text-gray-800 hover:bg-gray-50'
+    }`;
+  };
+
   return (
-    <header className={`sticky top-0 left-0 right-0 z-40 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] font-bwseidoround ${
+    <>
+    <header className={`sticky top-0 left-0 right-0 z-40 overflow-visible transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] font-bwseidoround ${
       isScrolled 
-        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
+        ? 'bg-white shadow-lg border-b border-gray-100' 
         : 'bg-white shadow-sm'
     }`}>
       {globalDiscount.isGlobalDiscount && globalDiscount.discountPercentage && (
         <GlobalDiscountRibbon discountPercentage={globalDiscount.discountPercentage} />
       )}
       <div
-        className={`header-topbar-transition overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-[60px] opacity-100 mb-0 lg:mb-2'}`}
+        className={`header-topbar-transition overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0 pointer-events-none' : 'max-h-[60px] opacity-100 mb-0 lg:mb-2'}`}
         style={{ transition: 'max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s, margin 0.4s' }}
       >
-        <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:px-10">
+        <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:px-10 2xl:px-24">
           <div className="flex items-center justify-between text-[12px] lg:text-sm">
             <div className="flex items-center space-x-3">
               <span className="text-gray-300 font-medium">Rruga e Pejës, Sllatinë e Madhe, Fushë Kosovë</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <a href="https://www.instagram.com/kraslight.ks/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200" aria-label="Instagram">
+            <div className="flex items-center space-x-4 lg:space-x-5">
+              <a href="https://www.instagram.com/kraslight.ks/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors duration-200" aria-label="Instagram">
                 <FiInstagram size={16} />
+                <span className="hidden lg:inline font-medium">Instagram</span>
               </a>
-              <a href="https://www.facebook.com/kraslight" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors duration-200" aria-label="Facebook">
+              <a href="https://www.facebook.com/kraslight" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors duration-200" aria-label="Facebook">
                 <FiFacebook size={16} />
+                <span className="hidden lg:inline font-medium">Facebook</span>
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-100 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] py-0">
-        <div className="mx-auto px-2 lg:px-10">
+      <div className="bg-white border-b border-gray-100 overflow-visible transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] py-0">
+        <div className="mx-auto px-2 lg:px-10 2xl:px-24">
             <div
               className={`flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isScrolled ? 'h-16 lg:h-20' : 'h-20 lg:h-28'
               }`}
             >
-              <div className="lg:hidden">
+              <div className="lg:hidden relative z-20">
                 <button
                   onClick={toggleMobileMenu}
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#0a9945]"
@@ -234,8 +266,8 @@ const Header = () => {
                 />
               </Link>
 
-              <div className="lg:hidden absolute left-1/2 transform -translate-x-1/2">
-                <Link href="/" className="flex-shrink-0">
+              <div className="lg:hidden absolute left-1/2 transform -translate-x-1/2 pointer-events-none">
+                <Link href="/" className="flex-shrink-0 pointer-events-auto">
                   <Image
                     src="/assets/logo/kraslight-logo.png"
                     alt="Kraslight Logo"
@@ -252,72 +284,158 @@ const Header = () => {
               <nav className="hidden lg:flex items-center space-x-6 2xl:space-x-8 uppercase">
                 <Link 
                   href="/" 
-                  className="text-gray-800 hover:text-gray-600 font-medium transition-colors duration-200 relative group"
+                  className={desktopNavLinkClass('/')}
                   onClick={scrollToTop}
                 >
                   Ballina
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-800 transition-all duration-200 group-hover:w-full"></span>
+                  <span className={desktopNavUnderlineClass('/')} />
                 </Link>
 
-                <div className="relative dropdown-container">
-                  <button 
-                    className="text-gray-800 hover:text-gray-600 font-medium transition-colors duration-200 flex items-center space-x-1 relative"
-                    onClick={() => {
-                      setIsProduktetNdricimitOpen(!isProduktetNdricimitOpen);
-                    }}
+                <div
+                  className="relative dropdown-container hidden lg:block"
+                  onMouseEnter={openProduktetDropdown}
+                  onMouseLeave={closeProduktetDropdown}
+                >
+                  <button
+                    type="button"
+                    className={`${
+                      isNavActive('/collections', false)
+                        ? 'text-[#0a9945]'
+                        : 'text-gray-800 hover:text-[#0a9945]'
+                    } font-medium transition-colors duration-300 flex items-center space-x-1.5 relative py-1`}
+                    aria-expanded={isProduktetNdricimitOpen}
                   >
                     <span>PRODUKTET E NDRIÇIMIT</span>
-                    <FiChevronDown size={14} className={`transition-transform duration-200 ${isProduktetNdricimitOpen ? 'rotate-180' : ''}`} />
-                    <span className={`absolute bottom-0 left-0 h-0.5 bg-gray-800 transition-all duration-200 ${isProduktetNdricimitOpen ? 'w-full' : 'w-0'}`}></span>
+                    <FiChevronDown
+                      size={14}
+                      className={`transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        isProduktetNdricimitOpen || isNavActive('/collections', false)
+                          ? 'rotate-180 text-[#0a9945]'
+                          : ''
+                      }`}
+                    />
+                    <span
+                      className={`absolute -bottom-0.5 left-0 h-0.5 bg-gradient-to-r from-[#0a9945] to-gray-700 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        isProduktetNdricimitOpen || isNavActive('/collections', false) ? 'w-full' : 'w-0'
+                      }`}
+                    />
                   </button>
+
                   <div
-                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-[85ch] bg-white border border-gray-200 rounded-xl shadow-xl transition-all duration-300 ease-in-out origin-top z-50
-                               ${isProduktetNdricimitOpen 
-                                 ? 'opacity-100 visible scale-100 translate-y-0' 
-                                 : 'opacity-0 invisible scale-95 -translate-y-2'
-                               }`}
+                    className={`absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isProduktetNdricimitOpen
+                        ? 'opacity-100 visible translate-y-0 pointer-events-auto'
+                        : 'opacity-0 invisible -translate-y-2 pointer-events-none'
+                    }`}
                   >
-                    <div className="py-8">
-                      {isLoadingCollections ? (
-                        <div className="flex flex-col gap-3 px-8 py-10">
-                          {[...Array(4)].map((_, i) => (
-                            <div key={i} className="flex items-center gap-3 animate-pulse">
-                              <div className="w-10 h-10 bg-gray-200 rounded-lg" />
-                              <div className="flex-1 h-4 bg-gray-200 rounded" />
-                            </div>
-                          ))}
-                        </div>
-                      ) : collections.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-8 px-8 py-4">
-                          {collections.map((col) => (
-                            <Link
-                              key={col._id}
-                              href={`/collections/${col._id}`}
-                              onClick={() => {
-                                scrollToTop();
-                                setIsProduktetNdricimitOpen(false);
-                              }}
-                              className="group flex flex-row rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition bg-white border border-gray-100"
-                            >
-                              <div className="w-40 h-40 bg-gray-100 relative flex-shrink-0">
-                                <Image src={optimizeImageUrl(col.image || IMAGE_PLACEHOLDER, { width: 320, quality: 'auto:good' })} alt={col.name} fill className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" />
+                    <div className="w-[min(920px,92vw)] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_28px_70px_-20px_rgba(0,0,0,0.22)]">
+                      <div className="border-b border-gray-100 bg-gradient-to-r from-[#0a9945]/8 via-white to-gray-50 px-8 py-5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0a9945]">
+                          Koleksionet
+                        </p>
+                        <h3 className="mt-1 text-lg font-bold text-gray-900">Produktet e Ndriçimit</h3>
+                      </div>
+
+                      <div className="p-6">
+                        {isLoadingCollections ? (
+                          <div className="grid grid-cols-2 gap-4">
+                            {[...Array(4)].map((_, i) => (
+                              <div key={i} className="flex animate-pulse gap-4 rounded-xl bg-gray-50 p-3 ring-1 ring-gray-100">
+                                <div className="h-24 w-24 shrink-0 rounded-lg bg-gray-200" />
+                                <div className="flex flex-1 flex-col justify-center gap-2">
+                                  <div className="h-4 w-2/3 rounded bg-gray-200" />
+                                  <div className="h-3 w-1/2 rounded bg-gray-100" />
+                                </div>
                               </div>
-                              <div className="flex flex-col justify-center pl-6 pr-4 py-4 flex-1">
-                                <span className="text-gray-900 font-bold text-base mb-1 text-left w-full">{col.name}</span>
-                                <div className="w-8 h-1 bg-[#0a9945] rounded-full mb-1"></div>
-                                <span className="text-xs text-[#0a9945] font-medium tracking-wider">Eksploroni koleksionin</span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-8">
-                          <p className="text-gray-500 text-base font-semibold">Nuk ka koleksione të disponueshme</p>
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        ) : collections.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-4">
+                            {collections.map((col, index) => {
+                              const isNavigating = navigatingCollectionId === col._id;
+                              return (
+                              <Link
+                                key={col._id}
+                                href={`/collections/${col._id}`}
+                                onClick={() => {
+                                  setNavigatingCollectionId(col._id);
+                                  window.scrollTo({ top: 0, behavior: 'auto' });
+                                  setIsProduktetNdricimitOpen(false);
+                                }}
+                                aria-busy={isNavigating}
+                                className={`group relative flex overflow-hidden rounded-xl bg-gray-50/80 ring-1 ring-gray-100 transition-all duration-300 hover:-translate-y-1 hover:bg-gradient-to-br hover:from-[#0a9945]/10 hover:via-white hover:to-gray-50 hover:ring-[#0a9945]/50 hover:shadow-[0_16px_40px_-12px_rgba(10,153,69,0.35)] ${
+                                  isNavigating ? 'pointer-events-none ring-[#0a9945]/40' : ''
+                                }`}
+                                style={{
+                                  transitionDelay: isProduktetNdricimitOpen ? `${index * 45}ms` : '0ms',
+                                }}
+                              >
+                                <div className="absolute left-0 top-0 h-full w-1 scale-y-0 bg-gradient-to-b from-[#0a9945] to-gray-700 transition-transform duration-300 group-hover:scale-y-100 origin-top" />
+                                <div className="relative h-28 w-28 shrink-0 overflow-hidden">
+                                  <Image
+                                    src={optimizeImageUrl(col.image || IMAGE_PLACEHOLDER, { width: 320, quality: 'auto:good' })}
+                                    alt={col.name}
+                                    fill
+                                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                  />
+                                  <div className="absolute inset-0 bg-[#0a9945]/0 transition-colors duration-300 group-hover:bg-[#0a9945]/15" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-50 transition-opacity duration-300 group-hover:opacity-70" />
+                                </div>
+                                <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
+                                  <span className="truncate text-base font-bold text-gray-900 transition-colors duration-300 group-hover:text-[#0a9945]">
+                                    {col.name}
+                                  </span>
+                                  {col.description && (
+                                    <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-gray-500 transition-colors duration-300 group-hover:text-gray-600">
+                                      {col.description}
+                                    </span>
+                                  )}
+                                  <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#0a9945]">
+                                    Eksploroni koleksionin
+                                    <FiArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
+                                  </span>
+                                </div>
+                                <div
+                                  className={`absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[2px] transition-opacity duration-200 ${
+                                    isNavigating ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                                  }`}
+                                >
+                                  <div
+                                    className={`h-9 w-9 rounded-full border-2 border-gray-200 border-t-[#0a9945] ${
+                                      isNavigating ? 'animate-spin opacity-100' : 'opacity-0'
+                                    }`}
+                                  />
+                                </div>
+                              </Link>
+                            );})}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-10">
+                            <p className="text-base font-semibold text-gray-500">Nuk ka koleksione të disponueshme</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                <Link
+                  href="/rreth-nesh"
+                  className={desktopNavLinkClass('/rreth-nesh')}
+                  onClick={scrollToTop}
+                >
+                  Rreth Nesh
+                  <span className={desktopNavUnderlineClass('/rreth-nesh')} />
+                </Link>
+
+                <Link
+                  href="/kontakti"
+                  className={desktopNavLinkClass('/kontakti')}
+                  onClick={scrollToTop}
+                >
+                  Kontakti
+                  <span className={desktopNavUnderlineClass('/kontakti')} />
+                </Link>
               </nav>
 
               <div className="flex items-center space-x-2">
@@ -333,44 +451,14 @@ const Header = () => {
                   </div>
                 )}
 
-                <div className="relative hidden lg:block">
-                  <button 
-                    onClick={handleUserIconClick}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
-                  >
-                    <FiUser size={20} className="text-gray-600 hover:text-gray-800" />
-                    {isAuthenticated && (
-                      <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-3 h-3"></span>
-                    )}
-                  </button>
-                  {showUserDropdown && isAuthenticated && (
-                    <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px] z-50">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">Welcome back!</p>
-                        <p className="text-xs text-gray-500">{user?.username}</p>
-                      </div>
-                      <Link href="/admin/products/list" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm">
-                        My Products
-                      </Link>
-                      <Link href="/admin/orders" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm">
-                        Orders
-                      </Link>
-                      <button
-                        onClick={() => {
-                          logout();
-                          setShowUserDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 text-sm"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-
                 <div className="relative">
                   <button 
-                    onClick={() => setShowCart(!showCart)} 
+                    onClick={() => {
+                      if (!showCart) {
+                        setCartHighlightId(null);
+                      }
+                      setShowCart(!showCart);
+                    }}
                     className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
                   >
                     <FiShoppingBag size={20} className="text-gray-600 hover:text-gray-800" />
@@ -385,6 +473,8 @@ const Header = () => {
             </div>
           </div>
         </div>
+
+    </header>
 
       {mobileMenuMounted && (
         <div className="fixed inset-0 z-50 lg:hidden" aria-hidden={!isMobileMenuOpen}>
@@ -424,21 +514,25 @@ const Header = () => {
             </MobileMenuReveal>
             <div className="flex-1 overflow-y-auto overscroll-contain">
               <div className="flex min-h-full flex-col space-y-2 p-6">
-                <MobileMenuReveal orderFromBottom={3} isOpen={isMobileMenuOpen}>
+                <MobileMenuReveal orderFromBottom={5} isOpen={isMobileMenuOpen}>
                   <Link
                     href="/"
-                    className="block rounded-xl px-4 py-4 text-xl font-bold text-gray-800 transition-colors duration-200 hover:bg-gray-50"
+                    className={mobileNavLinkClass('/')}
                     onClick={scrollToTop}
                   >
                     BALLINA
                   </Link>
                 </MobileMenuReveal>
 
-                <MobileMenuReveal orderFromBottom={2} isOpen={isMobileMenuOpen}>
+                <MobileMenuReveal orderFromBottom={4} isOpen={isMobileMenuOpen}>
                   <div>
                     <button
                       onClick={() => setIsMobileProduktetNdricimitOpen(!isMobileProduktetNdricimitOpen)}
-                      className="flex w-full items-center justify-between rounded-xl px-4 py-4 text-left text-xl font-bold text-gray-800 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0a9945]"
+                      className={`flex w-full items-center justify-between rounded-xl px-4 py-4 text-left text-xl font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#0a9945] ${
+                        isNavActive('/collections', false)
+                          ? 'text-[#0a9945] bg-[#0a9945]/5'
+                          : 'text-gray-800 hover:bg-gray-50'
+                      }`}
                     >
                       PRODUKTET E NDRIÇIMIT
                       <FiChevronDown
@@ -505,6 +599,26 @@ const Header = () => {
                   </div>
                 </MobileMenuReveal>
 
+                <MobileMenuReveal orderFromBottom={3} isOpen={isMobileMenuOpen}>
+                  <Link
+                    href="/rreth-nesh"
+                    className={mobileNavLinkClass('/rreth-nesh')}
+                    onClick={scrollToTop}
+                  >
+                    RRETH NESH
+                  </Link>
+                </MobileMenuReveal>
+
+                <MobileMenuReveal orderFromBottom={2} isOpen={isMobileMenuOpen}>
+                  <Link
+                    href="/kontakti"
+                    className={mobileNavLinkClass('/kontakti')}
+                    onClick={scrollToTop}
+                  >
+                    KONTAKTI
+                  </Link>
+                </MobileMenuReveal>
+
                 <div className="mt-auto space-y-4 border-t border-gray-200 pt-6">
                   <MobileMenuReveal orderFromBottom={1} isOpen={isMobileMenuOpen}>
                     <div className="flex items-center gap-4 px-4">
@@ -528,28 +642,6 @@ const Header = () => {
                       </a>
                     </div>
                   </MobileMenuReveal>
-
-                  <MobileMenuReveal orderFromBottom={0} isOpen={isMobileMenuOpen}>
-                    {!isAuthenticated ? (
-                      <Link 
-                        href="/signin" 
-                        className="block rounded-xl px-4 py-4 text-xl font-bold text-gray-800 transition-colors duration-200 hover:bg-gray-50"
-                        onClick={scrollToTop}
-                      >
-                        SIGN IN TO GET REWARDS
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          logout();
-                          scrollToTop();
-                        }}
-                        className="w-full rounded-xl px-4 py-4 text-left text-xl font-bold text-red-600 transition-colors duration-200 hover:bg-red-50"
-                      >
-                        SIGN OUT
-                      </button>
-                    )}
-                  </MobileMenuReveal>
                 </div>
               </div>
             </div>
@@ -558,9 +650,15 @@ const Header = () => {
       )}
 
       {showCart && (
-        <Cart onClose={() => setShowCart(false)} />
+        <Cart
+          highlightItemId={cartHighlightId}
+          onClose={() => {
+            setShowCart(false);
+            setCartHighlightId(null);
+          }}
+        />
       )}
-    </header>
+    </>
   );
 };
 

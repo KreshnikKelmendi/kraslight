@@ -185,7 +185,7 @@ export default function Main({ initialSlider }: MainProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/60 to-transparent" />
         {/* Slide Content */}
         <div className="absolute inset-0 flex items-end sm:items-center">
-          <div className="max-w-4xl px-4 lg:px-10 py-2 sm:py-0 mb-10 sm:mb-0 w-full">
+          <div className="max-w-4xl px-4 lg:px-10 2xl:px-24 py-2 sm:py-0 mb-10 sm:mb-0 w-full">
             {currentSlideContent.title && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}

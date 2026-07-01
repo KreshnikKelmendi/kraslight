@@ -55,7 +55,7 @@ const Footer = () => {
   return (
     <footer className="w-full bg-gradient-to-r from-[#0a9945] to-gray-800 text-white font-bwseidoround relative overflow-hidden font-bwseidoround">
       
-      <div className="max-w-[1920px] mx-auto px-4 lg:px-10 py-16 relative z-10">
+      <div className="max-w-[1920px] mx-auto px-4 lg:px-10 2xl:px-24 py-16 relative z-10">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           
@@ -130,7 +130,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center group">
+                <Link href="/rreth-nesh" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center group">
                   <span className="w-1 h-1 bg-[#0a9945] rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Rreth Nesh
                 </Link>
@@ -148,7 +148,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center group">
+                <Link href="/kontakti" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm flex items-center group">
                   <span className="w-1 h-1 bg-[#0a9945] rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Kontakti
                 </Link>

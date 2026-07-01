@@ -1,19 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/AuthContext';
 import { FiUser, FiLock, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
 
+const REMEMBER_ME_KEY = 'auth_remember_me';
+
 export default function SignIn() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
+
+  useEffect(() => {
+    setRememberMe(localStorage.getItem(REMEMBER_ME_KEY) === 'true');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,10 +29,8 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      const success = await login(username, password, from || undefined);
-      if (success) {
-        // No need to push here, AuthProvider handles redirect
-      } else {
+      const success = await login(username, password, from || undefined, rememberMe);
+      if (!success) {
         setError('Invalid username or password');
       }
     } catch {
@@ -35,7 +41,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-200 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-200 p-4 2xl:px-24">
       <div className="max-w-md w-full mx-4">
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
           {/* Logo Section */}
@@ -67,6 +73,7 @@ export default function SignIn() {
                     name="username"
                     type="text"
                     required
+                    autoComplete="username"
                     className="block w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white text-base"
                     placeholder="Username"
                     value={username}
@@ -74,6 +81,7 @@ export default function SignIn() {
                   />
                 </div>
               </div>
+
               <div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -82,25 +90,45 @@ export default function SignIn() {
                   <input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
+                    autoComplete="current-password"
                     className="block w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white text-base"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="mt-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                >
+                  {showPassword ? 'Hide Password' : 'Show Password'}
+                </button>
               </div>
+
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700">Remember me on this device</span>
+              </label>
+
               {error && (
                 <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-start space-x-3">
                   <FiAlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
               )}
+
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-4 px-6 rounded-xl text-white font-semibold bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 transform hover:scale-[1.01] ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                className={`w-full py-4 px-6 rounded-xl text-white font-semibold bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 transform hover:scale-[1.01] ${isLoading ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
@@ -120,4 +148,4 @@ export default function SignIn() {
       </div>
     </div>
   );
-} 
+}

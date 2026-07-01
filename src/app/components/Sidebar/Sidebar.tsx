@@ -4,12 +4,14 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../lib/AuthContext';
+import { usePendingOrderCount } from '@/app/hooks/usePendingOrderCount';
 import { FiList, FiHome, FiLogOut, FiImage, FiClipboard, FiMail, FiBookOpen } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 
 const Sidebar = () => {
   const { logout } = useAuth();
   const router = useRouter();
+  const { count: pendingOrderCount } = usePendingOrderCount();
 
   const handleSignOut = () => {
     logout();
@@ -49,8 +51,16 @@ const Sidebar = () => {
             href="/admin/orders"
             className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200 group"
           >
-            <FiClipboard className="w-5 h-5 group-hover:text-green-400 transition-colors" />
-            <span className="font-medium">Porositë</span>
+            <FiClipboard className="w-5 h-5 group-hover:text-green-400 transition-colors shrink-0" />
+            <span className="font-medium flex-1">Porositë</span>
+            {pendingOrderCount > 0 && (
+              <span
+                className="min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold leading-none shadow-sm"
+                aria-label={`${pendingOrderCount} porosi aktive`}
+              >
+                {pendingOrderCount > 99 ? '99+' : pendingOrderCount}
+              </span>
+            )}
           </Link>
 
           <Link

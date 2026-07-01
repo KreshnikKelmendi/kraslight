@@ -7,6 +7,10 @@ export function middleware(request: NextRequest) {
 
   // Check if the path starts with /admin
   if (path.startsWith('/admin')) {
+    if (path === '/admin' || path === '/admin/') {
+      return NextResponse.redirect(new URL('/admin/products/list', request.url));
+    }
+
     // Get the auth token from cookies
     const authToken = request.cookies.get('auth_token')?.value;
     const isAuthenticated = authToken === 'true';
@@ -29,8 +33,5 @@ export function middleware(request: NextRequest) {
 
 // Configure which paths the middleware should run on
 export const config = {
-  matcher: [
-    '/admin/:path*',
-    '/signin',
-  ],
+  matcher: ['/admin', '/admin/:path*', '/signin'],
 }; 

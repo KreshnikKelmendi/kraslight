@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
 import { formatEuroPrice, hasDisplayPrice } from '@/app/lib/images';
+import { isOrderDelivered, notifyOrdersUpdated } from '@/app/lib/orderStatus';
 
 interface OrderItem {
   id: string;
@@ -63,9 +64,6 @@ const statusConfig: Record<
     icon: <HiOutlineCheckCircle className="w-4 h-4" />,
   },
 };
-
-const isOrderDelivered = (status: string) =>
-  status === 'delivered' || status === 'completed';
 
 const getOrderStatusKey = (status: string): OrderStatusKey =>
   isOrderDelivered(status) ? 'delivered' : 'pending';
@@ -497,6 +495,7 @@ export default function OrdersPage() {
         )
       );
 
+      notifyOrdersUpdated();
       console.log(`Order status updated to: ${newStatus}`);
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -524,6 +523,7 @@ export default function OrdersPage() {
       setShowDeleteConfirm(false);
       setOrderToDelete(null);
 
+      notifyOrdersUpdated();
       console.log('Order deleted successfully');
     } catch (error) {
       console.error('Error deleting order:', error);
@@ -557,7 +557,8 @@ export default function OrdersPage() {
       setOrders(prevOrders => prevOrders.filter(order => !selectedOrders.includes(order._id)));
       setSelectedOrders([]);
       setShowBulkDeleteConfirm(false);
-      
+
+      notifyOrdersUpdated();
       console.log(`${result.deletedCount} orders deleted successfully`);
     } catch (error) {
       console.error('Error bulk deleting orders:', error);
@@ -609,6 +610,7 @@ export default function OrdersPage() {
         const data = await res.json();
         setOrders(data);
         setFilteredOrders(data);
+        notifyOrdersUpdated();
       } catch {
         setError('Nuk mund të ngarkohen porositë');
       } finally {

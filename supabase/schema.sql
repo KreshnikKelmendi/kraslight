@@ -43,9 +43,12 @@ create table if not exists collections (
   image text not null,
   categories jsonb not null default '[]'::jsonb,
   product_ids jsonb not null default '[]'::jsonb,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+create index if not exists idx_collections_sort_order on collections (sort_order asc);
 
 -- Orders (items stored as jsonb snapshot, same as Mongo)
 create table if not exists orders (
@@ -139,11 +142,7 @@ drop trigger if exists sliders_single_active on sliders;
 create trigger sliders_single_active after insert or update of is_active on sliders
   for each row execute function deactivate_other_sliders();
 
--- RLS off for server-side API access (enable policies later for client reads)
-alter table products disable row level security;
-alter table collections disable row level security;
-alter table orders disable row level security;
-alter table sliders disable row level security;
-alter table subscribers disable row level security;
+-- RLS enabled — run supabase/rls-policies.sql in SQL Editor after this file.
+-- Server API uses SUPABASE_SERVICE_ROLE_KEY and bypasses RLS.
 
 -- See storage-and-policies.sql for Storage bucket + grants

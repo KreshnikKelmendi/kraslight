@@ -44,7 +44,7 @@ const SecondBanner = () => {
   };
 
   return (
-    <section className="w-full bg-white py-16 PX-4 lg:py-32 flex justify-center lg:px-10">
+    <section className="w-full bg-white py-16 PX-4 lg:py-32 flex justify-center lg:px-10 2xl:px-24">
       <div className="flex items-center gap-6 md:gap-10">
         {/* Small Left Image Slider */}
         <div className="flex-shrink-0 w-20 h-28 md:w-36 2xl:w-52 md:h-full relative overflow-hidden shadow-md">

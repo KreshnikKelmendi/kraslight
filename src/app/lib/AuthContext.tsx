@@ -7,7 +7,12 @@ import Cookies from 'js-cookie';
 interface AuthContextType {
   isAuthenticated: boolean;
   user: { username: string } | null;
-  login: (username: string, password: string, from?: string) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string,
+    from?: string,
+    rememberMe?: boolean
+  ) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -15,6 +20,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_USERNAME = process.env.NEXT_PUBLIC_ADMIN_USERNAME || 'kraslight_admin';
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Kraslight2024!Secure';
+
+const REMEMBER_ME_KEY = 'auth_remember_me';
+const REMEMBER_ME_DAYS = 30;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -39,27 +47,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (username: string, password: string, from?: string): Promise<boolean> => {
+  const login = async (
+    username: string,
+    password: string,
+    from?: string,
+    rememberMe = false
+  ): Promise<boolean> => {
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       const userData = { username };
       setUser(userData);
       setIsAuthenticated(true);
-      const expiryTime = Date.now() + (24 * 60 * 60 * 1000);
-      Cookies.set('auth_token', 'true', { 
-        expires: 1,
+
+      const cookieOptions = {
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-      Cookies.set('user_data', JSON.stringify(userData), { 
-        expires: 1,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-      Cookies.set('auth_expiry', expiryTime.toString(), { 
-        expires: 1,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
+        sameSite: 'strict' as const,
+        ...(rememberMe ? { expires: REMEMBER_ME_DAYS } : {}),
+      };
+
+      const expiryTime =
+        Date.now() +
+        (rememberMe ? REMEMBER_ME_DAYS : 1) * 24 * 60 * 60 * 1000;
+
+      Cookies.set('auth_token', 'true', cookieOptions);
+      Cookies.set('user_data', JSON.stringify(userData), cookieOptions);
+      Cookies.set('auth_expiry', expiryTime.toString(), cookieOptions);
+
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_ME_KEY, 'true');
+      } else {
+        localStorage.removeItem(REMEMBER_ME_KEY);
+      }
+
       router.push(from || '/admin/products/list');
       return true;
     }

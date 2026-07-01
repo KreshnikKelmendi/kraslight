@@ -1,7 +1,5 @@
 import { findCollectionsWithProducts } from './supabase/collections';
-import { findProducts } from './supabase/products';
 import { findActiveSlider } from './supabase/sliders';
-import { formatProduct, type FormattedProduct } from './format-product';
 import { sanitizeImageUrl } from './images';
 
 export interface HomeSlide {
@@ -21,28 +19,18 @@ export interface HomeCollection {
 export interface HomePageData {
   slider: { _id: string | null; slides: HomeSlide[] };
   collections: HomeCollection[];
-  otherProducts: FormattedProduct[];
 }
-
-const STANDARD_CATEGORIES = [
-  'Ndriçim i brendshëm',
-  'Ndriçim i jashtëm',
-  'Materiale Elektrike',
-  'Ndriçim kopshti',
-];
 
 const EMPTY_HOME_DATA: HomePageData = {
   slider: { _id: null, slides: [] },
   collections: [],
-  otherProducts: [],
 };
 
 export async function getHomePageData(): Promise<HomePageData> {
   try {
-    const [activeSlider, collectionsRaw, productsRaw] = await Promise.all([
+    const [activeSlider, collectionsRaw] = await Promise.all([
       findActiveSlider(),
       findCollectionsWithProducts(),
-      findProducts(),
     ]);
 
     const slides: HomeSlide[] = (activeSlider?.slides ?? [])
@@ -68,21 +56,12 @@ export async function getHomePageData(): Promise<HomePageData> {
       image: sanitizeImageUrl(c.image as string) ?? '',
     }));
 
-    const products = productsRaw.map(formatProduct);
-    const otherProducts = products.filter(
-      (p) =>
-        p.category &&
-        !STANDARD_CATEGORIES.includes(p.category) &&
-        p.category.trim() !== ''
-    );
-
     return {
       slider: {
         _id: activeSlider?._id ?? null,
         slides,
       },
       collections,
-      otherProducts,
     };
   } catch (error) {
     console.error('[getHomePageData] Failed:', error);

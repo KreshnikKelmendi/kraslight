@@ -42,7 +42,7 @@ const BrandShowcase = () => {
   if (isLoading) {
     return (
       <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
-        <div className="px-4 lg:px-10 max-w-7xl mx-auto">
+        <div className="px-4 lg:px-10 2xl:px-24 max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="w-20 h-1 bg-gradient-to-r from-gray-300 to-gray-400 rounded-full mx-auto mb-8" />
             <div className="h-12 bg-gray-200 rounded-lg w-64 mx-auto mb-4 animate-pulse" />
@@ -60,7 +60,7 @@ const BrandShowcase = () => {
 
   return (
     <section className="pb-24 pt-10 lg:pb-32 lg:pt-10">
-      <div className="px-4 lg:px-10 mx-auto">
+      <div className="px-4 lg:px-10 2xl:px-24 mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

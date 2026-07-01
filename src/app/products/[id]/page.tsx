@@ -8,8 +8,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
 import Image from 'next/image';
-import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice } from '@/app/lib/images';
-import ProductPageSkeleton from './ProductPageSkeleton';
+import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice, formatEuroPrice, hasTrackedStock } from '@/app/lib/images';
+import PageLoadingSpinner from '@/components/PageLoadingSpinner';
 
 const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
 
@@ -52,6 +52,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [quantity, setQuantity] = useState(1);
   const [alert, setAlert] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<'success' | 'info'>('success');
+  const [addedProductPreview, setAddedProductPreview] = useState<{
+    title: string;
+    image: string;
+    size?: string;
+    price?: number;
+    quantity: number;
+  } | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const dispatch = useDispatch();
   const cart = useSelector((state: RootState) => state.cart.items);
 
@@ -60,6 +68,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }, [id]);
 
   useEffect(() => {
+    setLoading(true);
+    setProduct(null);
+
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`/api/products/${id}`);
@@ -96,11 +107,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     e.currentTarget.src = IMAGE_PLACEHOLDER;
   }, []);
 
-  if (loading) return <ProductPageSkeleton />;
+  if (loading) {
+    return <PageLoadingSpinner className="min-h-screen" label="Duke ngarkuar produktin" />;
+  }
 
   if (!product) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="container mx-auto px-4 lg:px-10 2xl:px-24 py-16 text-center">
         <p className="font-bwseidoround text-gray-600">Produkti nuk u gjet</p>
       </div>
     );
@@ -123,16 +136,16 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const canAddToCart = !hasSizes || !!selectedSize;
 
   const handleAddToCart = () => {
-    if (!canAddToCart) return;
+    if (!canAddToCart || isAddingToCart) return;
 
     const existingItem = cart.find((item) => item.id === product._id);
-    if (existingItem) {
+    const nextTotal = (existingItem?.quantity ?? 0) + quantity;
+
+    if (hasTrackedStock(product.stock) && nextTotal > product.stock!) {
+      setAddedProductPreview(null);
       setAlertType('info');
-      setAlert('Ky produkt është shtuar më herët në shportë.');
-      setTimeout(() => {
-        setAlert(null);
-        setAlertType('success');
-      }, 4000);
+      setAlert(`Vetëm ${product.stock} copë në stok.`);
+      setTimeout(() => setAlert(null), 5000);
       return;
     }
 
@@ -141,32 +154,56 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       { width: 600, quality: 'auto:good' }
     );
 
-    dispatch(
-      addToCart({
-        id: product._id,
-        name: product.title,
+    setIsAddingToCart(true);
+
+    window.setTimeout(() => {
+      dispatch(
+        addToCart({
+          id: product._id,
+          name: product.title,
+          ...(hasDisplayPrice(discountPrice || product.price)
+            ? { price: (discountPrice || product.price)! }
+            : {}),
+          originalPrice: product.originalPrice,
+          discountPercentage: product.discountPercentage,
+          image: imageForCart,
+          quantity,
+          brand: product.brand,
+          ...(selectedSize && { size: selectedSize }),
+          category: product.category,
+          gender: product.gender,
+          stock: product.stock,
+          description: product.description,
+        })
+      );
+
+      setAddedProductPreview({
+        title: formatTitle(product.title),
+        image: imageForCart,
+        quantity: nextTotal,
+        ...(selectedSize && { size: selectedSize }),
         ...(hasDisplayPrice(discountPrice || product.price)
           ? { price: (discountPrice || product.price)! }
           : {}),
-        originalPrice: product.originalPrice,
-        discountPercentage: product.discountPercentage,
-        image: imageForCart,
-        quantity,
-        brand: product.brand,
-        ...(selectedSize && { size: selectedSize }),
-        category: product.category,
-        gender: product.gender,
-        stock: product.stock,
-        description: product.description,
-      })
-    );
-
-    setAlertType('success');
-    setAlert(`"${formatTitle(product.title)}" u shtua në shportë.`);
-    setTimeout(() => {
-      setAlert(null);
+      });
       setAlertType('success');
-    }, 4000);
+      setAlert(
+        quantity > 1
+          ? `${quantity} copë të "${formatTitle(product.title)}" u shtuan në shportë.`
+          : `"${formatTitle(product.title)}" u shtua në shportë.`
+      );
+      setIsAddingToCart(false);
+
+      window.setTimeout(() => {
+        setAlert(null);
+        setAddedProductPreview(null);
+        window.dispatchEvent(
+          new CustomEvent('open-cart', {
+            detail: { highlightId: product._id },
+          })
+        );
+      }, 2000);
+    }, 450);
   };
 
   const detailsText = product.description?.trim();
@@ -176,21 +213,60 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   return (
     <div className="min-h-screen w-full bg-white">
       {alert && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none px-4">
+        <div className="fixed bottom-6 left-4 z-[10050] pointer-events-none sm:left-8 lg:left-10 2xl:left-24">
           <div
             role="status"
-            className={`pointer-events-auto animate-fade-in-up border px-4 py-2 font-bwseidoround text-xs shadow-md transition-all ${
+            className={`pointer-events-auto w-full max-w-md animate-fade-in-up rounded-xl border shadow-2xl transition-all sm:max-w-sm ${
               alertType === 'success'
-                ? 'border-neutral-800 bg-neutral-900 text-white'
-                : 'border-neutral-300 bg-white text-neutral-900'
+                ? 'border-neutral-200 bg-white'
+                : 'border-amber-200 bg-amber-50'
             }`}
           >
-            {alert}
+            <div className="flex items-start gap-4 p-5">
+              {addedProductPreview?.image && alertType === 'success' && (
+                <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-neutral-100">
+                  <Image
+                    src={addedProductPreview.image}
+                    alt={addedProductPreview.title}
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${
+                    alertType === 'success' ? 'text-[#0a9945]' : 'text-amber-700'
+                  }`}
+                >
+                  {alertType === 'success' ? 'Shtuar në shportë' : 'Informacion'}
+                </p>
+                <p className="mt-2 text-base font-semibold leading-snug text-neutral-900 sm:text-lg">
+                  {alert}
+                </p>
+                {addedProductPreview?.size && alertType === 'success' && (
+                  <p className="mt-1 text-xs uppercase tracking-wider text-neutral-400">
+                    {addedProductPreview.size}
+                  </p>
+                )}
+                {alertType === 'success' && (
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                    Sasia: {addedProductPreview?.quantity ?? quantity}
+                  </p>
+                )}
+                {addedProductPreview?.price != null && alertType === 'success' && (
+                  <p className="mt-2 text-sm font-medium text-neutral-900">
+                    {formatEuroPrice(addedProductPreview.price)}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="w-full min-w-0 px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+      <div className="w-full min-w-0 px-4 sm:px-6 lg:px-10 2xl:px-24 py-6 lg:py-10">
         <div className="w-full min-w-0 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-8 xl:gap-12">
           {/* Desktop: scrollable image grid */}
           <div className="hidden min-w-0 lg:block">
@@ -227,7 +303,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 unoptimized
               />
               {product.discountPercentage ? (
-                <span className="absolute left-3 top-3 bg-black px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
+                <span className="absolute left-3 top-3 bg-red-600 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
                   -{product.discountPercentage}%
                 </span>
               ) : null}
@@ -358,8 +434,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-2 font-bwseidoround text-neutral-600 hover:bg-neutral-50"
+                    onClick={() => {
+                      const maxQty = hasTrackedStock(product.stock) ? product.stock! : undefined;
+                      setQuantity((q) => (maxQty ? Math.min(maxQty, q + 1) : q + 1));
+                    }}
+                    className="px-3 py-2 font-bwseidoround text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+                    disabled={hasTrackedStock(product.stock) && quantity >= (product.stock ?? 0)}
                   >
                     +
                   </button>
@@ -396,15 +476,27 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <div className="pt-4">
                 <button
                   type="button"
-                  disabled={!canAddToCart}
+                  disabled={!canAddToCart || isAddingToCart}
                   onClick={handleAddToCart}
                   className={`w-full border py-3.5 font-bwseidoround text-sm transition-colors duration-300 ${
-                    canAddToCart
-                      ? 'border-neutral-900 bg-white text-neutral-900 hover:bg-neutral-900 hover:text-white'
-                      : 'cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400'
+                    isAddingToCart
+                      ? 'cursor-wait border-neutral-900 bg-white text-neutral-900'
+                      : canAddToCart
+                        ? 'cursor-pointer border-neutral-900 bg-white text-neutral-900 hover:bg-neutral-900 hover:text-white'
+                        : 'cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400'
                   }`}
                 >
-                  Shto në shportë
+                  {isAddingToCart ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span
+                        className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900"
+                        aria-hidden
+                      />
+                      Duke u shtuar...
+                    </span>
+                  ) : (
+                    'Shto në shportë'
+                  )}
                 </button>
                 {hasSizes && !selectedSize && (
                   <p className="mt-2 text-center font-bwseidoround text-xs text-neutral-400">
