@@ -105,7 +105,7 @@ function renderProductRows(items: OrderItem[]): string {
           <td style="padding:10px 8px;border-bottom:1px solid #eee;vertical-align:top;font-size:13px;color:#171717;line-height:1.5;">
             <strong>${escapeHtml(item.name)}</strong><br />
             <span style="color:#525252;">Barkod: ${escapeHtml(item.barcode || '—')}</span><br />
-            ${item.brand ? `<span style="color:#525252;">Marka: ${escapeHtml(item.brand)}</span><br />` : ''}
+            ${item.brand ? `<span style="color:#525252;">Brendi: ${escapeHtml(item.brand)}</span><br />` : ''}
             ${item.size ? `<span style="color:#525252;">Madhësia: ${escapeHtml(item.size)}</span><br />` : ''}
             <span style="color:#525252;">Sasia: ${item.quantity} · ${unitPrice}</span>
           </td>

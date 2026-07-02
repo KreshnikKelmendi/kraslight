@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { FiMapPin, FiArrowUpRight } from "react-icons/fi";
+import { MAP_LABEL, MAP_URL, STORE_ADDRESS } from "@/app/lib/contact";
 
 export default function TextAnimation() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -129,20 +130,15 @@ export default function TextAnimation() {
               </h2>
               <p className="mt-3 flex items-start gap-2 text-sm font-extralight leading-relaxed text-stone-300/90">
                 <FiMapPin size={16} className="mt-0.5 shrink-0 text-[#0a9945]" />
-                Rruga e Pejës, Sllatinë e Madhe, Fushë Kosovë
+                {STORE_ADDRESS}
               </p>
               <button
                 type="button"
-                onClick={() =>
-                  window.open(
-                    "https://www.google.com/maps?q=Kraslight+Showroom",
-                    "_blank"
-                  )
-                }
+                onClick={() => window.open(MAP_URL, "_blank")}
                 aria-label="Shiko showroom-in në hartë"
                 className="pointer-events-auto cursor-pointer mt-5 inline-flex items-center gap-2 border border-white/30 bg-white/10 px-5 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:border-[#0a9945] hover:bg-[#0a9945]/20"
               >
-                Shiko në hartë
+                {MAP_LABEL}
                 <FiArrowUpRight size={16} />
               </button>
             </motion.div>

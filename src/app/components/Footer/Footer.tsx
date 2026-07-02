@@ -9,6 +9,9 @@ import WorkHoursInfo from '@/app/components/WorkHoursInfo';
 import {
   PHONE_DISPLAY,
   PHONE_TEL_HREF,
+  MAP_LABEL,
+  MAP_URL,
+  STORE_ADDRESS,
   WHATSAPP_URL,
 } from '@/app/lib/contact';
 import { BsLightningCharge, BsShieldCheck, BsTruck } from 'react-icons/bs';
@@ -173,9 +176,16 @@ const Footer = () => {
                   <MdLocationOn className="text-white text-lg" />
                 </div>
                 <div>
-                  <p className="text-white font-medium text-sm">Rruga e Pejës, Sllatinë e Madhe, Fushë Kosovë
-                  </p>
-                  <p className="text-gray-400 text-xs">Adresa Jonë</p>
+                  <p className="text-white font-medium text-sm">{STORE_ADDRESS}</p>
+                  <a
+                    href={MAP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-xs text-[#0a9945] hover:underline"
+                  >
+                    {MAP_LABEL}
+                  </a>
+                  <p className="text-gray-400 text-xs mt-2">Adresa Jonë</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">

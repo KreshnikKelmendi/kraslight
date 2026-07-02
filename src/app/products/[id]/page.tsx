@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice, formatEuroPrice, hasTrackedStock } from '@/app/lib/images';
 import PageLoadingSpinner from '@/components/PageLoadingSpinner';
 import { PHONE_DISPLAY, WHATSAPP_URL } from '@/app/lib/contact';
+import ProductPriceInquiry from '@/app/components/ProductPriceInquiry';
 
 const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
 
@@ -366,7 +367,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 )}
               </div>
 
-              {hasDisplayPrice(product.price) && (
+              {hasDisplayPrice(product.price) ? (
                 <div className="flex flex-wrap items-baseline gap-3">
                   {product.originalPrice &&
                   hasDisplayPrice(product.originalPrice) &&
@@ -385,6 +386,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </span>
                   )}
                 </div>
+              ) : (
+                <ProductPriceInquiry productName={formatTitle(product.title)} />
               )}
 
               {hasSizes && sizes.length > 0 && (
@@ -531,9 +534,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 </div>
 
                 <div className="space-y-3 border-t border-neutral-200 pt-4">
-                  <p className="font-bwseidoround text-xs leading-relaxed text-neutral-600">
-                    Porosia mund të kthehet brenda 24 orëve.
-                  </p>
                   <p className="font-bwseidoround text-xs leading-relaxed text-neutral-600">
                     Për çdo pyetje apo sqarime shtesë, na kontaktoni në WhatsApp / Viber:{' '}
                     <a

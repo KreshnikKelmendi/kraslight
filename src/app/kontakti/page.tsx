@@ -6,6 +6,8 @@ import WorkHoursInfo from '@/app/components/WorkHoursInfo';
 import {
   PHONE_DISPLAY,
   PHONE_TEL_HREF,
+  MAP_URL,
+  STORE_ADDRESS,
   WHATSAPP_URL,
 } from '@/app/lib/contact';
 
@@ -13,7 +15,8 @@ const contactItems = [
   {
     icon: MdLocationOn,
     label: 'Adresa',
-    value: 'Rruga e Pejës, Sllatinë e Madhe, Fushë Kosovë',
+    value: STORE_ADDRESS,
+    href: MAP_URL,
   },
   {
     icon: MdPhone,
@@ -109,7 +112,7 @@ export default function KontaktiPage() {
           <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50">
             <iframe
               title="Kraslight lokacioni"
-              src="https://maps.google.com/maps?q=Rruga+e+Pej%C3%ABs,+Sllatin%C3%AB+e+Madhe,+Fush%C3%AB+Kosov%C3%AB&t=&z=15&ie=UTF8&iwloc=&output=embed"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent('Kraslight Showroom')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
               className="h-[400px] w-full border-0 lg:h-full lg:min-h-[420px]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"

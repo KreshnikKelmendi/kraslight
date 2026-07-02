@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     }
 
     let shipping = 0;
-    if (['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(body.country)) {
+    if (['Shqipëri', 'Maqedoni e Veriut'].includes(body.country)) {
       shipping = 10;
     }
 

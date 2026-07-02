@@ -245,10 +245,6 @@ export default function Cart({ onClose, highlightItemId }: CartProps) {
             >
               Pastro shportën
             </button>
-
-            <p className="mt-4 text-center text-[11px] text-neutral-400">
-              Transporti llogaritet në pagesë
-            </p>
           </div>
         )}
       </div>

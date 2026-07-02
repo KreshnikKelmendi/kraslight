@@ -14,6 +14,7 @@ import {
   hasDisplayPrice,
   sumPricedCartItems,
 } from '@/app/lib/images';
+import { getCountryFlagUrl, SHIPPING_COUNTRIES } from '@/app/lib/contact';
 
 const inputClass =
   'w-full rounded-md border border-neutral-200 bg-white px-4 py-3 font-bwseidoround text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors focus:border-neutral-400 focus:outline-none';
@@ -68,11 +69,8 @@ export default function CheckoutPage() {
     email: string;
   } | null>(null);
 
-  const shipping = ['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(country) ? 10 : 0;
   const itemsTotal = sumPricedCartItems(cart);
-  const totalWithShipping = itemsTotal + shipping;
-  const showSubtotal = itemsTotal > 0;
-  const showTotal = totalWithShipping > 0;
+  const showTotal = itemsTotal > 0;
 
   const canSubmit =
     !loading &&
@@ -228,17 +226,35 @@ export default function CheckoutPage() {
               <h2 className="mb-4 font-bwseidoround text-sm font-semibold text-neutral-900">
                 Shteti i dërgimit
               </h2>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className={inputClass}
-                required
-              >
-                <option value="Kosovë">Kosovë — transport falas</option>
-                <option value="Shqipëri">Shqipëri — {displayMoney(10)} transport</option>
-                <option value="Maqedoni e Veriut">Maqedoni e Veriut — {displayMoney(10)} transport</option>
-                <option value="Mali i Zi">Mali i Zi — {displayMoney(10)} transport</option>
-              </select>
+              <div className="space-y-2">
+                {SHIPPING_COUNTRIES.map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors ${
+                      country === value
+                        ? 'border-neutral-900 bg-neutral-50'
+                        : 'border-neutral-200 hover:border-neutral-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="country"
+                      value={value}
+                      checked={country === value}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="sr-only"
+                    />
+                    <Image
+                      src={getCountryFlagUrl(value)}
+                      alt=""
+                      width={24}
+                      height={18}
+                      className="h-[18px] w-6 shrink-0 rounded-sm border border-neutral-200 object-cover"
+                    />
+                    <span className="font-bwseidoround text-sm text-neutral-900">{label}</span>
+                  </label>
+                ))}
+              </div>
             </section>
 
             <section>
@@ -335,7 +351,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="mt-2 space-y-0.5 font-bwseidoround text-[11px] uppercase tracking-wider text-neutral-500">
                       <p>Sasia: {item.quantity}</p>
-                      {item.brand && <p>Marka: {item.brand}</p>}
+                      {item.brand && <p>Brendi: {item.brand}</p>}
                       {item.size && <p>Madhësia: {item.size}</p>}
                     </div>
                     {hasDisplayPrice(item.price) && (
@@ -350,25 +366,10 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-8 space-y-3 border-t border-neutral-200 pt-6 font-bwseidoround text-sm">
-            {showSubtotal && (
-              <div className="flex justify-between text-neutral-600">
-                <span>Nëntotali</span>
-                <span className="text-neutral-900">{displayMoney(itemsTotal)}</span>
-              </div>
-            )}
-            <div className="flex justify-between gap-4 text-neutral-600">
-              <span className="min-w-0">
-                Dërgimi në {country}
-                {shipping > 0 ? ` (${displayMoney(shipping)})` : ' (Falas)'}
-              </span>
-              <span className="shrink-0 text-neutral-900">
-                {shipping === 0 ? 'Falas' : displayMoney(shipping)}
-              </span>
-            </div>
             {showTotal && (
               <div className="flex justify-between border-t border-neutral-200 pt-4 font-bwseidoround text-lg text-neutral-900">
                 <span className="font-semibold">Totali</span>
-                <span className="font-semibold">{displayMoney(totalWithShipping)}</span>
+                <span className="font-semibold">{displayMoney(itemsTotal)}</span>
               </div>
             )}
           </div>

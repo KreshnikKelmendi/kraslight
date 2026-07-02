@@ -168,16 +168,6 @@ export default function CartPage() {
 
                 <div className="mt-6 space-y-3 font-bwseidoround text-sm">
                   {itemsTotal > 0 && (
-                    <div className="flex justify-between text-neutral-600">
-                      <span>Nëntotali</span>
-                      <span className="text-neutral-900">{displayMoney(itemsTotal)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-neutral-600">
-                    <span>Transporti</span>
-                    <span className="text-neutral-900">Falas</span>
-                  </div>
-                  {totalWithShipping > 0 && (
                     <div className="flex justify-between border-t border-neutral-200 pt-4 text-base">
                       <span className="font-semibold text-neutral-900">Totali</span>
                       <span className="font-semibold text-neutral-900">
@@ -195,10 +185,6 @@ export default function CartPage() {
                   Vazhdo me porosinë
                   <FiArrowRight size={16} />
                 </button>
-
-                <p className="mt-4 text-center text-[11px] text-neutral-400">
-                  Transporti llogaritet në pagesë
-                </p>
               </div>
             </aside>
           </div>

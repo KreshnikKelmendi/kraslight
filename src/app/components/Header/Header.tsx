@@ -14,6 +14,7 @@ import Searchbar from '../Search/Searchbar';
 import GlobalDiscountRibbon from './GlobalDiscountRibbon';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
 import { useStorefrontData } from '@/app/lib/StorefrontDataContext';
+import { STORE_ADDRESS } from '@/app/lib/contact';
 
 const MOBILE_MENU_TRANSITION_MS = 420;
 const MOBILE_MENU_STAGGER_MS = 75;
@@ -189,7 +190,7 @@ const Header = () => {
         <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:px-10 2xl:px-24">
           <div className="flex items-center justify-between text-[12px] lg:text-sm">
             <div className="flex items-center space-x-3">
-              <span className="text-gray-300 font-medium">Rruga e Pejës, Sllatinë e Madhe, Fushë Kosovë</span>
+              <span className="text-gray-300 font-medium">{STORE_ADDRESS}</span>
             </div>
             <div className="flex items-center space-x-4 lg:space-x-5">
               <a href="https://www.instagram.com/kraslight.ks/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors duration-200" aria-label="Instagram">

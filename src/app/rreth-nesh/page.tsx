@@ -3,11 +3,9 @@
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import ShowRoom from '@/app/components/ShowRoom';
+import { MAP_URL, STORE_ADDRESS } from '@/app/lib/contact';
 
 const ease = [0.22, 1, 0.36, 1] as const;
-
-const MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=Rruga+e+Pej%C3%ABs,+Sllatin%C3%AB+e+Madhe,+Fush%C3%AB+Kosov%C3%AB';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -100,7 +98,7 @@ export default function RrethNeshPage() {
                   />
                 </span>
                 <span className="font-semibold text-neutral-900 transition-colors duration-200 ease-out group-hover:text-[#0a9945]">
-                  Sllatinë e Madhe — Rruga e Pejës, Fushë Kosovë
+                  {STORE_ADDRESS}
                 </span>
               </a>
               {' '}— ku na vizitoni në dyqan, ose porositni online me lehtësi.

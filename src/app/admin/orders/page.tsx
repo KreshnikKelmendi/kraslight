@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
 import { formatEuroPrice, hasDisplayPrice } from '@/app/lib/images';
+import { getCountryFlagUrl } from '@/app/lib/contact';
 import { isOrderDelivered, notifyOrdersUpdated } from '@/app/lib/orderStatus';
 
 interface OrderItem {
@@ -75,7 +76,7 @@ const paymentMethodLabels: Record<string, string> = {
 
 // Calculate shipping cost based on country
 const calculateShipping = (country: string): number => {
-  if (['Shqipëri', 'Maqedoni e Veriut', 'Mali i Zi'].includes(country)) {
+  if (['Shqipëri', 'Maqedoni e Veriut'].includes(country)) {
     return 10;
   }
   return 0;
@@ -101,27 +102,6 @@ function displayItemLineTotal(item: OrderItem): string {
 function displayOrderMoney(amount: number): string {
   if (!hasDisplayPrice(amount)) return '—';
   return `€${amount.toFixed(2)}`;
-}
-
-// Helper to map Albanian country names to ISO country codes
-const countryToCode: Record<string, string> = {
-  'Shqipëri': 'al',
-  'Kosovë': 'xk',
-  'Maqedoni e Veriut': 'mk',
-  'Mali i Zi': 'me',
-  'Greqi': 'gr',
-  'Itali': 'it',
-  'Gjermani': 'de',
-  'Francë': 'fr',
-  'Angli': 'gb',
-  'Turqi': 'tr',
-  'Shtetet e Bashkuara': 'us',
-  // add more as needed
-};
-
-function getFlagUrl(country: string) {
-  const code = countryToCode[country] || 'un';
-  return `https://flagcdn.com/16x12/${code}.png`;
 }
 
 // Add InvoicePDFDocument component with types
@@ -1091,7 +1071,7 @@ export default function OrdersPage() {
                           <HiOutlineTruck className="w-5 h-5 text-blue-600 inline-block" />
                           <span className="font-semibold">Transporti:</span>
                           <span className="font-semibold text-slate-900 text-[12px] underline flex items-center gap-1">
-                            <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                            <NextImage src={getCountryFlagUrl(order.country, '16x12')} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                             {order.country}
                           </span>
                           {calculateShipping(order.country) === 0 ? <span className="ml-1">Falas</span> : <span className="ml-1">€{calculateShipping(order.country).toFixed(2)}</span>}
@@ -1101,7 +1081,7 @@ export default function OrdersPage() {
                         <span className="font-bold underline underline-offset-2 text-blue-600">Adresa e dërgimit të porosisë</span>
                         <span className="">{order.address}</span>
                         <span className="font-bold flex items-center gap-1">{order.city},
-                          <NextImage src={getFlagUrl(order.country)} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
+                          <NextImage src={getCountryFlagUrl(order.country, '16x12')} alt={`Flag of ${order.country}`} width={16} height={12} className="inline-block w-4 h-3 rounded-sm border border-slate-200" />
                           {order.country}
                         </span>
                       </div>
@@ -1411,7 +1391,7 @@ export default function OrdersPage() {
                           <td style={{ border: '1px solid #cccccc', padding: 8, textAlign: 'center' }}>{idx + 1}</td>
                           <td style={{ border: '1px solid #cccccc', padding: 8 }}>
                             <div style={{ fontWeight: 600 }}>{item.name}</div>
-                            {item.brand && <div style={{ color: '#888', fontSize: 11 }}>Marka: {item.brand}</div>}
+                            {item.brand && <div style={{ color: '#888', fontSize: 11 }}>Brendi: {item.brand}</div>}
                             {item.size && <div style={{ color: '#888', fontSize: 11 }}>Madhësia: {item.size}</div>}
                             {item.category && <div style={{ color: '#888', fontSize: 11 }}>Kategoria: {item.category}</div>}
                           </td>
