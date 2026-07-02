@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sanitizeImageUrl } from '@/app/lib/images';
+import { deleteImageAsset } from '@/app/lib/cloudinary';
 import {
   createCollection,
   deleteAllCollections,
@@ -43,8 +44,22 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
   try {
-    await deleteAllCollections();
-    return NextResponse.json({ message: 'All collections deleted' });
+    const deletedCollections = await deleteAllCollections();
+
+    await Promise.all(
+      deletedCollections.map(async (collection) => {
+        try {
+          await deleteImageAsset(collection.image);
+        } catch (cleanupError) {
+          console.error('Failed to delete collection image:', collection._id, cleanupError);
+        }
+      })
+    );
+
+    return NextResponse.json({
+      message: 'All collections deleted',
+      count: deletedCollections.length,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to delete collections', details: (error as Error)?.message },

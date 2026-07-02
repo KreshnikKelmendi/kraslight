@@ -41,6 +41,7 @@ export async function GET() {
     const subscribers = await findActiveSubscribers();
     return NextResponse.json(
       subscribers.map((s) => ({
+        _id: s._id,
         email: s.email,
         subscribedAt: s.subscribedAt,
         emailCount: s.emailCount,

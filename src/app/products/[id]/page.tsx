@@ -10,6 +10,7 @@ import { RootState } from '../../../lib/store';
 import Image from 'next/image';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice, formatEuroPrice, hasTrackedStock } from '@/app/lib/images';
 import PageLoadingSpinner from '@/components/PageLoadingSpinner';
+import { PHONE_DISPLAY, WHATSAPP_URL } from '@/app/lib/contact';
 
 const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
 
@@ -535,7 +536,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   </p>
                   <p className="font-bwseidoround text-xs leading-relaxed text-neutral-600">
                     Për çdo pyetje apo sqarime shtesë, na kontaktoni në WhatsApp / Viber:{' '}
-                    <span className="text-neutral-900">049 111 111</span>, ose në{' '}
+                    <a
+                      href={WHATSAPP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neutral-900 underline underline-offset-2 hover:text-neutral-600"
+                    >
+                      {PHONE_DISPLAY}
+                    </a>
+                    , ose në{' '}
                     <a
                       href="https://www.instagram.com/kraslight.ks/"
                       target="_blank"

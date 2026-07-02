@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../lib/AuthContext';
 import { FiUser, FiLock, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
@@ -15,13 +15,20 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, isAuthReady } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
 
   useEffect(() => {
     setRememberMe(localStorage.getItem(REMEMBER_ME_KEY) === 'true');
   }, []);
+
+  useEffect(() => {
+    if (isAuthReady && isAuthenticated) {
+      router.replace(from || '/admin/products/list');
+    }
+  }, [isAuthReady, isAuthenticated, from, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

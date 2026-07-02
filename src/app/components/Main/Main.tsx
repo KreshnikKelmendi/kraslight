@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { FaChevronRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { optimizeImageUrl } from '@/app/lib/images';
-import { fetchJson } from '@/app/lib/fetch-json';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 interface Slide {
   image: string;
@@ -74,7 +74,7 @@ export default function Main({ initialSlider }: MainProps) {
 
     const fetchSlider = async () => {
       try {
-        const data = await fetchJson<{
+        const data = await fetchCachedJson<{
           _id: string | null;
           slides: unknown[];
         }>('/api/sliders');

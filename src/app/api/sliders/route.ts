@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { ISlide } from '@/app/models/Slider';
+import { deleteImageAsset } from '@/app/lib/cloudinary';
 import { sanitizeImageUrl } from '@/app/lib/images';
-import { createActiveSlider, findActiveSlider } from '@/app/lib/supabase/sliders';
+import { findActiveSlider, saveActiveSliderSlides } from '@/app/lib/supabase/sliders';
 
 interface ApiError extends Error {
   statusCode?: number;
@@ -11,6 +12,21 @@ function isValidSlide(slide: unknown): slide is ISlide {
   if (!slide || typeof slide !== 'object') return false;
   const s = slide as Record<string, unknown>;
   return typeof s.image === 'string' && s.image.trim() !== '';
+}
+
+function normalizeSlides(slides: unknown[]): ISlide[] {
+  return slides
+    .filter(isValidSlide)
+    .map((slide: ISlide) => ({
+      image: slide.image.trim(),
+      title: typeof slide.title === 'string' ? slide.title.trim() : '',
+      description: typeof slide.description === 'string' ? slide.description.trim() : '',
+      link: typeof slide.link === 'string' ? slide.link.trim() : '',
+    }));
+}
+
+function slideImageUrls(slides: unknown[]): string[] {
+  return normalizeSlides(slides).map((slide) => slide.image);
 }
 
 export async function GET() {
@@ -24,13 +40,10 @@ export async function GET() {
       });
     }
 
-    const validSlides = (activeSlider.slides as unknown[])
-      .filter(isValidSlide)
-      .map((slide: ISlide) => ({
-        image: sanitizeImageUrl(slide.image.trim()) ?? '',
-        title: typeof slide.title === 'string' ? slide.title.trim() : '',
-        description: typeof slide.description === 'string' ? slide.description.trim() : '',
-        link: typeof slide.link === 'string' ? slide.link.trim() : '',
+    const validSlides = normalizeSlides(activeSlider.slides as unknown[])
+      .map((slide) => ({
+        ...slide,
+        image: sanitizeImageUrl(slide.image) ?? '',
       }))
       .filter((slide) => slide.image.length > 0);
 
@@ -67,20 +80,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const validSlides = (body.slides as unknown[])
-      .filter(isValidSlide)
-      .map((slide: ISlide) => ({
-        image: slide.image.trim(),
-        title: typeof slide.title === 'string' ? slide.title.trim() : '',
-        description: typeof slide.description === 'string' ? slide.description.trim() : '',
-        link: typeof slide.link === 'string' ? slide.link.trim() : '',
-      }));
+    const previousSlider = await findActiveSlider();
+    const previousImages = previousSlider ? slideImageUrls(previousSlider.slides) : [];
+    const validSlides = normalizeSlides(body.slides);
+    const newImages = validSlides.map((slide) => slide.image);
+    const removedImages = previousImages.filter((url) => !newImages.includes(url));
 
-    if (validSlides.length === 0) {
-      return NextResponse.json({ error: 'No valid slides provided' }, { status: 400 });
+    for (const url of removedImages) {
+      try {
+        await deleteImageAsset(url);
+      } catch (cleanupError) {
+        console.error('Failed to delete removed slider image:', url, cleanupError);
+      }
     }
 
-    const slider = await createActiveSlider(validSlides);
+    const slider = await saveActiveSliderSlides(validSlides);
 
     return NextResponse.json({
       _id: slider._id,
@@ -96,7 +110,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error: 'Failed to create slider',
+        error: 'Failed to save slider',
         details: error.message || 'Unknown error occurred',
       },
       { status: 500 }

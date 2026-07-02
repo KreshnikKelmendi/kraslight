@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   _id: string;
@@ -272,8 +273,9 @@ export default function CollectionPage() {
 
   async function fetchCollection(id: string) {
     try {
-      const res = await fetch(`/api/collections/${id}`);
-      const data = await res.json();
+      const data = await fetchCachedJson<Collection & { products: Product[] }>(
+        `/api/collections/${id}`
+      );
       if (data.products) {
         data.products = data.products.sort(
           (a: Product, b: Product) =>

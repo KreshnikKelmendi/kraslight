@@ -1,7 +1,13 @@
 'use client';
 
-import { MdEmail, MdPhone, MdLocationOn, MdAccessTime } from 'react-icons/md';
+import { MdEmail, MdPhone, MdLocationOn } from 'react-icons/md';
 import { FaInstagram, FaFacebookF, FaWhatsapp } from 'react-icons/fa';
+import WorkHoursInfo from '@/app/components/WorkHoursInfo';
+import {
+  PHONE_DISPLAY,
+  PHONE_TEL_HREF,
+  WHATSAPP_URL,
+} from '@/app/lib/contact';
 
 const contactItems = [
   {
@@ -12,19 +18,14 @@ const contactItems = [
   {
     icon: MdPhone,
     label: 'Telefoni',
-    value: '049 666 678',
-    href: 'tel:+38349666678',
+    value: PHONE_DISPLAY,
+    href: PHONE_TEL_HREF,
   },
   {
     icon: MdEmail,
     label: 'Email',
     value: 'info@kraslight.com',
     href: 'mailto:info@kraslight.com',
-  },
-  {
-    icon: MdAccessTime,
-    label: 'Orari i punës',
-    value: '8:00 – 19:00',
   },
 ];
 
@@ -70,6 +71,10 @@ export default function KontaktiPage() {
               </div>
             ))}
 
+            <div className="rounded-xl border border-neutral-100 p-5">
+              <WorkHoursInfo />
+            </div>
+
             <div className="flex gap-4 pt-2">
               <a
                 href="https://www.instagram.com/kraslight.ks/"
@@ -90,7 +95,7 @@ export default function KontaktiPage() {
                 <FaFacebookF size={18} />
               </a>
               <a
-                href="https://wa.me/38349666678"
+                href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"

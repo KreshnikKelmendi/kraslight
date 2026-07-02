@@ -4,7 +4,13 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
-import { MdEmail, MdPhone, MdLocationOn, MdAccessTime } from 'react-icons/md';
+import { MdEmail, MdPhone, MdLocationOn } from 'react-icons/md';
+import WorkHoursInfo from '@/app/components/WorkHoursInfo';
+import {
+  PHONE_DISPLAY,
+  PHONE_TEL_HREF,
+  WHATSAPP_URL,
+} from '@/app/lib/contact';
 import { BsLightningCharge, BsShieldCheck, BsTruck } from 'react-icons/bs';
 
 const Footer = () => {
@@ -177,7 +183,12 @@ const Footer = () => {
                   <MdPhone className="text-white text-lg" />
                 </div>
                 <div>
-                  <p className="text-white font-medium text-sm">049 666 678</p>
+                  <a
+                    href={PHONE_TEL_HREF}
+                    className="text-white font-medium text-sm hover:underline"
+                  >
+                    {PHONE_DISPLAY}
+                  </a>
                   <p className="text-gray-400 text-xs">Telefoni</p>
                 </div>
               </div>
@@ -190,15 +201,7 @@ const Footer = () => {
                   <p className="text-gray-400 text-xs">Email</p>
                 </div>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                  <MdAccessTime className="text-white text-lg" />
-                </div>
-                <div>
-                  <p className="text-white font-medium text-sm">8:00 - 19:00</p>
-                  <p className="text-gray-400 text-xs">Orari i Punës</p>
-                </div>
-              </div>
+              <WorkHoursInfo theme="dark" />
             </div>
           </div>
 
@@ -247,7 +250,7 @@ const Footer = () => {
             {/* WhatsApp Contact */}
             <div className="mt-4">
               <a 
-                href="https://wa.me/049666678" 
+                href={WHATSAPP_URL} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 border border-white text-white font-semibold rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 hover:scale-105"

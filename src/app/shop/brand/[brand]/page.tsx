@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { motion } from 'framer-motion';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   _id: string;
@@ -160,8 +161,9 @@ export default function BrandPage() {
 
   async function fetchBrandProducts(brand: string) {
     try {
-      const res = await fetch(`/api/products?brand=${brand}`);
-      const data = await res.json();
+      const data = await fetchCachedJson<Product[]>(
+        `/api/products?brand=${encodeURIComponent(brand)}`
+      );
       console.log('API Response for brand:', brand, 'Products:', data);
       const sorted = data.sort((a: Product, b: Product) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setProducts(sorted);

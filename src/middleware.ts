@@ -13,7 +13,12 @@ export function middleware(request: NextRequest) {
 
     // Get the auth token from cookies
     const authToken = request.cookies.get('auth_token')?.value;
-    const isAuthenticated = authToken === 'true';
+    const authExpiry = request.cookies.get('auth_expiry')?.value;
+    const expiryTime = authExpiry ? parseInt(authExpiry, 10) : 0;
+    const isAuthenticated =
+      authToken === 'true' &&
+      !Number.isNaN(expiryTime) &&
+      Date.now() < expiryTime;
 
     // If not authenticated and not on the signin page, redirect to signin
     if (!isAuthenticated && path !== '/signin') {

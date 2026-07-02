@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaTimes, FaFilter, FaSort } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   id?: string;
@@ -57,16 +58,11 @@ export default function BagsPage() {
 
   async function fetchProducts() {
     try {
-      const response = await fetch('/api/products');
-      if (!response.ok) throw new Error('Failed to fetch products');
-      const data = await response.json();
-      // Filter products to only show bags
-      const bagsProducts = data.filter((product: Product) => 
-        (product.category || '').toLowerCase() === 'çanta' || 
-        (product.subcategory || '').toLowerCase() === 'çanta'
+      const data = await fetchCachedJson<Product[]>(
+        `/api/products?categoryMatch=${encodeURIComponent('çanta')}`
       );
-      setProducts(bagsProducts);
-      setFilteredProducts(bagsProducts);
+      setProducts(data);
+      setFilteredProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again later.');

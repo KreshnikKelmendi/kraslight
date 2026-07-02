@@ -13,14 +13,7 @@ import Cart from '../../../components/Cart';
 import Searchbar from '../Search/Searchbar';
 import GlobalDiscountRibbon from './GlobalDiscountRibbon';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
-import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
-
-interface Collection {
-  _id: string;
-  name: string;
-  description?: string;
-  image: string;
-}
+import { useStorefrontData } from '@/app/lib/StorefrontDataContext';
 
 const MOBILE_MENU_TRANSITION_MS = 420;
 const MOBILE_MENU_STAGGER_MS = 75;
@@ -56,14 +49,12 @@ const Header = () => {
   const [mobileMenuMounted, setMobileMenuMounted] = useState(false);
   const [isProduktetNdricimitOpen, setIsProduktetNdricimitOpen] = useState(false);
   const [isMobileProduktetNdricimitOpen, setIsMobileProduktetNdricimitOpen] = useState(false);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [isLoadingCollections, setIsLoadingCollections] = useState(true);
+  const { collections, globalDiscount, isLoadingCollections } = useStorefrontData();
   const [showCart, setShowCart] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const cartCount = getCartUnitCount(cartItems);
-  const [globalDiscount, setGlobalDiscount] = useState<{ isGlobalDiscount: boolean; discountPercentage?: number }>({ isGlobalDiscount: false });
   const [navigatingCollectionId, setNavigatingCollectionId] = useState<string | null>(null);
   const [cartHighlightId, setCartHighlightId] = useState<string | null>(null);
   const dropdownCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,27 +115,6 @@ const Header = () => {
   useEffect(() => {
     setNavigatingCollectionId(null);
   }, [pathname]);
-
-  useEffect(() => {
-    const loadHeaderData = async () => {
-      try {
-        const [collectionsData, discountData] = await Promise.all([
-          fetchCachedJson<Collection[]>('/api/collections'),
-          fetchCachedJson<{ isGlobalDiscount: boolean }>(
-            '/api/products/bulk-discount'
-          ).catch(() => ({ isGlobalDiscount: false })),
-        ]);
-        setCollections(collectionsData);
-        setGlobalDiscount(discountData);
-      } catch {
-        console.error('Error fetching header data');
-        setGlobalDiscount({ isGlobalDiscount: false });
-      } finally {
-        setIsLoadingCollections(false);
-      }
-    };
-    loadHeaderData();
-  }, []);
 
   useEffect(() => {
     const handleOpenCart = (event: Event) => {

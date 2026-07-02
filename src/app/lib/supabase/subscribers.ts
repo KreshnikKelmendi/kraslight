@@ -82,3 +82,25 @@ export async function markSubscribersEmailed(ids: string[]) {
       .or(`id.eq.${id},legacy_mongo_id.eq.${id}`);
   }
 }
+
+export async function findSubscriberById(id: string) {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('subscribers')
+    .select('*')
+    .or(`id.eq.${id},legacy_mongo_id.eq.${id}`)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? subscriberRowToDoc(data) : null;
+}
+
+export async function deleteSubscriberById(id: string) {
+  const supabase = createSupabaseServerClient();
+  const subscriber = await findSubscriberById(id);
+  const { error } = await supabase
+    .from('subscribers')
+    .delete()
+    .or(`id.eq.${id},legacy_mongo_id.eq.${id}`);
+  if (error) throw error;
+  return subscriber;
+}

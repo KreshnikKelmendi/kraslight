@@ -42,7 +42,7 @@ const features: {
   {
     icon: FiLayers,
     title: "Zgjedhje e gjerë",
-    description: "Ndriçim arkitektonik, materiale elektrike dhe zgjidhje për çdo ambient.",
+    description: "Ndriçim modern, materiale elektrike dhe zgjidhje për çdo ambient.",
     parallaxOffset: 14,
   },
   {

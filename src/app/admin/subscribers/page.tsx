@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaEnvelope, FaUsers, FaEye } from 'react-icons/fa';
+import { FaEnvelope, FaUsers, FaEye, FaTrash } from 'react-icons/fa';
 
 interface Subscriber {
   _id: string;
@@ -23,6 +23,7 @@ const SubscribersPage = () => {
   });
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubscribers();
@@ -84,6 +85,41 @@ const SubscribersPage = () => {
       setMessageType('error');
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const handleDeleteSubscriber = async (subscriber: Subscriber) => {
+    if (
+      !window.confirm(
+        `A jeni të sigurt që dëshironi të fshini abonuesin "${subscriber.email}"?`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(subscriber._id);
+    setMessage('');
+
+    try {
+      const response = await fetch(`/api/subscribers/${subscriber._id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || 'Gabim gjatë fshirjes së abonuesit');
+        setMessageType('error');
+        return;
+      }
+
+      setSubscribers((prev) => prev.filter((s) => s._id !== subscriber._id));
+      setMessage(`Abonuesi ${subscriber.email} u fshi me sukses`);
+      setMessageType('success');
+    } catch {
+      setMessage('Gabim i lidhjes me serverin');
+      setMessageType('error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -302,11 +338,17 @@ const SubscribersPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email i Fundit
                     </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Veprime
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {subscribers.map((subscriber) => (
-                    <tr key={subscriber._id} className="hover:bg-gray-50">
+                  {subscribers.map((subscriber, index) => (
+                    <tr
+                      key={subscriber._id || `${subscriber.email}-${index}`}
+                      className="hover:bg-gray-50"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {subscriber.email}
@@ -329,6 +371,22 @@ const SubscribersPage = () => {
                             : 'Asnjë'
                           }
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSubscriber(subscriber)}
+                          disabled={deletingId === subscriber._id}
+                          title="Fshi abonuesin"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                        >
+                          {deletingId === subscriber._id ? (
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-200 border-t-rose-600" />
+                          ) : (
+                            <FaTrash className="h-3.5 w-3.5" />
+                          )}
+                          Fshi
+                        </button>
                       </td>
                     </tr>
                   ))}

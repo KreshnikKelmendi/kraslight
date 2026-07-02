@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaChevronDown, FaFilter, FaTimes, FaPercent, FaPlus } from 'react-icons/fa';
 import AddProductModal from '@/app/components/admin/AddProductModal';
 import { hasDisplayPrice, formatStockBadge, hasTrackedStock } from '@/app/lib/images';
+import { invalidateFetchCachePrefix } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   _id: string;
@@ -192,10 +193,12 @@ function ProductsList() {
         body: JSON.stringify({ ids: selectedProducts }),
       });
       if (response.ok) {
-        setProducts(products.filter(p => !selectedProducts.includes(p._id)));
+        setProducts((prev) => prev.filter((p) => !selectedProducts.includes(p._id)));
         setSelectedProducts([]);
+        invalidateFetchCachePrefix('/api/products');
       } else {
-        setError('Dështoi fshirja e produkteve të zgjedhura');
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || data.details || 'Dështoi fshirja e produkteve të zgjedhura');
       }
     } catch {
       setError('Dështoi fshirja e produkteve të zgjedhura');
@@ -209,17 +212,27 @@ function ProductsList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('A jeni të sigurt që doni ta fshini këtë produkt?')) {
-      setDeleteLoading(id);
-      try {
-        // Replace with your actual API endpoint
-        await fetch(`/api/products/${id}`, { method: 'DELETE' });
-        setProducts(products.filter(p => p._id !== id));
-      } catch {
-        setError('Dështoi fshirja e produktit');
-      } finally {
-        setDeleteLoading(null);
+    if (!window.confirm('A jeni të sigurt që doni ta fshini këtë produkt?')) return;
+
+    setDeleteLoading(id);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setError(data.error || data.details || 'Dështoi fshirja e produktit');
+        return;
       }
+
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      setSelectedProducts((prev) => prev.filter((pid) => pid !== id));
+      invalidateFetchCachePrefix('/api/products');
+    } catch {
+      setError('Dështoi fshirja e produktit');
+    } finally {
+      setDeleteLoading(null);
     }
   };
 

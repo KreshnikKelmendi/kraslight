@@ -10,7 +10,12 @@ export async function findProducts(filters?: {
   gender?: string;
   brand?: string;
   adminView?: boolean;
+  category?: string;
   categoryIn?: string[];
+  categoryMatch?: string;
+  matchTerms?: string[];
+  subcategory?: string;
+  isNewArrival?: boolean;
   onSale?: boolean;
   search?: string;
   stockGt?: number;
@@ -27,8 +32,28 @@ export async function findProducts(filters?: {
   if (filters?.stockGt != null) {
     query = query.gt('stock', filters.stockGt);
   }
+  if (filters?.category) {
+    query = query.ilike('category', filters.category);
+  }
+  if (filters?.subcategory) {
+    query = query.ilike('subcategory', filters.subcategory);
+  }
+  if (filters?.categoryMatch) {
+    const term = `%${filters.categoryMatch}%`;
+    query = query.or(`category.ilike.${term},subcategory.ilike.${term}`);
+  }
+  if (filters?.matchTerms?.length) {
+    const orParts = filters.matchTerms.flatMap((term) => {
+      const t = `%${term}%`;
+      return [`category.ilike.${t}`, `subcategory.ilike.${t}`];
+    });
+    query = query.or(orParts.join(','));
+  }
   if (filters?.categoryIn?.length) {
     query = query.in('category', filters.categoryIn);
+  }
+  if (filters?.isNewArrival) {
+    query = query.eq('is_new_arrival', true);
   }
   if (filters?.search) {
     const term = `%${filters.search}%`;
@@ -90,12 +115,22 @@ export async function updateProduct(id: string, input: Record<string, unknown>) 
 }
 
 export async function deleteProductById(id: string) {
+  const product = await findProductById(id);
+  if (!product) return null;
+
   const supabase = createSupabaseServerClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('products')
     .delete()
-    .or(`id.eq.${id},legacy_mongo_id.eq.${id}`);
+    .or(`id.eq.${id},legacy_mongo_id.eq.${id}`)
+    .select('*');
+
   if (error) throw error;
+  if (!data?.length) {
+    throw new Error('Product delete failed — no rows removed from database');
+  }
+
+  return product;
 }
 
 export async function deleteProductsByIds(ids: string[]) {
@@ -111,16 +146,25 @@ export async function deleteProductsByIds(ids: string[]) {
 
   if (findError) throw findError;
 
-  const { error } = await supabase
+  if (!toDelete?.length) {
+    return [];
+  }
+
+  const { data: deletedRows, error } = await supabase
     .from('products')
     .delete()
     .or(
       ids.map((id) => `id.eq.${id}`).join(',') +
         ',' +
         ids.map((id) => `legacy_mongo_id.eq.${id}`).join(',')
-    );
+    )
+    .select('id');
 
   if (error) throw error;
+  if (!deletedRows?.length) {
+    throw new Error('Bulk product delete failed — no rows removed from database');
+  }
+
   return (toDelete ?? []).map((row) => productRowToDoc(row));
 }
 

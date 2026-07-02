@@ -6,6 +6,9 @@ import ShowRoom from '@/app/components/ShowRoom';
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+const MAP_URL =
+  'https://www.google.com/maps/search/?api=1&query=Rruga+e+Pej%C3%ABs,+Sllatin%C3%AB+e+Madhe,+Fush%C3%AB+Kosov%C3%AB';
+
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i: number) => ({
@@ -47,7 +50,7 @@ export default function RrethNeshPage() {
           >
             Kraslight është destinacioni juaj kryesor për produkte ndriçimi dhe materiale elektrike
             të cilësisë së lartë. Me përvojë të gjatë në treg, ofrojmë zgjidhje për shtëpi,
-            biznese dhe projekte arkitektonike.
+            biznese dhe projekte të ndryshme.
           </motion.p>
         </div>
       </section>
@@ -75,11 +78,32 @@ export default function RrethNeshPage() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.8, ease, delay: 0.1 }}
           >
-            <h2 className="font-serif text-3xl text-neutral-900">Light the way.</h2>
+            <h2 className="font-serif text-3xl text-neutral-900">Misioni ynë</h2>
             <p className="mt-4 text-sm leading-relaxed text-neutral-600">
               Misioni ynë është të ndriçojmë çdo hapësirë me produkte të besueshme, dizajn
-              modern dhe shërbim profesional. Gjindemi në Sllatinë e Madhe — Rruga e Pejës,
-              Fushë Kosovë — ku na vizitoni në dyqan, ose porositni online me lehtësi.
+              modern dhe shërbim profesional. Gjindemi në{' '}
+              <a
+                href={MAP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative inline cursor-pointer no-underline"
+                aria-label="Shiko në hartë"
+              >
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-neutral-900 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-all duration-200 ease-out scale-95 translate-y-1 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0"
+                >
+                  Shiko në hartë
+                  <span
+                    aria-hidden
+                    className="absolute left-1/2 top-full -translate-x-1/2 border-[5px] border-transparent border-t-neutral-900"
+                  />
+                </span>
+                <span className="font-semibold text-neutral-900 transition-colors duration-200 ease-out group-hover:text-[#0a9945]">
+                  Sllatinë e Madhe — Rruga e Pejës, Fushë Kosovë
+                </span>
+              </a>
+              {' '}— ku na vizitoni në dyqan, ose porositni online me lehtësi.
             </p>
             <p className="mt-4 text-sm leading-relaxed text-neutral-600">
               Besojmë në partneritet afatgjatë me klientët — nga zgjedhja e produktit deri

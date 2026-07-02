@@ -6,6 +6,7 @@ import Cookies from 'js-cookie';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   user: { username: string } | null;
   login: (
     username: string,
@@ -23,28 +24,61 @@ const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Kraslight2024!
 
 const REMEMBER_ME_KEY = 'auth_remember_me';
 const REMEMBER_ME_DAYS = 30;
+const SESSION_DAYS = 1;
+const COOKIE_PATH = '/';
+
+function readAuthFromCookies() {
+  const authToken = Cookies.get('auth_token');
+  const userData = Cookies.get('user_data');
+  const tokenExpiry = Cookies.get('auth_expiry');
+
+  if (authToken === 'true' && userData && tokenExpiry) {
+    const expiryTime = parseInt(tokenExpiry, 10);
+    if (!Number.isNaN(expiryTime) && Date.now() < expiryTime) {
+      try {
+        return {
+          isAuthenticated: true,
+          user: JSON.parse(userData) as { username: string },
+        };
+      } catch {
+        // fall through
+      }
+    }
+  }
+
+  return { isAuthenticated: false, user: null };
+}
+
+function clearAuthCookies() {
+  Cookies.remove('auth_token', { path: COOKIE_PATH });
+  Cookies.remove('user_data', { path: COOKIE_PATH });
+  Cookies.remove('auth_expiry', { path: COOKIE_PATH });
+}
+
+function buildCookieOptions(rememberMe: boolean) {
+  return {
+    path: COOKIE_PATH,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict' as const,
+    expires: rememberMe ? REMEMBER_ME_DAYS : SESSION_DAYS,
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [user, setUser] = useState<{ username: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const authToken = Cookies.get('auth_token');
-    const userData = Cookies.get('user_data');
-    const tokenExpiry = Cookies.get('auth_expiry');
-    
-    if (authToken === 'true' && userData && tokenExpiry) {
-      const expiryTime = parseInt(tokenExpiry);
-      if (Date.now() < expiryTime) {
-        setUser(JSON.parse(userData));
-        setIsAuthenticated(true);
-      } else {
-        Cookies.remove('auth_token');
-        Cookies.remove('user_data');
-        Cookies.remove('auth_expiry');
-      }
+    const auth = readAuthFromCookies();
+    if (auth.isAuthenticated) {
+      setUser(auth.user);
+      setIsAuthenticated(true);
+    } else {
+      clearAuthCookies();
     }
+    setIsAuthReady(true);
   }, []);
 
   const login = async (
@@ -58,15 +92,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       setIsAuthenticated(true);
 
-      const cookieOptions = {
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict' as const,
-        ...(rememberMe ? { expires: REMEMBER_ME_DAYS } : {}),
-      };
-
+      const cookieOptions = buildCookieOptions(rememberMe);
       const expiryTime =
         Date.now() +
-        (rememberMe ? REMEMBER_ME_DAYS : 1) * 24 * 60 * 60 * 1000;
+        (rememberMe ? REMEMBER_ME_DAYS : SESSION_DAYS) * 24 * 60 * 60 * 1000;
 
       Cookies.set('auth_token', 'true', cookieOptions);
       Cookies.set('user_data', JSON.stringify(userData), cookieOptions);
@@ -87,14 +116,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    Cookies.remove('auth_token');
-    Cookies.remove('user_data');
-    Cookies.remove('auth_expiry');
+    clearAuthCookies();
+    localStorage.removeItem(REMEMBER_ME_KEY);
     router.push('/');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, isAuthReady, user, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -106,4 +136,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}

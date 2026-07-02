@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   _id: string;
@@ -50,19 +51,13 @@ export default function NdriqimIBendshemPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
-        if (!res.ok) throw new Error('Nuk u gjetën produktet');
-        const data = await res.json();
-        console.log('Raw API data:', data);
-        console.log('Sample product:', data[0]);
-        const filtered = data.filter(
-          (product: Product) => (product.category || '').toLowerCase() === 'ndriqim i bendshem'
+        const data = await fetchCachedJson<Product[]>(
+          `/api/products?category=${encodeURIComponent('ndriqim i bendshem')}`
         );
-        console.log('Filtered products for ndriqim i bendshem:', filtered);
-        setProducts(filtered);
+        setProducts(data);
         // Set price range
-        if (filtered.length > 0) {
-          const prices = filtered.map((p: Product) => p.price);
+        if (data.length > 0) {
+          const prices = data.map((p: Product) => p.price);
           const minPrice = Math.min(...prices);
           const maxPrice = Math.max(...prices);
           setMinAvailablePrice(minPrice);

@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { FaSave, FaEdit, FaCheck } from 'react-icons/fa';
 import UploadCompressionInfo from '../../components/admin/UploadCompressionInfo';
 import type { CompressionStats } from '@/app/lib/images';
+import { invalidateFetchCache } from '@/app/lib/client-fetch-cache';
 
 interface Slide {
   image: string;
@@ -134,8 +135,42 @@ export default function SliderAdmin() {
     setEditIndex(0);
   };
 
-  const removeSlide = (index: number) => {
-    setSlides(slides.filter((_, i) => i !== index));
+  const persistSlides = async (updatedSlides: Slide[]) => {
+    const response = await fetch('/api/sliders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slides: updatedSlides }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || data.details || 'Failed to save slider');
+    }
+
+    invalidateFetchCache('/api/sliders');
+    return response.json();
+  };
+
+  const removeSlide = async (index: number) => {
+    if (!window.confirm('A jeni të sigurt që doni ta fshini këtë slide? Do të fshihet edhe nga databaza.')) {
+      return;
+    }
+
+    const updatedSlides = slides.filter((_, i) => i !== index);
+
+    try {
+      setError(null);
+      await persistSlides(updatedSlides);
+      setSlides(updatedSlides);
+      if (editIndex === index) {
+        setEditIndex(null);
+      } else if (editIndex !== null && editIndex > index) {
+        setEditIndex(editIndex - 1);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete slide');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,33 +178,17 @@ export default function SliderAdmin() {
     setError(null);
 
     try {
-      // Validate form
-      if (slides.length === 0) {
-        throw new Error('At least one slide is required');
-      }
-
       for (const slide of slides) {
         if (!slide.image) {
           throw new Error('Each slide must have an image');
         }
       }
 
-      // Submit slider
-      const response = await fetch('/api/sliders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slides }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save slider');
-      }
-
+      await persistSlides(slides);
       router.refresh();
       alert('Slider saved successfully!');
-    } catch {
-      setError('Failed to save slider');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save slider');
     }
   };
 
@@ -238,15 +257,7 @@ export default function SliderAdmin() {
                                 if (!slide.image) throw new Error('Image is required');
                                 const updatedSlides = [...slides];
                                 updatedSlides[index] = slide;
-                                const response = await fetch('/api/sliders', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ slides: updatedSlides }),
-                                });
-                                if (!response.ok) {
-                                  const data = await response.json();
-                                  throw new Error(data.error || 'Failed to save slider');
-                                }
+                                await persistSlides(updatedSlides);
                                 setEditIndex(null);
                                 router.refresh();
                                 alert('Slide saved successfully!');

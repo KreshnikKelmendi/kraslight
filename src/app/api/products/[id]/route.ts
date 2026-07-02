@@ -29,7 +29,10 @@ export async function DELETE(
     }
 
     const cloudinaryCleanup = await deleteProductImageAssets(product);
-    await deleteProductById(id);
+    const deleted = await deleteProductById(id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
 
     return NextResponse.json({
       message: 'Product deleted successfully',
@@ -37,7 +40,10 @@ export async function DELETE(
     });
   } catch (error) {
     console.error('Error deleting product:', error);
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete product', details: (error as Error)?.message },
+      { status: 500 }
+    );
   }
 }
 

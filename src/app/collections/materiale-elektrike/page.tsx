@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
+import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   _id: string;
@@ -49,12 +50,10 @@ export default function MaterialeElektrikePage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
-        if (!res.ok) throw new Error('Nuk u gjetën produktet');
-        const data = await res.json();
-        const filtered = data.filter(
-          (product: Product) => (product.category || '').toLowerCase() === 'materiale elektrike'
+        const data = await fetchCachedJson<Product[]>(
+          `/api/products?category=${encodeURIComponent('materiale elektrike')}`
         );
+        const filtered = data;
         setProducts(filtered);
         // Set price range
         if (filtered.length > 0) {

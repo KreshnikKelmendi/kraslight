@@ -8,11 +8,25 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const gender = searchParams.get('gender');
     const brand = searchParams.get('brand');
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+    const categoryMatch = searchParams.get('categoryMatch');
+    const matchTerms = searchParams.get('matchTerms');
+    const isNewArrival = searchParams.get('isNewArrival') === 'true';
+    const onSale = searchParams.get('onSale') === 'true';
     const adminView = searchParams.get('admin') === 'true';
 
     const products = await findProducts({
       gender: gender ?? undefined,
       brand: brand ?? undefined,
+      category: category ?? undefined,
+      subcategory: subcategory ?? undefined,
+      categoryMatch: categoryMatch ?? undefined,
+      matchTerms: matchTerms
+        ? matchTerms.split(',').map((term) => term.trim()).filter(Boolean)
+        : undefined,
+      isNewArrival: isNewArrival || undefined,
+      onSale: onSale || undefined,
       adminView,
     });
 

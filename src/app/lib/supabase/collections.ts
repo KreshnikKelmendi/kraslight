@@ -2,6 +2,27 @@ import { createSupabaseServerClient } from './server';
 import { collectionRowToDoc } from './row-map';
 import { findProducts } from './products';
 
+/** Lightweight list for nav / homepage showcase (no product joins). */
+export async function findCollectionsNav() {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const doc = collectionRowToDoc(row);
+    return {
+      _id: doc._id,
+      name: doc.name,
+      description: doc.description,
+      image: doc.image,
+    };
+  });
+}
+
 export async function findCollectionsWithProducts() {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -134,18 +155,45 @@ export async function updateCollection(
 }
 
 export async function deleteCollectionById(id: string) {
+  const collection = await findCollectionById(id);
+  if (!collection) return null;
+
   const supabase = createSupabaseServerClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('collections')
     .delete()
-    .or(`id.eq.${id},legacy_mongo_id.eq.${id}`);
+    .or(`id.eq.${id},legacy_mongo_id.eq.${id}`)
+    .select('*');
+
   if (error) throw error;
+  if (!data?.length) {
+    throw new Error('Collection delete failed — no rows removed from database');
+  }
+
+  return collection;
 }
 
 export async function deleteAllCollections() {
   const supabase = createSupabaseServerClient();
-  const { error } = await supabase.from('collections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { data: existing, error: findError } = await supabase.from('collections').select('*');
+  if (findError) throw findError;
+
+  if (!existing?.length) {
+    return [];
+  }
+
+  const { data: deletedRows, error } = await supabase
+    .from('collections')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
+    .select('id');
+
   if (error) throw error;
+  if (!deletedRows?.length) {
+    throw new Error('Collections delete failed — no rows removed from database');
+  }
+
+  return (existing ?? []).map((row) => collectionRowToDoc(row));
 }
 
 export async function updateCollectionsOrder(orderedIds: string[]) {

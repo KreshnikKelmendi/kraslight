@@ -7,7 +7,8 @@ import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { FiArrowRight } from "react-icons/fi";
 import { optimizeImageUrl, IMAGE_PLACEHOLDER } from "@/app/lib/images";
-import { fetchJson } from "@/app/lib/fetch-json";
+import { fetchCachedJson } from "@/app/lib/client-fetch-cache";
+import { useOptionalStorefrontData } from "@/app/lib/StorefrontDataContext";
 
 interface Collection {
   _id: string;
@@ -62,25 +63,30 @@ function getCardClass(index: number, count: number) {
 export default function CollectionsShowcase({
   initialCollections,
 }: CollectionsShowcaseProps) {
+  const storefrontData = useOptionalStorefrontData();
   const [collections, setCollections] = useState<Collection[]>(
-    initialCollections ?? []
+    initialCollections ?? storefrontData?.collections ?? []
   );
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.08 });
 
   useEffect(() => {
     if (initialCollections?.length) return;
+    if (storefrontData?.collections.length) {
+      setCollections(storefrontData.collections);
+      return;
+    }
 
     async function fetchCollections() {
       try {
-        const data = await fetchJson<Collection[]>("/api/collections");
+        const data = await fetchCachedJson<Collection[]>("/api/collections");
         setCollections(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to load collections:", error);
       }
     }
     fetchCollections();
-  }, [initialCollections]);
+  }, [initialCollections, storefrontData?.collections]);
 
   const visibleCollections = collections.filter((c) => c.image);
   const count = visibleCollections.length;

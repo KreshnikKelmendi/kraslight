@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { WHATSAPP_URL } from '@/app/lib/contact';
 
 const WhatsAppButton: React.FC = () => {
-  const phoneNumber = '+38349831671';
-  const whatsappUrl = `https://wa.me/${phoneNumber.replace('+', '')}`;
   const [show, setShow] = useState(false);
   const [hover, setHover] = useState(false);
 
@@ -32,7 +31,7 @@ const WhatsAppButton: React.FC = () => {
             </div>
           )}
           <a
-            href={whatsappUrl}
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="block bg-green-500 hover:bg-green-600 text-white rounded-full p-3 md:p-3 shadow-lg transition-colors duration-300"
@@ -57,4 +56,4 @@ const WhatsAppButton: React.FC = () => {
   );
 };
 
-export default WhatsAppButton; 
+export default WhatsAppButton;

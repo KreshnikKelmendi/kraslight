@@ -1,4 +1,4 @@
-import { findCollectionsWithProducts } from './supabase/collections';
+import { findCollectionsNav } from './supabase/collections';
 import { findActiveSlider } from './supabase/sliders';
 import { sanitizeImageUrl } from './images';
 
@@ -30,7 +30,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   try {
     const [activeSlider, collectionsRaw] = await Promise.all([
       findActiveSlider(),
-      findCollectionsWithProducts(),
+      findCollectionsNav(),
     ]);
 
     const slides: HomeSlide[] = (activeSlider?.slides ?? [])

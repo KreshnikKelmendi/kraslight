@@ -3,7 +3,7 @@ import type { CompressionStats, ImagePreset } from './images';
 import { compressionStatsFromSizes, MAX_IMAGE_UPLOAD_BYTES } from './images';
 import { compressImageBuffer } from './images-server';
 
-import { deleteProductStorageAssets } from '@/app/lib/supabase/storage';
+import { deleteImageFromSupabase, deleteProductStorageAssets } from '@/app/lib/supabase/storage';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -196,4 +196,11 @@ export async function deleteProductImageAssets(product: {
     deleted: supabaseResult.deleted + cloudinaryResult.deleted,
     skipped: supabaseResult.skipped + cloudinaryResult.skipped,
   };
+}
+
+/** Delete a single uploaded image from Supabase Storage and/or Cloudinary. */
+export async function deleteImageAsset(url?: string | null): Promise<void> {
+  if (!url?.trim()) return;
+  await deleteImageFromSupabase(url);
+  await deleteImage(url);
 }

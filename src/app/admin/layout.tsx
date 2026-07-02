@@ -10,18 +10,19 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAuthReady } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!isAuthReady) return;
     if (!isAuthenticated) {
       const from = pathname ? `?from=${encodeURIComponent(pathname)}` : '';
       router.replace(`/signin${from}`);
     }
-  }, [isAuthenticated, pathname, router]);
+  }, [isAuthenticated, isAuthReady, pathname, router]);
 
-  if (!isAuthenticated) {
+  if (!isAuthReady || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-100">
         <div className="h-12 w-12 animate-spin rounded-full border-2 border-neutral-200 border-t-neutral-900" />

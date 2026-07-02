@@ -5,6 +5,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import UploadCompressionInfo from '../../components/admin/UploadCompressionInfo';
 import type { CompressionStats } from '@/app/lib/images';
+import { invalidateFetchCache, invalidateFetchCachePrefix } from '@/app/lib/client-fetch-cache';
 
 interface Product {
   _id: string;
@@ -62,6 +63,7 @@ export default function CollectionsAdminPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [orderSaving, setOrderSaving] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   // Check authentication on mount
   useEffect(() => {
@@ -176,6 +178,7 @@ export default function CollectionsAdminPage() {
       });
 
       if (response.ok) {
+        invalidateFetchCache('/api/collections');
         showSuccessAlert("✅ Koleksioni u shtua me sukses!");
         setName("");
         setDescription("");
@@ -280,6 +283,7 @@ export default function CollectionsAdminPage() {
       });
 
       if (response.ok) {
+        invalidateFetchCache('/api/collections');
         showSuccessAlert("✅ Koleksioni u përditësua me sukses!");
         cancelEdit();
         await fetchCollections();
@@ -308,6 +312,7 @@ export default function CollectionsAdminPage() {
         body: JSON.stringify({ orderedIds: reordered.map((c) => c._id) }),
       });
       if (response.ok) {
+        invalidateFetchCache('/api/collections');
         setCollections(reordered.map((c, i) => ({ ...c, sortOrder: i + 1 })));
         showSuccessAlert("✅ Renditja u përditësua!");
       } else {
@@ -317,6 +322,42 @@ export default function CollectionsAdminPage() {
       showErrorAlert("❌ Gabim gjatë ndryshimit të renditjes!");
     } finally {
       setOrderSaving(false);
+    }
+  }
+
+  async function handleDeleteCollection(collection: Collection) {
+    if (
+      !window.confirm(
+        'A jeni të sigurt që doni ta fshini këtë koleksion? Do të fshihet edhe nga databaza.'
+      )
+    ) {
+      return;
+    }
+
+    setDeleteLoading(collection._id);
+
+    try {
+      const response = await fetch(`/api/collections/${collection._id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        showErrorAlert(data.error || data.details || '❌ Gabim gjatë fshirjes së koleksionit!');
+        return;
+      }
+
+      setCollections((prev) => prev.filter((c) => c._id !== collection._id));
+      invalidateFetchCache('/api/collections');
+      invalidateFetchCachePrefix('/api/collections/');
+      if (editingCollection?._id === collection._id) {
+        cancelEdit();
+      }
+      showSuccessAlert('✅ Koleksioni u fshi me sukses!');
+    } catch {
+      showErrorAlert('❌ Gabim gjatë fshirjes së koleksionit!');
+    } finally {
+      setDeleteLoading(null);
     }
   }
 
@@ -719,26 +760,11 @@ export default function CollectionsAdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (window.confirm("A je i sigurt që do ta fshish këtë koleksion?")) {
-                      try {
-                        const response = await fetch(`/api/collections/${collection._id}`, {
-                          method: "DELETE",
-                        });
-                        if (response.ok) {
-                          showSuccessAlert("✅ Koleksioni u fshi me sukses!");
-                          await fetchCollections();
-                        } else {
-                          showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
-                        }
-                      } catch {
-                        showErrorAlert("❌ Gabim gjatë fshirjes së koleksionit!");
-                      }
-                    }
-                  }}
-                  className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                  onClick={() => handleDeleteCollection(collection)}
+                  disabled={deleteLoading === collection._id}
+                  className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Fshi
+                  {deleteLoading === collection._id ? 'Duke fshirë...' : 'Fshi'}
                 </button>
               </div>
             </div>
