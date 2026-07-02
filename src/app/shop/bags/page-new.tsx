@@ -5,6 +5,7 @@ import { FaTimes, FaFilter, FaSort } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
+import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
 
 interface Product {
   id?: string;
@@ -72,13 +73,15 @@ export default function BagsPage() {
   }
 
   // Get unique brands and categories from products
-  const uniqueBrands = useMemo(() => {
-    return Array.from(new Set(products.map(p => p.brand).filter((brand): brand is string => typeof brand === 'string' && brand.trim() !== ''))).sort();
-  }, [products]);
+  const uniqueBrands = useMemo(
+    () => uniqueFilterValues(products.map((p) => p.brand)),
+    [products]
+  );
 
-  const uniqueCategories = useMemo(() => {
-    return Array.from(new Set(products.map(p => p.subcategory).filter((category): category is string => typeof category === 'string' && category.trim() !== ''))).sort();
-  }, [products]);
+  const uniqueCategories = useMemo(
+    () => uniqueFilterValues(products.map((p) => p.subcategory)),
+    [products]
+  );
 
   // Countdown animation for product count
   useEffect(() => {
@@ -148,15 +151,13 @@ export default function BagsPage() {
 
     // Brand filters
     if (filters.brands.length > 0) {
-      filtered = filtered.filter(product => 
-        product.brand && filters.brands.includes(product.brand)
-      );
+      filtered = filtered.filter((product) => matchesFilterSelection(product.brand, filters.brands));
     }
 
     // Category filters
     if (filters.categories.length > 0) {
-      filtered = filtered.filter(product => 
-        product.subcategory && filters.categories.includes(product.subcategory)
+      filtered = filtered.filter((product) =>
+        matchesFilterSelection(product.subcategory, filters.categories)
       );
     }
 

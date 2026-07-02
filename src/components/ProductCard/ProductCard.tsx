@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getValidImage, optimizeImageUrl, hasDisplayPrice } from '@/app/lib/images';
+import { formatProductDisplayTitle } from '@/app/lib/product-display';
 
 const SCROLL_RESTORE_KEY = 'listingScrollRestore';
 
@@ -32,16 +33,6 @@ interface ProductCardProps {
   className?: string;
   onWishlistClick?: () => void;
   isWishlisted?: boolean;
-}
-
-function formatProductTitle(title: string) {
-  return title
-    .replace(/[-_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
 }
 
 function collectImages(product: Product): string[] {
@@ -169,25 +160,25 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
         </div>
       </Link>
 
-      <div className="space-y-2 px-1 pt-4">
-        <p className="font-bwseidoround text-[10px] uppercase tracking-[0.18em] text-neutral-400">
+      <div className="space-y-0 border-t border-neutral-100 px-2 pt-4">
+        <p className="font-bwseidoround text-[10px] uppercase tracking-[0.22em] text-neutral-400">
           {brand}
         </p>
 
-        <Link href={productHref} className="block cursor-pointer" onClick={handleNavigate}>
-          <h3 className="font-bwseidoround text-sm leading-snug text-neutral-900 line-clamp-2 transition-colors group-hover:text-neutral-600">
-            {formatProductTitle(title)}
+        <Link href={productHref} className="mt-2 block cursor-pointer" onClick={handleNavigate}>
+          <h3 className=" text-[1.05rem] font-semibold leading-snug tracking-tight text-[#0a9945] line-clamp-2">
+            {formatProductDisplayTitle(title)}
           </h3>
         </Link>
 
         {product.subcategory && (
-          <span className="inline-block font-bwseidoround text-[10px] uppercase tracking-wider text-neutral-500">
+          <p className="mt-2 font-bwseidoround text-[10px] uppercase tracking-[0.16em] text-neutral-500">
             {product.subcategory}
-          </span>
+          </p>
         )}
 
         {hasDisplayPrice(price) && (
-          <div className="flex items-baseline gap-2 pt-1">
+          <div className="mt-3 flex items-baseline gap-2 border-t border-neutral-100 pt-3">
             {discountPercentage && discountPercentage > 0 && hasDisplayPrice(originalPrice) ? (
               <>
                 <span className="font-bwseidoround text-base text-neutral-900">

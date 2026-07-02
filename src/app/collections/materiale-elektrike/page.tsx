@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
+import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
 
 interface Product {
   _id: string;
@@ -83,19 +84,21 @@ export default function MaterialeElektrikePage() {
   }, []);
 
   // Extract unique brands and subcategories
-  const availableBrands = useMemo(() => {
-    return Array.from(new Set(products.map((p: Product) => p.brand).filter((b): b is string => typeof b === 'string' && !!b)));
-  }, [products]);
-  const availableSubcategories = useMemo(() => {
-    return Array.from(new Set(products.map((p: Product) => p.subcategory).filter((subcat): subcat is string => typeof subcat === 'string' && !!subcat)));
-  }, [products]);
+  const availableBrands = useMemo(
+    () => uniqueFilterValues(products.map((p: Product) => p.brand)),
+    [products]
+  );
+  const availableSubcategories = useMemo(
+    () => uniqueFilterValues(products.map((p: Product) => p.subcategory)),
+    [products]
+  );
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     const filtered = products.filter((product: Product) => {
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-      const matchesBrand = filters.brands.length === 0 || filters.brands.includes(product.brand || '');
-      const matchesSubcategory = filters.subcategories.length === 0 || filters.subcategories.includes(product.subcategory || '');
+      const matchesBrand = matchesFilterSelection(product.brand, filters.brands);
+      const matchesSubcategory = matchesFilterSelection(product.subcategory, filters.subcategories);
       return matchesPrice && matchesBrand && matchesSubcategory;
     });
     switch (sortBy) {
@@ -150,9 +153,10 @@ export default function MaterialeElektrikePage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex gap-6 lg:gap-10 2xl:gap-12 px-4 lg:px-10 2xl:px-24">
       {/* Desktop Filters Sidebar */}
-      <div className="hidden lg:block w-80 bg-white shadow-2xl border-r border-gray-200 p-10 overflow-y-auto sticky top-0 h-screen">
+      <div className="hidden lg:block w-80 shrink-0 bg-white shadow-2xl rounded-xl p-10 overflow-y-auto sticky top-0 h-screen">
         {/* Filter Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -361,8 +365,8 @@ export default function MaterialeElektrikePage() {
       </div>
 
       {/* Products Area */}
-      <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="px-4 py-4 lg:px-10 lg:py-6 2xl:px-24 pb-20"> {/* Add extra bottom padding for mobile button */}
+      <div className="min-w-0 flex-1 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="py-4 lg:py-6 pb-20"> {/* Add extra bottom padding for mobile button */}
           {/* Results Header with Sort */}
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -418,6 +422,7 @@ export default function MaterialeElektrikePage() {
             </div>
           )}
         </div>
+      </div>
       </div>
       {/* Mobile Filter Button - fixed at bottom */}
       <div className="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-gradient-to-br from-gray-50 to-gray-100 pt-2 pb-2 px-4 border-t border-gray-200">

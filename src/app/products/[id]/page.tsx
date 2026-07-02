@@ -9,6 +9,7 @@ import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
 import Image from 'next/image';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice, formatEuroPrice, hasTrackedStock } from '@/app/lib/images';
+import { formatProductDisplayTitle } from '@/app/lib/product-display';
 import PageLoadingSpinner from '@/components/PageLoadingSpinner';
 import { PHONE_DISPLAY, WHATSAPP_URL } from '@/app/lib/contact';
 import ProductPriceInquiry from '@/app/components/ProductPriceInquiry';
@@ -33,16 +34,6 @@ interface Product {
   barcode?: string;
   isNewArrival?: boolean;
   characteristics?: Array<{ key: string; value: string }>;
-}
-
-function formatTitle(title: string) {
-  return title
-    .replace(/[-_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
 }
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -180,7 +171,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       );
 
       setAddedProductPreview({
-        title: formatTitle(product.title),
+        title: formatProductDisplayTitle(product.title),
         image: imageForCart,
         quantity: nextTotal,
         ...(selectedSize && { size: selectedSize }),
@@ -191,8 +182,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       setAlertType('success');
       setAlert(
         quantity > 1
-          ? `${quantity} copë të "${formatTitle(product.title)}" u shtuan në shportë.`
-          : `"${formatTitle(product.title)}" u shtua në shportë.`
+          ? `${quantity} copë të "${formatProductDisplayTitle(product.title)}" u shtuan në shportë.`
+          : `"${formatProductDisplayTitle(product.title)}" u shtua në shportë.`
       );
       setIsAddingToCart(false);
 
@@ -354,11 +345,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <div className="lg:sticky lg:top-28 lg:z-10">
             <div className="min-w-0 space-y-5 lg:space-y-6 lg:px-2">
               <div className="space-y-2">
-                <p className="font-bwseidoround text-[11px] uppercase tracking-[0.2em] text-neutral-500 break-words">
+                <p className="font-bwseidoround text-[11px] uppercase text-neutral-500 break-words">
                   {product.category || product.brand}
                 </p>
-                <h1 className="font-bwseidoround text-3xl font-light leading-tight tracking-tight text-neutral-900 break-words sm:text-4xl">
-                  {formatTitle(product.title)}
+                <h1 className=" text-3xl font-medium leading-tight tracking-tight text-[#0a9945] sm:text-4xl">
+                  {formatProductDisplayTitle(product.title)}
                 </h1>
                 {product.barcode && (
                   <p className="font-bwseidoround text-xs uppercase tracking-widest text-neutral-400">
@@ -387,7 +378,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   )}
                 </div>
               ) : (
-                <ProductPriceInquiry productName={formatTitle(product.title)} />
+                <ProductPriceInquiry productName={formatProductDisplayTitle(product.title)} />
               )}
 
               {hasSizes && sizes.length > 0 && (

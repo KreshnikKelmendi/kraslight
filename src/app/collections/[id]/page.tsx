@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
+import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
 
 interface Product {
   _id: string;
@@ -284,13 +285,8 @@ export default function CollectionPage() {
       }
       setCollection(data);
 
-      const brands = Array.from(new Set(data.products.map((p: Product) => p.brand).filter(Boolean)));
-      setAvailableBrands(brands as string[]);
-
-      const subcategories = Array.from(
-        new Set(data.products.map((p: Product) => p.subcategory).filter(Boolean))
-      );
-      setAvailableSubcategories(subcategories as string[]);
+      setAvailableBrands(uniqueFilterValues(data.products.map((p: Product) => p.brand)));
+      setAvailableSubcategories(uniqueFilterValues(data.products.map((p: Product) => p.subcategory)));
 
       if (typeof window !== 'undefined') {
         setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
@@ -341,13 +337,9 @@ export default function CollectionPage() {
     const timer = window.setTimeout(() => {
       const filtered = collection.products.filter((product) => {
         const matchesType = !filters.type || product.category === filters.type;
-        const matchesCategory =
-          filters.categories.length === 0 || filters.categories.includes(product.category);
-        const matchesBrand =
-          filters.brands.length === 0 || filters.brands.includes(product.brand);
-        const matchesSubcategory =
-          filters.subcategories.length === 0 ||
-          filters.subcategories.includes(product.subcategory || '');
+        const matchesCategory = matchesFilterSelection(product.category, filters.categories);
+        const matchesBrand = matchesFilterSelection(product.brand, filters.brands);
+        const matchesSubcategory = matchesFilterSelection(product.subcategory, filters.subcategories);
         return matchesType && matchesCategory && matchesBrand && matchesSubcategory;
       });
 
@@ -427,8 +419,9 @@ export default function CollectionPage() {
     filters.brands.length + filters.subcategories.length + filters.categories.length;
 
   return (
-    <div className="flex min-h-screen bg-neutral-50 py-6 lg:py-10">
-      <aside className="sticky top-28 hidden max-h-[calc(100vh-7rem)] w-72 shrink-0 self-start overflow-y-auto border-r border-neutral-200 bg-white px-6 py-8 lg:block xl:w-80">
+    <div className="min-h-screen bg-neutral-50 px-4 py-6 lg:px-10 lg:py-10 2xl:px-24">
+      <div className="flex gap-6 lg:gap-10 2xl:gap-12">
+      <aside className="sticky top-28 hidden max-h-[calc(100vh-7rem)] w-72 shrink-0 self-start overflow-y-auto rounded-xl border border-neutral-200 bg-white px-6 py-8 lg:block xl:w-80">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FaFilter className="text-neutral-500" size={14} />
@@ -499,7 +492,7 @@ export default function CollectionPage() {
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="px-4 py-8 pb-28 lg:px-10 2xl:px-24 lg:py-12 lg:pb-12">
+        <div className="py-8 pb-28 lg:py-12 lg:pb-12">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="font-bwseidoround text-2xl font-light tracking-tight text-neutral-900 sm:text-3xl">
@@ -575,6 +568,7 @@ export default function CollectionPage() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       <div className="fixed bottom-0 left-0 z-40 w-full border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur-sm lg:hidden">

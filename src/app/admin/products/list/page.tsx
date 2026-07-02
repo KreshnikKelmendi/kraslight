@@ -8,6 +8,7 @@ import { FaEdit, FaTrash, FaSpinner, FaImage, FaChevronLeft, FaChevronRight, FaC
 import AddProductModal from '@/app/components/admin/AddProductModal';
 import { hasDisplayPrice, formatStockBadge, hasTrackedStock } from '@/app/lib/images';
 import { invalidateFetchCachePrefix } from '@/app/lib/client-fetch-cache';
+import { matchesExactFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
 
 interface Product {
   _id: string;
@@ -90,15 +91,15 @@ function ProductsList() {
   const searchParams = useSearchParams();
 
   // Get unique brands and categories for filters
-  const uniqueBrands = useMemo(() => {
-    const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
-    return brands.sort();
-  }, [products]);
+  const uniqueBrands = useMemo(
+    () => uniqueFilterValues(products.map((p) => p.brand)),
+    [products]
+  );
 
-  const uniqueCategories = useMemo(() => {
-    const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
-    return categories.sort();
-  }, [products]);
+  const uniqueCategories = useMemo(
+    () => uniqueFilterValues(products.map((p) => p.category)),
+    [products]
+  );
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -135,8 +136,8 @@ function ProductsList() {
       const searchTerm = filters.search.toLowerCase();
       const matchesSearch = product.title.toLowerCase().includes(searchTerm) ||
                            (product.barcode && product.barcode.toLowerCase().includes(searchTerm));
-      const matchesBrand = !filters.brand || product.brand === filters.brand;
-      const matchesCategory = !filters.category || product.category === filters.category;
+      const matchesBrand = matchesExactFilterSelection(product.brand, filters.brand);
+      const matchesCategory = matchesExactFilterSelection(product.category, filters.category);
       const matchesPrice = (!filters.minPrice || (product.price !== undefined && product.price >= filters.minPrice)) &&
                           (!filters.maxPrice || (product.price !== undefined && product.price <= filters.maxPrice));
       const matchesStock = (!filters.minStock || (product.stock != null && product.stock >= filters.minStock)) &&

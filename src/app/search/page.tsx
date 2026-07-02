@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { FiSearch, FiChevronDown } from 'react-icons/fi';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import ProductFilters from '../../components/ProductFilters/ProductFilters';
+import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
 // import { motion, AnimatePresence } from 'framer-motion';
 
 interface Product {
@@ -67,13 +68,15 @@ export default function SearchPage() {
   }, [query]);
 
   // Get unique brands and categories from products
-  const uniqueBrands = useMemo(() => {
-    return Array.from(new Set(products.map(p => p.brand).filter((brand): brand is string => typeof brand === 'string' && brand.trim() !== ''))).sort();
-  }, [products]);
+  const uniqueBrands = useMemo(
+    () => uniqueFilterValues(products.map((p) => p.brand)),
+    [products]
+  );
 
-  const uniqueCategories = useMemo(() => {
-    return Array.from(new Set(products.map(p => p.category).filter((category): category is string => typeof category === 'string' && category.trim() !== ''))).sort();
-  }, [products]);
+  const uniqueCategories = useMemo(
+    () => uniqueFilterValues(products.map((p) => p.category)),
+    [products]
+  );
 
   // Apply filters and sorting
   useEffect(() => {
@@ -90,11 +93,13 @@ export default function SearchPage() {
     }
 
     if (filters.brands.length > 0) {
-      filtered = filtered.filter(product => filters.brands.includes(product.brand));
+      filtered = filtered.filter((product) => matchesFilterSelection(product.brand, filters.brands));
     }
 
     if (filters.categories.length > 0) {
-      filtered = filtered.filter(product => filters.categories.includes(product.category));
+      filtered = filtered.filter((product) =>
+        matchesFilterSelection(product.category, filters.categories)
+      );
     }
 
     // Apply sorting
