@@ -461,7 +461,7 @@ export default function BrandPage() {
                 onClick={clearFilters}
                 className="w-full px-4 py-3 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-200"
               >
-                Pastro Filtret
+                Pastro Filtrat
               </button>
             </div>
           </div>
