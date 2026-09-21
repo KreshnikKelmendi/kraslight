@@ -22,9 +22,11 @@ interface Product {
   discountPercentage?: number;
   images: string[];
   mainImage: string;
+  image?: string;
   stock: number;
   brand: string;
   category: string;
+  subcategory?: string;
   description?: string;
   barcode?: string;
   isNewArrival?: boolean;
@@ -43,11 +45,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   const [brand, setBrand] = useState('');
   const [collectionId, setCollectionId] = useState('');
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
   const [description, setDescription] = useState('');
   const [barcode, setBarcode] = useState('');
   const [characteristics, setCharacteristics] = useState<Array<{key: string, value: string}>>([{key: '', value: ''}]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +81,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           setStock(productData.stock != null ? productData.stock.toString() : '');
           setBrand(productData.brand || '');
           setCategory(productData.category || '');
+          setSubcategory(productData.subcategory || '');
 
           try {
             const colRes = await fetch('/api/collections');
@@ -100,15 +105,24 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           setCharacteristics(productData.characteristics && productData.characteristics.length > 0 ? productData.characteristics : [{key: '', value: ''}]);
           setProduct(productData);
           
-          // Handle images
-          const availableImages = [
-            ...(productData.images || []),
-            ...(productData.image ? [productData.image] : [])
-          ].filter(Boolean);
+          // Keep unique images; prefer mainImage first for a clear default
+          const availableImages = Array.from(
+            new Set(
+              [
+                productData.mainImage,
+                ...(productData.images || []),
+                productData.image,
+              ].filter(Boolean) as string[]
+            )
+          );
           
+          setExistingImages(availableImages);
           setPreviewUrls(availableImages);
-          const mainImageIndex = availableImages.indexOf(productData.mainImage || availableImages[0]);
-          setMainImageIndex(mainImageIndex >= 0 ? mainImageIndex : 0);
+          const resolvedMain =
+            productData.mainImage && availableImages.includes(productData.mainImage)
+              ? productData.mainImage
+              : availableImages[0];
+          setMainImageIndex(Math.max(0, availableImages.indexOf(resolvedMain)));
         } catch (err) {
           console.error('Error fetching product:', err);
           setMessage({ text: '❌ Gabim gjatë marrjes së të dhënave të produktit', type: 'error' });
@@ -140,13 +154,22 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   };
 
   const removeImage = (index: number) => {
-    const existingCount = product?.images?.length ?? 0;
+    const url = previewUrls[index];
+    const isExisting = existingImages.includes(url);
+
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-    if (index >= existingCount) {
-      const newIdx = index - existingCount;
-      setImageFiles((prev) => prev.filter((_, i) => i !== newIdx));
-      setNewFileSizes((prev) => prev.filter((_, i) => i !== newIdx));
+
+    if (isExisting) {
+      setExistingImages((prev) => prev.filter((img) => img !== url));
+    } else {
+      const blobIndex = previewUrls
+        .slice(0, index)
+        .filter((u) => u.startsWith('blob:')).length;
+      setImageFiles((prev) => prev.filter((_, i) => i !== blobIndex));
+      setNewFileSizes((prev) => prev.filter((_, i) => i !== blobIndex));
+      if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
     }
+
     if (mainImageIndex === index) {
       setMainImageIndex(0);
     } else if (mainImageIndex > index) {
@@ -170,6 +193,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     formData.append('stock', stock);
     formData.append('brand', brand);
     formData.append('category', category || 'Other');
+    formData.append('subcategory', subcategory);
     formData.append('description', description);
     formData.append('barcode', barcode);
     
@@ -179,15 +203,24 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     
     formData.append('mainImageIndex', mainImageIndex.toString());
 
-    // Append existing images that weren't removed
-    const existingImages = product?.images || [];
-    existingImages.forEach((image) => {
-      if (previewUrls.includes(image)) {
-        formData.append('existingImages', image);
+    const selectedMainUrl = previewUrls[mainImageIndex];
+    if (selectedMainUrl?.startsWith('blob:')) {
+      const newFileIndex = previewUrls
+        .slice(0, mainImageIndex)
+        .filter((url) => url.startsWith('blob:')).length;
+      formData.append('mainImageNewFileIndex', String(newFileIndex));
+    } else if (selectedMainUrl) {
+      formData.append('mainImageUrl', selectedMainUrl);
+    }
+
+    // Keep existing images in preview order so display stays consistent
+    previewUrls.forEach((url) => {
+      if (!url.startsWith('blob:') && existingImages.includes(url)) {
+        formData.append('existingImages', url);
       }
     });
 
-    // Append new images
+    // Append new images in preview order
     imageFiles.forEach(file => {
       formData.append('images', file);
     });
@@ -277,6 +310,20 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Nënkategoria
+              </label>
+              <input
+                type="text"
+                value={subcategory}
+                onChange={(e) => setSubcategory(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="P.sh.: Llambadar, Spot..."
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Stoku
               </label>
               <input
@@ -289,20 +336,19 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 placeholder="Lëreni bosh"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Barkodi i Produktit <span className="text-gray-500 font-normal">(Opsionale)</span>
-            </label>
-            <input
-              type="text"
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Shkruani barkodin e produktit"
-            />
-            <p className="mt-1 text-xs text-gray-500">Barkodi përdoret për kërkim të shpejtë të produktit</p>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Barkodi i Produktit <span className="text-gray-500 font-normal">(Opsionale)</span>
+              </label>
+              <input
+                type="text"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="Shkruani barkodin e produktit"
+              />
+              <p className="mt-1 text-xs text-gray-500">Barkodi përdoret për kërkim të shpejtë të produktit</p>
+            </div>
           </div>
           {/* Pricing Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -425,19 +471,29 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Imazhet
             </label>
+            <p className="mb-3 text-xs text-gray-500">
+              Klikoni <span className="font-semibold text-gray-700">Bëj Kryesor</span> për të zgjedhur imazhin kryesor të produktit.
+            </p>
             {previewUrls.length > 0 && (
               <div className="mb-4">
                 <h4 className="text-xs font-medium text-gray-700 mb-2">Imazhet e Ngarkuara ({previewUrls.length})</h4>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {previewUrls.map((url, index) => {
-                    const existingCount = product?.images?.length ?? 0;
-                    const newSize =
-                      index >= existingCount
-                        ? newFileSizes[index - existingCount]
-                        : undefined;
+                    const isExisting = existingImages.includes(url);
+                    const blobIndex = previewUrls
+                      .slice(0, index)
+                      .filter((u) => u.startsWith('blob:')).length;
+                    const newSize = !isExisting ? newFileSizes[blobIndex] : undefined;
+                    const isMain = index === mainImageIndex;
                     return (
                     <div key={url + '-' + index} className="relative group">
-                      <div className="aspect-square relative rounded-lg overflow-hidden bg-white border border-gray-200 hover:border-blue-500 transition-colors">
+                      <div
+                        className={`aspect-square relative rounded-lg overflow-hidden bg-white border-2 transition-colors ${
+                          isMain
+                            ? 'border-blue-500 ring-2 ring-blue-200'
+                            : 'border-gray-200 hover:border-blue-400'
+                        }`}
+                      >
                         {imageErrors[url] ? (
                           <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
                             <FaImage className="w-6 h-6" />
@@ -462,24 +518,23 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                           </button>
                         </div>
                       </div>
-                      {index === mainImageIndex && (
+                      {isMain ? (
                         <div className="mt-1 text-[10px] text-center font-medium bg-blue-100 text-blue-800 py-0.5 px-1 rounded-full">
                           Imazhi Kryesor
                         </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setMainImage(index)}
+                          className="mt-1 w-full text-[10px] px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          Bëj Kryesor
+                        </button>
                       )}
                       {newSize !== undefined && (
                         <p className="mt-1 text-[10px] text-center text-gray-500">
                           {formatFileSize(newSize)} (para ngarkimit)
                         </p>
-                      )}
-                      {index !== mainImageIndex && (
-                        <button
-                          type="button"
-                          onClick={() => setMainImage(index)}
-                          className="mt-1 w-full text-[10px] px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        >
-                          Bëj Kryesor
-                        </button>
                       )}
                     </div>
                     );
@@ -501,7 +556,6 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 multiple
               />
             </label>
-            <div className="text-[10px] text-gray-400 mt-1 ml-1">Imazhi i parë do të jetë kryesor</div>
             {uploadCompression.length > 0 && (
               <UploadCompressionInfo stats={uploadCompression} className="mt-3" />
             )}

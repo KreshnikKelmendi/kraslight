@@ -1,11 +1,14 @@
 import { createSupabaseServerClient } from './server';
 import { hasTrackedStock } from '@/app/lib/images';
 import {
+  looksLikeProductId,
+  slugifyProductTitle,
+} from '@/app/lib/product-display';
+import {
   applyProductDiscountFields,
   productDocToRow,
   productRowToDoc,
 } from './row-map';
-
 export async function findProducts(filters?: {
   gender?: string;
   brand?: string;
@@ -89,6 +92,24 @@ export async function findProductById(id: string) {
 
   if (error) throw error;
   return data ? productRowToDoc(data) : null;
+}
+
+/** Resolve a product by UUID/legacy id or by title slug (e.g. `llambadar-modern`). */
+export async function findProductBySlugOrId(slugOrId: string) {
+  const raw = decodeURIComponent(slugOrId).trim();
+  if (!raw) return null;
+
+  if (looksLikeProductId(raw)) {
+    const byId = await findProductById(raw);
+    if (byId) return byId;
+  }
+
+  const products = await findProducts();
+  const bySlug = products.find((product) => slugifyProductTitle(product.title) === raw);
+  if (bySlug) return bySlug;
+
+  // Last resort: treat as id (covers odd legacy ids that aren't UUID/mongo shaped)
+  return findProductById(raw);
 }
 
 export async function createProduct(input: Record<string, unknown>) {

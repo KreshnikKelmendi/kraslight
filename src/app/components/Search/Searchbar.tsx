@@ -3,6 +3,7 @@ import { FiSearch, FiX, FiClock } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getProductPath } from '@/app/lib/product-display';
 
 interface Product {
   _id: string;
@@ -187,7 +188,7 @@ const Searchbar: React.FC<SearchbarProps> = ({ isOpen, onClose }) => {
                       {results.map((product) => (
                         <Link
                           key={product._id}
-                          href={`/products/${product._id}`}
+                          href={getProductPath(product)}
                           onClick={() => {
                             addToRecentSearches(query);
                             onClose();

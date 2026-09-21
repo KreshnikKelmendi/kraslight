@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteProductById,
   findProductById,
+  findProductBySlugOrId,
   updateProduct,
 } from '@/app/lib/supabase/products';
 import { deleteProductImageAssets } from '@/app/lib/cloudinary';
@@ -53,7 +54,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const product = await findProductById(id);
+    const product = await findProductBySlugOrId(id);
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -96,11 +97,18 @@ export async function PUT(
     const sizes = formData.get('sizes') as string;
     const gender = formData.get('gender') as string;
     const category = formData.get('category') as string;
+    const subcategory = (formData.get('subcategory') as string) || '';
     const barcode = formData.get('barcode') as string;
     const description = formData.get('description') as string;
     const isNewArrival = formData.get('isNewArrival') === 'true';
     const characteristics = formData.get('characteristics') as string;
-    const mainImageIndex = parseInt(formData.get('mainImageIndex') as string) || 0;
+    const mainImageIndexRaw = parseInt(formData.get('mainImageIndex') as string, 10);
+    const mainImageIndex = Number.isFinite(mainImageIndexRaw) ? mainImageIndexRaw : 0;
+    const mainImageUrl = (formData.get('mainImageUrl') as string) || '';
+    const mainImageNewFileIndexRaw = parseInt(
+      formData.get('mainImageNewFileIndex') as string,
+      10
+    );
     const existingImages = formData.getAll('existingImages') as string[];
     const newImageFiles = formData.getAll('images') as File[];
 
@@ -145,6 +153,31 @@ export async function PUT(
       compression.push(uploaded.compression);
     }
 
+    let resolvedMainImage: string | undefined;
+    if (mainImageUrl && imagePaths.includes(mainImageUrl)) {
+      resolvedMainImage = mainImageUrl;
+    } else if (
+      Number.isFinite(mainImageNewFileIndexRaw) &&
+      mainImageNewFileIndexRaw >= 0 &&
+      existingImages.length + mainImageNewFileIndexRaw < imagePaths.length
+    ) {
+      resolvedMainImage = imagePaths[existingImages.length + mainImageNewFileIndexRaw];
+    } else if (imagePaths.length > 0) {
+      const safeMainIndex = Math.min(Math.max(mainImageIndex, 0), imagePaths.length - 1);
+      resolvedMainImage = imagePaths[safeMainIndex];
+    } else {
+      resolvedMainImage = existing.mainImage || existing.images?.[0] || existing.image;
+    }
+
+    // Keep main image first so storefront cards/listings stay consistent
+    const orderedImages =
+      imagePaths.length > 0 && resolvedMainImage
+        ? [
+            resolvedMainImage,
+            ...imagePaths.filter((url) => url !== resolvedMainImage),
+          ]
+        : existing.images;
+
     const updatePayload: Record<string, unknown> = {
       title,
       price: finalPrice,
@@ -158,21 +191,15 @@ export async function PUT(
       sizes: sizes || '',
       gender: gender || 'Të Gjitha',
       category: category || 'Të tjera',
+      subcategory: subcategory || '',
       barcode: barcode || '',
       description: description || '',
       isNewArrival,
       characteristics: characteristicsArray,
+      images: orderedImages,
+      mainImage: resolvedMainImage,
+      image: resolvedMainImage,
     };
-
-    if (imagePaths.length > 0) {
-      updatePayload.images = imagePaths;
-      updatePayload.mainImage = imagePaths[mainImageIndex] || imagePaths[0];
-      updatePayload.image = imagePaths[0];
-    } else {
-      updatePayload.images = existing.images;
-      updatePayload.mainImage = existing.mainImage;
-      updatePayload.image = existing.image;
-    }
 
     const product = await updateProduct(id, updatePayload);
     return NextResponse.json({ product, compression });

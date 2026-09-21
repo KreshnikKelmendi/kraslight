@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { FaTruck, FaShieldAlt, FaUndo, FaInstagram, FaFacebookF } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,7 +10,7 @@ import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
 import Image from 'next/image';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl, hasDisplayPrice, formatEuroPrice, hasTrackedStock } from '@/app/lib/images';
-import { formatProductDisplayTitle } from '@/app/lib/product-display';
+import { formatProductDisplayTitle, getProductPath, looksLikeProductId } from '@/app/lib/product-display';
 import PageLoadingSpinner from '@/components/PageLoadingSpinner';
 import { PHONE_DISPLAY, WHATSAPP_URL } from '@/app/lib/contact';
 import ProductPriceInquiry from '@/app/components/ProductPriceInquiry';
@@ -38,6 +39,7 @@ interface Product {
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileIndex, setMobileIndex] = useState(0);
@@ -66,7 +68,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`/api/products/${id}`);
+        const res = await axios.get(`/api/products/${encodeURIComponent(id)}`);
         const productData = res.data;
 
         const availableImages = [
@@ -80,11 +82,19 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
         const uniqueImages = [...new Set(availableImages.length > 0 ? availableImages : [DEFAULT_IMAGE])];
 
-        setProduct({
+        const nextProduct = {
           ...productData,
           images: uniqueImages,
           mainImage: productData.mainImage || uniqueImages[0] || DEFAULT_IMAGE,
-        });
+        };
+
+        // Prefer title slug in the address bar when opened via UUID
+        const prettyPath = getProductPath(nextProduct);
+        if (looksLikeProductId(id) && prettyPath !== `/products/${id}`) {
+          router.replace(prettyPath);
+        }
+
+        setProduct(nextProduct);
         setMobileIndex(0);
       } catch {
         setProduct(null);
@@ -94,7 +104,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, router]);
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = IMAGE_PLACEHOLDER;
@@ -263,9 +273,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         <div className="w-full min-w-0 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-8 xl:gap-12">
           {/* Desktop: scrollable image grid */}
           <div className="hidden min-w-0 lg:block">
-            <div className="grid min-w-0 grid-cols-2 gap-1">
+            <div className="grid min-w-0 grid-cols-2 gap-3">
               {productImages.map((image, index) => (
-                <div key={`${image}-${index}`} className="relative aspect-[3/4] overflow-hidden bg-neutral-50">
+                <div
+                  key={`${image}-${index}`}
+                  className="relative aspect-[3/4] overflow-hidden rounded-md border border-neutral-200/70 bg-neutral-50"
+                >
                   <Image
                     src={optimizeImageUrl(image, { width: 800, quality: 'auto:good' })}
                     alt={`${product.title} - ${index + 1}`}
@@ -317,13 +330,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
             )}
             {productImages.length > 1 && (
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <div className="mt-3 grid grid-cols-6 gap-1.5">
                 {productImages.map((image, index) => (
                   <button
                     key={index}
                     type="button"
                     onClick={() => setMobileIndex(index)}
-                    className={`relative h-16 w-16 flex-shrink-0 overflow-hidden border ${
+                    className={`relative aspect-square w-full overflow-hidden rounded-sm border ${
                       mobileIndex === index ? 'border-neutral-900' : 'border-neutral-200'
                     }`}
                   >
@@ -348,12 +361,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <p className="font-bwseidoround text-[11px] uppercase text-neutral-500 break-words">
                   {product.category || product.brand}
                 </p>
-                <h1 className=" text-3xl font-medium leading-tight tracking-tight text-[#0a9945] sm:text-4xl">
+                <h1 className="text-2xl font-medium leading-tight tracking-tight text-[#0a9945] sm:text-3xl lg:text-4xl">
                   {formatProductDisplayTitle(product.title)}
                 </h1>
                 {product.barcode && (
-                  <p className="font-bwseidoround text-xs uppercase tracking-widest text-neutral-400">
-                    SKU: #{product.barcode}
+                  <p className="font-bwseidoround text-[10px] uppercase tracking-widest text-neutral-400">
+                    <span className="text-[9px] tracking-[0.18em] text-neutral-400">Barcode</span>
+                    <span className="ml-1.5 normal-case tracking-normal text-neutral-500">
+                      #{product.barcode}
+                    </span>
                   </p>
                 )}
               </div>
@@ -456,14 +472,39 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </p>
                   )}
                   {product.characteristics && product.characteristics.length > 0 && (
-                    <dl className="space-y-2">
-                      {product.characteristics.map((char, index) => (
-                        <div key={index} className="flex justify-between gap-4 text-sm">
-                          <dt className="font-bwseidoround text-neutral-500">{char.key}</dt>
-                          <dd className="font-bwseidoround text-right text-neutral-900">{char.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
+                    <div className="overflow-hidden rounded-md border border-neutral-200/70">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="bg-neutral-50/80">
+                            <th className="border-b border-neutral-200/70 px-3 py-1.5 text-left font-bwseidoround text-[11px] font-medium uppercase tracking-wider text-neutral-500">
+                              Specifika
+                            </th>
+                            <th className="border-b border-l border-neutral-200/70 px-3 py-1.5 text-left font-bwseidoround text-[11px] font-medium uppercase tracking-wider text-neutral-500">
+                              Vlera
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {product.characteristics.map((char, index) => (
+                            <tr
+                              key={index}
+                              className={
+                                index < product.characteristics!.length - 1
+                                  ? 'border-b border-neutral-200/60'
+                                  : undefined
+                              }
+                            >
+                              <td className="px-3 py-1.5 font-bwseidoround text-neutral-500">
+                                {char.key}
+                              </td>
+                              <td className="border-l border-neutral-200/60 px-3 py-1.5 font-bwseidoround text-neutral-900">
+                                {char.value}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               )}

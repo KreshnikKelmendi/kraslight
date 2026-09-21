@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getProductPath } from '@/app/lib/product-display';
 
 interface Product {
   _id: string;
@@ -24,7 +25,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {products.map((product) => (
         <Link 
-          href={`/product/${product._id}`} 
+          href={getProductPath(product)} 
           key={product._id}
           className="group"
         >

@@ -13,9 +13,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": "./src",                 // ✅ Add this line
     "paths": {
-      "@/*": ["./*"]                    // ✅ Alias for @/
+      "@/*": ["./src/*"]
     },
     "plugins": [
       {

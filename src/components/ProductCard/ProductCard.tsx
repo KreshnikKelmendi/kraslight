@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getValidImage, optimizeImageUrl, hasDisplayPrice } from '@/app/lib/images';
-import { formatProductDisplayTitle } from '@/app/lib/product-display';
+import { formatProductDisplayTitle, getProductPath } from '@/app/lib/product-display';
 
 const SCROLL_RESTORE_KEY = 'listingScrollRestore';
 
@@ -78,7 +78,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       ? originalPrice * (1 - discountPercentage / 100)
       : price;
 
-  const productHref = `/products/${_id}`;
+  const productHref = getProductPath({ _id, title });
 
   const handleNavigate = () => {
     saveListingScrollAndGoTop();

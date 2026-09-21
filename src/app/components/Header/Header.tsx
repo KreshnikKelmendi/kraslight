@@ -19,6 +19,9 @@ import { STORE_ADDRESS } from '@/app/lib/contact';
 const MOBILE_MENU_TRANSITION_MS = 420;
 const MOBILE_MENU_STAGGER_MS = 75;
 const MOBILE_MENU_ITEM_DURATION_MS = 500;
+/** Collapse past topbar height; expand only near absolute top (avoids sticky height jitter) */
+const SCROLL_COLLAPSE_AT = 72;
+const SCROLL_EXPAND_AT = 4;
 
 function MobileMenuReveal({
   children,
@@ -59,6 +62,7 @@ const Header = () => {
   const [navigatingCollectionId, setNavigatingCollectionId] = useState<string | null>(null);
   const [cartHighlightId, setCartHighlightId] = useState<string | null>(null);
   const dropdownCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isScrolledRef = useRef(false);
 
   const openProduktetDropdown = useCallback(() => {
     if (dropdownCloseTimer.current) {
@@ -106,10 +110,29 @@ const Header = () => {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+    let ticking = false;
+
+    const updateScrolled = () => {
+      const y = window.scrollY;
+      const next = isScrolledRef.current
+        ? y > SCROLL_EXPAND_AT
+        : y > SCROLL_COLLAPSE_AT;
+
+      if (next !== isScrolledRef.current) {
+        isScrolledRef.current = next;
+        setIsScrolled(next);
+      }
+      ticking = false;
     };
-    window.addEventListener('scroll', handleScroll);
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateScrolled);
+    };
+
+    updateScrolled();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -175,7 +198,7 @@ const Header = () => {
 
   return (
     <>
-    <header className={`sticky top-0 left-0 right-0 z-40 overflow-visible transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] font-bwseidoround ${
+    <header className={`sticky top-0 left-0 right-0 z-40 overflow-visible font-bwseidoround ${
       isScrolled 
         ? 'bg-white shadow-lg border-b border-gray-100' 
         : 'bg-white shadow-sm'
@@ -184,8 +207,16 @@ const Header = () => {
         <GlobalDiscountRibbon discountPercentage={globalDiscount.discountPercentage} />
       )}
       <div
-        className={`header-topbar-transition overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0 pointer-events-none' : 'max-h-[60px] opacity-100 mb-0 lg:mb-2'}`}
-        style={{ transition: 'max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s, margin 0.4s' }}
+        className={`overflow-hidden ${
+          isScrolled
+            ? 'max-h-0 opacity-0 pointer-events-none'
+            : 'max-h-[60px] opacity-100'
+        }`}
+        style={{
+          transition: isScrolled
+            ? 'max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease'
+            : 'max-height 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease',
+        }}
       >
         <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:px-10 2xl:px-24">
           <div className="flex items-center justify-between text-[12px] lg:text-sm">
@@ -206,10 +237,10 @@ const Header = () => {
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-100 overflow-visible transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] py-0">
+      <div className="bg-white border-b border-gray-100 overflow-visible py-0">
         <div className="mx-auto px-2 lg:px-10 2xl:px-24">
             <div
-              className={`flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              className={`flex items-center justify-between transition-[height] duration-300 ease-out ${
                 isScrolled ? 'h-16 lg:h-20' : 'h-20 lg:h-28'
               }`}
             >
@@ -231,7 +262,7 @@ const Header = () => {
                   width={160}
                   height={56}
                   priority
-                  className={`h-auto object-contain transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  className={`h-auto object-contain transition-[width] duration-300 ease-out ${
                     isScrolled ? 'w-[148px]' : 'w-[160px]'
                   }`}
                 />
@@ -245,7 +276,7 @@ const Header = () => {
                     width={120}
                     height={42}
                     priority
-                    className={`h-auto object-contain transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    className={`h-auto object-contain transition-[width] duration-300 ease-out ${
                       isScrolled ? 'w-[112px]' : 'w-[120px]'
                     }`}
                   />
