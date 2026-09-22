@@ -7,6 +7,7 @@ import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown } from 'react
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
+import { WhatsAppBarButton } from '@/app/components/WhatsAppButton/WhatsAppButton';
 
 interface Product {
   _id: string;
@@ -419,10 +420,10 @@ export default function CollectionPage() {
     filters.brands.length + filters.subcategories.length + filters.categories.length;
 
   return (
-    <div className="min-h-screen bg-neutral-50 px-4 py-6 lg:px-10 lg:py-10 2xl:px-24">
+    <div className="min-h-screen bg-neutral-50 px-4 py-4 lg:px-10 lg:py-6 2xl:px-24">
       <div className="flex gap-6 lg:gap-10 2xl:gap-12">
-      <aside className="sticky top-28 hidden max-h-[calc(100vh-7rem)] w-72 shrink-0 self-start overflow-y-auto rounded-xl border border-neutral-200 bg-white px-6 py-8 lg:block xl:w-80">
-        <div className="mb-8 flex items-center justify-between">
+      <aside className="sticky top-28 hidden max-h-[calc(100vh-7rem)] w-72 shrink-0 self-start overflow-y-auto rounded-xl border border-neutral-200 bg-white px-6 py-5 lg:block xl:w-80">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FaFilter className="text-neutral-500" size={14} />
             <h2 className="font-bwseidoround text-sm font-semibold uppercase tracking-[0.15em] text-neutral-900">
@@ -492,36 +493,40 @@ export default function CollectionPage() {
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="py-8 pb-28 lg:py-12 lg:pb-12">
-          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="font-bwseidoround text-2xl font-light tracking-tight text-neutral-900 sm:text-3xl">
+        <div className="pb-28 pt-3 lg:pb-8 lg:pt-0">
+          <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-neutral-200/70 pb-2.5 lg:mb-5 lg:pb-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-bwseidoround text-lg font-medium tracking-tight text-neutral-900 sm:text-xl lg:text-2xl lg:font-light truncate">
                 {collection.name}
               </h1>
-              <p className="mt-2 font-bwseidoround text-sm text-neutral-500">
-                {filteredProducts.length} produkte
-                {totalPages > 1 && !filterLoading && (
-                  <span className="text-neutral-400">
-                    {' '}
-                    · Faqja {currentPage} / {totalPages}
-                  </span>
-                )}
-              </p>
+              {totalPages > 1 && !filterLoading && (
+                <p className="mt-0.5 font-bwseidoround text-xs text-neutral-400 sm:text-sm">
+                  Faqja {currentPage} / {totalPages}
+                </p>
+              )}
             </div>
 
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="cursor-pointer rounded-md border border-neutral-200 bg-white px-3 py-2.5 font-bwseidoround text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-            >
-              <option value="default" disabled>
-                Rendit
-              </option>
-              <option value="price-asc">Çmimi: më i ulët</option>
-              <option value="price-desc">Çmimi: më i larti</option>
-              <option value="name-asc">Emri: A-Z</option>
-              <option value="name-desc">Emri: Z-A</option>
-            </select>
+            <label className="relative shrink-0">
+              <span className="sr-only">Rendit</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="cursor-pointer appearance-none rounded-lg border border-neutral-900 bg-white py-2.5 pl-3.5 pr-8 font-bwseidoround text-xs text-neutral-900 transition-colors hover:bg-neutral-50 focus:outline-none sm:text-sm"
+              >
+                <option value="default" disabled>
+                  Rendit
+                </option>
+                <option value="price-asc">Çmimi: më i ulët</option>
+                <option value="price-desc">Çmimi: më i larti</option>
+                <option value="name-asc">Emri: A-Z</option>
+                <option value="name-desc">Emri: Z-A</option>
+              </select>
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </label>
           </div>
 
           {filterLoading ? (
@@ -531,7 +536,7 @@ export default function CollectionPage() {
             </div>
           ) : filteredProducts.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-6 xl:gap-y-14">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-5 xl:gap-y-10">
                 {paginatedProducts.map((product: Product) => (
                   <ProductCard
                     key={product._id}
@@ -571,20 +576,25 @@ export default function CollectionPage() {
       </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 z-40 w-full border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur-sm lg:hidden">
-        <button
-          type="button"
-          onClick={openMobileFilters}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-neutral-900 bg-white py-3 font-bwseidoround text-sm text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
-        >
-          <FaFilter size={14} />
-          Shfaq filtrat
-          {activeFilterCount > 0 && (
-            <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] text-white">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+      <div className="fixed bottom-0 left-0 z-40 w-full border-t border-neutral-200 bg-white/95 px-3 py-2.5 backdrop-blur-sm lg:hidden"
+        style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+          <button
+            type="button"
+            onClick={openMobileFilters}
+            className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 border-r border-neutral-200 bg-white py-3 font-bwseidoround text-sm text-neutral-900 transition-colors active:bg-neutral-100"
+          >
+            <FaFilter size={14} />
+            Shfaq filtrat
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          <WhatsAppBarButton variant="bar" />
+        </div>
       </div>
     </div>
   );

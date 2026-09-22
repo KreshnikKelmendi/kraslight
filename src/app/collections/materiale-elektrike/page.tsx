@@ -5,6 +5,7 @@ import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown, FaChevronUp 
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
+import { WhatsAppBarButton } from '@/app/components/WhatsAppButton/WhatsAppButton';
 
 interface Product {
   _id: string;
@@ -373,9 +374,6 @@ export default function MaterialeElektrikePage() {
               <h1 className="text-xl font-bold text-gray-900 mb-1">
                 Materiale Elektrike
               </h1>
-              <p className="text-gray-600 text-sm">
-                {filteredAndSortedProducts.length} produkte të gjetura
-              </p>
             </div>
             {/* Sort Filter */}
             <div className="flex items-center gap-2">
@@ -425,14 +423,19 @@ export default function MaterialeElektrikePage() {
       </div>
       </div>
       {/* Mobile Filter Button - fixed at bottom */}
-      <div className="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-gradient-to-br from-gray-50 to-gray-100 pt-2 pb-2 px-4 border-t border-gray-200">
-        <button
-          onClick={() => setIsMobileFiltersOpen(true)}
-          className="w-full px-4 py-3 bg-gradient-to-r from-[#0a9945] to-gray-800 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
-        >
-          <FaFilter className="text-white" />
-          Shfaq Filtrat
-        </button>
+      <div className="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-white/95 px-3 pt-2 pb-2 border-t border-gray-200 backdrop-blur-sm"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+          <button
+            onClick={() => setIsMobileFiltersOpen(true)}
+            className="flex min-w-0 flex-1 items-center justify-center gap-2 border-r border-neutral-200 bg-gradient-to-r from-[#0a9945] to-gray-800 px-4 py-3 font-medium text-white"
+          >
+            <FaFilter className="text-white" />
+            Shfaq Filtrat
+          </button>
+          <WhatsAppBarButton variant="bar" />
+        </div>
       </div>
     </div>
   );
