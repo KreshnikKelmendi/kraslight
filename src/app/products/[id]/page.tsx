@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { FaTruck, FaShieldAlt, FaUndo, FaInstagram, FaFacebookF } from 'react-icons/fa';
+import { FaTruck, FaShieldAlt, FaUndo, FaInstagram, FaFacebookF, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../lib/cartSlice';
 import { RootState } from '../../../lib/store';
@@ -16,6 +16,7 @@ import { PHONE_DISPLAY, WHATSAPP_URL } from '@/app/lib/contact';
 import ProductPriceInquiry from '@/app/components/ProductPriceInquiry';
 
 const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
+const THUMBS_PER_PAGE = 6;
 
 interface Product {
   _id: string;
@@ -43,6 +44,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileIndex, setMobileIndex] = useState(0);
+  const [thumbStart, setThumbStart] = useState(0);
+  const [imageFading, setImageFading] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [alert, setAlert] = useState<string | null>(null);
@@ -96,6 +99,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
         setProduct(nextProduct);
         setMobileIndex(0);
+        setThumbStart(0);
       } catch {
         setProduct(null);
       } finally {
@@ -106,8 +110,25 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     fetchProduct();
   }, [id, router]);
 
+  useEffect(() => {
+    if (mobileIndex < thumbStart) {
+      setThumbStart(mobileIndex);
+    } else if (mobileIndex >= thumbStart + THUMBS_PER_PAGE) {
+      setThumbStart(Math.floor(mobileIndex / THUMBS_PER_PAGE) * THUMBS_PER_PAGE);
+    }
+  }, [mobileIndex, thumbStart]);
+
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = IMAGE_PLACEHOLDER;
+  }, []);
+
+  const goToMobileImage = useCallback((nextIndex: number, total: number) => {
+    if (nextIndex < 0 || nextIndex >= total) return;
+    setImageFading(true);
+    window.setTimeout(() => {
+      setMobileIndex(nextIndex);
+      setImageFading(false);
+    }, 160);
   }, []);
 
   if (loading) {
@@ -273,11 +294,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         <div className="w-full min-w-0 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-8 xl:gap-12">
           {/* Desktop: scrollable image grid */}
           <div className="hidden min-w-0 lg:block">
-            <div className="grid min-w-0 grid-cols-2 gap-3">
+            <div className="grid min-w-0 grid-cols-2 gap-5 xl:gap-6">
               {productImages.map((image, index) => (
                 <div
                   key={`${image}-${index}`}
-                  className="relative aspect-[3/4] overflow-hidden rounded-md border border-neutral-200/70 bg-neutral-50"
+                  className="relative aspect-[4/5] overflow-hidden rounded-md border border-neutral-200/70 bg-neutral-50"
                 >
                   <Image
                     src={optimizeImageUrl(image, { width: 800, quality: 'auto:good' })}
@@ -297,12 +318,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <div className="min-w-0 lg:relative">
           {/* Mobile: image carousel */}
           <div className="min-w-0 lg:hidden mb-8">
-            <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-50">
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-50">
               <Image
                 src={optimizeImageUrl(productImages[mobileIndex], { width: 800, quality: 'auto:good' })}
                 alt={product.title}
                 fill
-                className="object-cover"
+                className={`object-cover transition-opacity duration-300 ease-in-out ${
+                  imageFading ? 'opacity-0' : 'opacity-100'
+                }`}
                 onError={handleImageError}
                 priority
                 sizes="100vw"
@@ -321,7 +344,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     key={index}
                     type="button"
                     aria-label={`Imazhi ${index + 1}`}
-                    onClick={() => setMobileIndex(index)}
+                    onClick={() => goToMobileImage(index, productImages.length)}
                     className={`h-1.5 rounded-full transition-all ${
                       mobileIndex === index ? 'w-6 bg-neutral-900' : 'w-1.5 bg-neutral-300'
                     }`}
@@ -330,26 +353,55 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
             )}
             {productImages.length > 1 && (
-              <div className="mt-3 grid grid-cols-6 gap-1.5">
-                {productImages.map((image, index) => (
+              <div className="mt-3 flex items-center gap-1.5">
+                {productImages.length > THUMBS_PER_PAGE && (
                   <button
-                    key={index}
                     type="button"
-                    onClick={() => setMobileIndex(index)}
-                    className={`relative aspect-square w-full overflow-hidden rounded-sm border ${
-                      mobileIndex === index ? 'border-neutral-900' : 'border-neutral-200'
-                    }`}
+                    aria-label="Imazhi i mëparshëm"
+                    disabled={mobileIndex <= 0 || imageFading}
+                    onClick={() => goToMobileImage(mobileIndex - 1, productImages.length)}
+                    className="flex h-8 w-7 shrink-0 items-center justify-center rounded-sm border border-neutral-200 text-neutral-600 transition-colors enabled:hover:border-neutral-400 enabled:hover:text-neutral-900 disabled:opacity-30"
                   >
-                    <Image
-                      src={optimizeImageUrl(image, { width: 120, quality: 'auto:good' })}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      onError={handleImageError}
-                      unoptimized
-                    />
+                    <FaChevronLeft size={11} />
                   </button>
-                ))}
+                )}
+                <div className="grid min-w-0 flex-1 grid-cols-6 gap-1.5">
+                  {productImages
+                    .slice(thumbStart, thumbStart + THUMBS_PER_PAGE)
+                    .map((image, offset) => {
+                      const index = thumbStart + offset;
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => goToMobileImage(index, productImages.length)}
+                          className={`relative aspect-square w-full overflow-hidden rounded-sm border transition-colors ${
+                            mobileIndex === index ? 'border-neutral-900' : 'border-neutral-200'
+                          }`}
+                        >
+                          <Image
+                            src={optimizeImageUrl(image, { width: 120, quality: 'auto:good' })}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            onError={handleImageError}
+                            unoptimized
+                          />
+                        </button>
+                      );
+                    })}
+                </div>
+                {productImages.length > THUMBS_PER_PAGE && (
+                  <button
+                    type="button"
+                    aria-label="Imazhi i radhës"
+                    disabled={mobileIndex >= productImages.length - 1 || imageFading}
+                    onClick={() => goToMobileImage(mobileIndex + 1, productImages.length)}
+                    className="flex h-8 w-7 shrink-0 items-center justify-center rounded-sm border border-neutral-200 text-neutral-600 transition-colors enabled:hover:border-neutral-400 enabled:hover:text-neutral-900 disabled:opacity-30"
+                  >
+                    <FaChevronRight size={11} />
+                  </button>
+                )}
               </div>
             )}
           </div>

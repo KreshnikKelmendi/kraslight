@@ -26,6 +26,7 @@ interface Product {
   stock: number;
   isNewArrival?: boolean;
   subcategory?: string;
+  characteristics?: Array<{ key: string; value: string }>;
   createdAt?: string;
 }
 
@@ -42,6 +43,8 @@ interface Filters {
   categories: string[];
   brands: string[];
   subcategories: string[];
+  /** Specifika key → selected values */
+  specs: Record<string, string[]>;
 }
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
@@ -50,30 +53,116 @@ const MOBILE_FILTER_MS = 320;
 const PRODUCTS_PER_PAGE = 16;
 const FILTER_LOADING_MS = 400;
 
+function parseSpecNumber(value: string): number {
+  const match = value.replace(',', '.').match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
+}
+
+function sortSpecValues(key: string, values: string[]): string[] {
+  const unique = uniqueFilterValues(values);
+  if (key.trim().toLowerCase() === 'fuqia') {
+    return [...unique].sort((a, b) => {
+      const diff = parseSpecNumber(a) - parseSpecNumber(b);
+      if (diff !== 0) return diff;
+      return a.localeCompare(b, 'sq', { sensitivity: 'base' });
+    });
+  }
+  return unique;
+}
+
+function buildAvailableSpecs(
+  products: Product[]
+): Array<{ key: string; values: string[] }> {
+  const map = new Map<string, string[]>();
+  const excludedKeys = new Set([
+    'lloji',
+    'tipi',
+    'temperatura e ngjyres',
+    'temperatura e ngjyrës',
+    'permasat',
+    'përmasat',
+  ]);
+
+  for (const product of products) {
+    for (const char of product.characteristics ?? []) {
+      const key = char.key?.trim();
+      const value = char.value?.trim();
+      if (!key || !value) continue;
+      if (excludedKeys.has(key.toLowerCase())) continue;
+      const existing = map.get(key) ?? [];
+      existing.push(value);
+      map.set(key, existing);
+    }
+  }
+
+  return Array.from(map.entries())
+    .map(([key, values]) => ({
+      key,
+      values: sortSpecValues(key, values),
+    }))
+    .filter((entry) => entry.values.length > 0)
+    .sort((a, b) => a.key.localeCompare(b.key, 'sq', { sensitivity: 'base' }));
+}
+
+function countSelectedSpecs(specs: Record<string, string[]>): number {
+  return Object.values(specs).reduce((sum, values) => sum + values.length, 0);
+}
+
+function productMatchesSpecs(
+  product: Product,
+  selectedSpecs: Record<string, string[]>
+): boolean {
+  const entries = Object.entries(selectedSpecs).filter(([, values]) => values.length > 0);
+  if (entries.length === 0) return true;
+
+  const chars = product.characteristics ?? [];
+  return entries.every(([key, values]) =>
+    values.some((selected) =>
+      chars.some(
+        (c) =>
+          c.key?.trim().toLowerCase() === key.trim().toLowerCase() &&
+          c.value?.trim().toLowerCase() === selected.trim().toLowerCase()
+      )
+    )
+  );
+}
+
 function FilterSection({
   title,
   expanded,
   onToggle,
   children,
+  prominent = false,
 }: {
   title: string;
   expanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  prominent?: boolean;
 }) {
   return (
-    <div className="border-b border-neutral-100 pb-4 mb-4 last:mb-0">
+    <div
+      className={`border-b border-neutral-100 last:border-b-0 ${
+        prominent ? 'rounded-lg border border-neutral-200 bg-neutral-50/70 p-2.5' : 'pb-2 mb-2'
+      }`}
+    >
       <button
         type="button"
         onClick={onToggle}
-        className="mb-2 flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-left transition-colors hover:bg-neutral-50"
+        className="flex w-full cursor-pointer items-center justify-between rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-neutral-50"
       >
-        <span className="font-bwseidoround text-sm font-semibold text-neutral-900">{title}</span>
+        <span
+          className={`font-bwseidoround font-semibold text-neutral-900 ${
+            prominent ? 'text-[15px]' : 'text-sm'
+          }`}
+        >
+          {title}
+        </span>
         <FaChevronDown
           className={`text-neutral-400 transition-transform duration-300 ease-out ${
             expanded ? 'rotate-180' : 'rotate-0'
           }`}
-          size={12}
+          size={prominent ? 13 : 11}
         />
       </button>
       <div
@@ -82,7 +171,9 @@ function FilterSection({
         }`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-1 pt-1">{children}</div>
+          <div className={`pt-0.5 ${prominent ? 'max-h-64 space-y-2 overflow-y-auto pr-0.5' : 'space-y-0'}`}>
+            {children}
+          </div>
         </div>
       </div>
     </div>
@@ -99,12 +190,12 @@ function CheckboxFilter({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-neutral-50">
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-neutral-50">
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-4 w-4 cursor-pointer rounded border-neutral-300 text-neutral-900 focus:ring-neutral-400"
+        className="h-3.5 w-3.5 cursor-pointer rounded border-neutral-300 text-neutral-900 focus:ring-neutral-400"
       />
       <span className="font-bwseidoround text-sm text-neutral-700">{label}</span>
     </label>
@@ -114,19 +205,25 @@ function CheckboxFilter({
 function FilterPanelContent({
   availableBrands,
   availableSubcategories,
+  availableSpecs,
   filters,
   expandedFilters,
   setExpandedFilters,
   handleBrandFilter,
   handleSubcategoryFilter,
+  handleSpecFilter,
 }: {
   availableBrands: string[];
   availableSubcategories: string[];
+  availableSpecs: Array<{ key: string; values: string[] }>;
   filters: Filters;
-  expandedFilters: { brands: boolean; subcategories: boolean };
-  setExpandedFilters: React.Dispatch<React.SetStateAction<{ brands: boolean; subcategories: boolean }>>;
+  expandedFilters: { brands: boolean; subcategories: boolean; specs: boolean };
+  setExpandedFilters: React.Dispatch<
+    React.SetStateAction<{ brands: boolean; subcategories: boolean; specs: boolean }>
+  >;
   handleBrandFilter: (brand: string) => void;
   handleSubcategoryFilter: (subcategory: string) => void;
+  handleSpecFilter: (key: string, value: string) => void;
 }) {
   return (
     <>
@@ -160,6 +257,33 @@ function FilterPanelContent({
               checked={filters.subcategories.includes(subcategory)}
               onChange={() => handleSubcategoryFilter(subcategory)}
             />
+          ))}
+        </FilterSection>
+      )}
+
+      {availableSpecs.length > 0 && (
+        <FilterSection
+          title="Specifikat"
+          prominent
+          expanded={expandedFilters.specs}
+          onToggle={() => setExpandedFilters((prev) => ({ ...prev, specs: !prev.specs }))}
+        >
+          {availableSpecs.map(({ key, values }) => (
+            <div key={key} className="rounded-md border border-neutral-200/70 bg-white px-1.5 py-1.5">
+              <p className="mb-0.5 px-1 font-bwseidoround text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                {key}
+              </p>
+              <div className="space-y-0">
+                {values.map((value) => (
+                  <CheckboxFilter
+                    key={`${key}-${value}`}
+                    label={value}
+                    checked={(filters.specs[key] ?? []).includes(value)}
+                    onChange={() => handleSpecFilter(key, value)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </FilterSection>
       )}
@@ -208,15 +332,18 @@ export default function CollectionPage() {
     categories: [],
     brands: [],
     subcategories: [],
+    specs: {},
   });
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
+  const [availableSpecs, setAvailableSpecs] = useState<Array<{ key: string; values: string[] }>>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [mobileFiltersMounted, setMobileFiltersMounted] = useState(false);
   const [expandedFilters, setExpandedFilters] = useState({
     brands: true,
     subcategories: true,
+    specs: true,
   });
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filterLoading, setFilterLoading] = useState(false);
@@ -288,6 +415,7 @@ export default function CollectionPage() {
 
       setAvailableBrands(uniqueFilterValues(data.products.map((p: Product) => p.brand)));
       setAvailableSubcategories(uniqueFilterValues(data.products.map((p: Product) => p.subcategory)));
+      setAvailableSpecs(buildAvailableSpecs(data.products));
 
       if (typeof window !== 'undefined') {
         setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
@@ -318,12 +446,29 @@ export default function CollectionPage() {
     }));
   };
 
+  const handleSpecFilter = (key: string, value: string) => {
+    setFilters((prev) => {
+      const current = prev.specs[key] ?? [];
+      const nextValues = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      const nextSpecs = { ...prev.specs };
+      if (nextValues.length === 0) {
+        delete nextSpecs[key];
+      } else {
+        nextSpecs[key] = nextValues;
+      }
+      return { ...prev, specs: nextSpecs };
+    });
+  };
+
   const clearFilters = () => {
     setFilters({
       type: null,
       categories: [],
       brands: [],
       subcategories: [],
+      specs: {},
     });
   };
 
@@ -341,7 +486,14 @@ export default function CollectionPage() {
         const matchesCategory = matchesFilterSelection(product.category, filters.categories);
         const matchesBrand = matchesFilterSelection(product.brand, filters.brands);
         const matchesSubcategory = matchesFilterSelection(product.subcategory, filters.subcategories);
-        return matchesType && matchesCategory && matchesBrand && matchesSubcategory;
+        const matchesSpecs = productMatchesSpecs(product, filters.specs);
+        return (
+          matchesType &&
+          matchesCategory &&
+          matchesBrand &&
+          matchesSubcategory &&
+          matchesSpecs
+        );
       });
 
       switch (sortBy) {
@@ -395,11 +547,13 @@ export default function CollectionPage() {
   const filterPanelProps = {
     availableBrands,
     availableSubcategories,
+    availableSpecs,
     filters,
     expandedFilters,
     setExpandedFilters,
     handleBrandFilter,
     handleSubcategoryFilter,
+    handleSpecFilter,
   };
 
   if (loading) {
@@ -417,13 +571,16 @@ export default function CollectionPage() {
   if (!collection) return null;
 
   const activeFilterCount =
-    filters.brands.length + filters.subcategories.length + filters.categories.length;
+    filters.brands.length +
+    filters.subcategories.length +
+    filters.categories.length +
+    countSelectedSpecs(filters.specs);
 
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-4 lg:px-10 lg:py-6 2xl:px-24">
       <div className="flex gap-6 lg:gap-10 2xl:gap-12">
-      <aside className="sticky top-28 hidden max-h-[calc(100vh-7rem)] w-72 shrink-0 self-start overflow-y-auto rounded-xl border border-neutral-200 bg-white px-6 py-5 lg:block xl:w-80">
-        <div className="mb-6 flex items-center justify-between">
+      <aside className="sticky top-28 hidden max-h-[calc(100vh-7rem)] w-80 shrink-0 self-start overflow-y-auto rounded-xl border border-neutral-200 bg-white px-4 py-4 lg:block xl:w-96">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FaFilter className="text-neutral-500" size={14} />
             <h2 className="font-bwseidoround text-sm font-semibold uppercase tracking-[0.15em] text-neutral-900">
