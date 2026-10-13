@@ -7,6 +7,7 @@ import Footer from './Footer/Footer';
 import WhatsAppButton from './WhatsAppButton/WhatsAppButton';
 import { StorefrontDataProvider } from '@/app/lib/StorefrontDataContext';
 import type { StorefrontShellData } from '@/app/lib/storefront-data';
+import { IS_LAUNCH_MODE } from '@/app/lib/launch';
 
 export default function SiteShell({
   children,
@@ -16,8 +17,9 @@ export default function SiteShell({
   storefrontData: StorefrontShellData;
 }) {
   const pathname = usePathname();
+  const isLaunchHome = IS_LAUNCH_MODE && pathname === '/';
   const isStorefrontShell =
-    !pathname?.startsWith('/admin') && pathname !== '/signin';
+    !pathname?.startsWith('/admin') && pathname !== '/signin' && !isLaunchHome;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
