@@ -9,6 +9,7 @@ import { FiArrowRight } from "react-icons/fi";
 import { optimizeImageUrl, IMAGE_PLACEHOLDER } from "@/app/lib/images";
 import { fetchCachedJson } from "@/app/lib/client-fetch-cache";
 import { useOptionalStorefrontData } from "@/app/lib/StorefrontDataContext";
+import { getCollectionPath } from "@/app/lib/product-display";
 
 interface Collection {
   _id: string;
@@ -135,7 +136,7 @@ export default function CollectionsShowcase({
                 className={`${getItemClass(index, count)} ${count === 3 ? "h-full min-h-0" : ""}`}
               >
                 <Link
-                  href={`/collections/${collection._id}`}
+                  href={getCollectionPath(collection)}
                   onClick={() => handleNavigate(collection._id)}
                   aria-busy={isNavigating}
                   className={`group relative block h-full overflow-hidden bg-neutral-900 ring-1 ring-neutral-200/60 transition-all duration-500 hover:ring-[#0a9945]/40 hover:shadow-[0_28px_60px_-24px_rgba(10,153,69,0.35)] ${getCardClass(index, count)} ${

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -16,7 +16,6 @@ import { PHONE_DISPLAY, WHATSAPP_URL } from '@/app/lib/contact';
 import ProductPriceInquiry from '@/app/components/ProductPriceInquiry';
 
 const DEFAULT_IMAGE = IMAGE_PLACEHOLDER;
-const THUMBS_PER_PAGE = 6;
 
 interface Product {
   _id: string;
@@ -44,9 +43,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileIndex, setMobileIndex] = useState(0);
-  const [thumbStart, setThumbStart] = useState(0);
   const [imageFading, setImageFading] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
+  const mobileThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [alert, setAlert] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<'success' | 'info'>('success');
@@ -99,7 +98,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
         setProduct(nextProduct);
         setMobileIndex(0);
-        setThumbStart(0);
       } catch {
         setProduct(null);
       } finally {
@@ -111,25 +109,25 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }, [id, router]);
 
   useEffect(() => {
-    if (mobileIndex < thumbStart) {
-      setThumbStart(mobileIndex);
-    } else if (mobileIndex >= thumbStart + THUMBS_PER_PAGE) {
-      setThumbStart(Math.floor(mobileIndex / THUMBS_PER_PAGE) * THUMBS_PER_PAGE);
-    }
-  }, [mobileIndex, thumbStart]);
+    mobileThumbRefs.current[mobileIndex]?.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'smooth',
+    });
+  }, [mobileIndex]);
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = IMAGE_PLACEHOLDER;
   }, []);
 
   const goToMobileImage = useCallback((nextIndex: number, total: number) => {
-    if (nextIndex < 0 || nextIndex >= total) return;
+    if (nextIndex < 0 || nextIndex >= total || imageFading) return;
     setImageFading(true);
     window.setTimeout(() => {
       setMobileIndex(nextIndex);
       setImageFading(false);
     }, 160);
-  }, []);
+  }, [imageFading]);
 
   if (loading) {
     return <PageLoadingSpinner className="min-h-screen" label="Duke ngarkuar produktin" />;
@@ -316,94 +314,93 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
           {/* Right column: stretches to image column height so sticky works */}
           <div className="min-w-0 lg:relative">
-          {/* Mobile: image carousel */}
-          <div className="min-w-0 lg:hidden mb-8">
-            <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-50">
-              <Image
-                src={optimizeImageUrl(productImages[mobileIndex], { width: 800, quality: 'auto:good' })}
-                alt={product.title}
-                fill
-                className={`object-cover transition-opacity duration-300 ease-in-out ${
-                  imageFading ? 'opacity-0' : 'opacity-100'
+          {/* Mobile: main image + vertical thumbs (same height) */}
+          <div className="mb-8 min-w-0 lg:hidden">
+            <div
+              className={`relative aspect-[1/1] w-full ${
+                productImages.length > 1 ? 'pr-[4.75rem]' : ''
+              }`}
+            >
+              <div
+                className={`absolute inset-y-0 left-0 overflow-hidden rounded-md bg-neutral-50 ${
+                  productImages.length > 1 ? 'right-[4.75rem]' : 'right-0'
                 }`}
-                onError={handleImageError}
-                priority
-                sizes="100vw"
-                unoptimized
-              />
-              {product.discountPercentage ? (
-                <span className="absolute left-3 top-3 bg-red-600 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
-                  -{product.discountPercentage}%
-                </span>
-              ) : null}
-            </div>
-            {productImages.length > 1 && (
-              <div className="mt-3 flex justify-center gap-1.5">
-                {productImages.map((_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    aria-label={`Imazhi ${index + 1}`}
-                    onClick={() => goToMobileImage(index, productImages.length)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      mobileIndex === index ? 'w-6 bg-neutral-900' : 'w-1.5 bg-neutral-300'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-            {productImages.length > 1 && (
-              <div className="mt-3 flex items-center gap-1.5">
-                {productImages.length > THUMBS_PER_PAGE && (
-                  <button
-                    type="button"
-                    aria-label="Imazhi i mëparshëm"
-                    disabled={mobileIndex <= 0 || imageFading}
-                    onClick={() => goToMobileImage(mobileIndex - 1, productImages.length)}
-                    className="flex h-8 w-7 shrink-0 items-center justify-center rounded-sm border border-neutral-200 text-neutral-600 transition-colors enabled:hover:border-neutral-400 enabled:hover:text-neutral-900 disabled:opacity-30"
-                  >
-                    <FaChevronLeft size={11} />
-                  </button>
+              >
+                <Image
+                  src={optimizeImageUrl(productImages[mobileIndex], { width: 800, quality: 'auto:good' })}
+                  alt={product.title}
+                  fill
+                  className={`object-cover transition-opacity duration-300 ease-in-out ${
+                    imageFading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  onError={handleImageError}
+                  priority
+                  sizes="80vw"
+                  unoptimized
+                />
+
+                {product.discountPercentage ? (
+                  <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-red-600 px-2 py-1 text-[11px] font-semibold text-white">
+                    -{product.discountPercentage}%
+                  </span>
+                ) : null}
+
+                {productImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Imazhi i mëparshëm"
+                      disabled={mobileIndex <= 0 || imageFading}
+                      onClick={() => goToMobileImage(mobileIndex - 1, productImages.length)}
+                      className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-md transition enabled:active:scale-95 disabled:opacity-35"
+                    >
+                      <FaChevronLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Imazhi i radhës"
+                      disabled={mobileIndex >= productImages.length - 1 || imageFading}
+                      onClick={() => goToMobileImage(mobileIndex + 1, productImages.length)}
+                      className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-md transition enabled:active:scale-95 disabled:opacity-35"
+                    >
+                      <FaChevronRight size={14} />
+                    </button>
+                    <span className="absolute bottom-2.5 right-2.5 z-10 rounded-full bg-black/55 px-2.5 py-1 font-bwseidoround text-[11px] font-medium text-white backdrop-blur-[1px]">
+                      {mobileIndex + 1} / {productImages.length}
+                    </span>
+                  </>
                 )}
-                <div className="grid min-w-0 flex-1 grid-cols-6 gap-1.5">
-                  {productImages
-                    .slice(thumbStart, thumbStart + THUMBS_PER_PAGE)
-                    .map((image, offset) => {
-                      const index = thumbStart + offset;
-                      return (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => goToMobileImage(index, productImages.length)}
-                          className={`relative aspect-square w-full overflow-hidden rounded-sm border transition-colors ${
-                            mobileIndex === index ? 'border-neutral-900' : 'border-neutral-200'
-                          }`}
-                        >
-                          <Image
-                            src={optimizeImageUrl(image, { width: 120, quality: 'auto:good' })}
-                            alt=""
-                            fill
-                            className="object-cover"
-                            onError={handleImageError}
-                            unoptimized
-                          />
-                        </button>
-                      );
-                    })}
+              </div>
+
+              {productImages.length > 1 && (
+                <div className="absolute inset-y-0 right-0 flex w-[4.25rem] flex-col gap-1.5 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  {productImages.map((image, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      ref={(el) => {
+                        mobileThumbRefs.current[index] = el;
+                      }}
+                      onClick={() => goToMobileImage(index, productImages.length)}
+                      className={`relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
+                        mobileIndex === index
+                          ? 'border-[#0a9945]'
+                          : 'border-neutral-200'
+                      }`}
+                    >
+                      <Image
+                        src={optimizeImageUrl(image, { width: 160, quality: 'auto:good' })}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        onError={handleImageError}
+                        unoptimized
+                      />
+                    </button>
+                  ))}
                 </div>
-                {productImages.length > THUMBS_PER_PAGE && (
-                  <button
-                    type="button"
-                    aria-label="Imazhi i radhës"
-                    disabled={mobileIndex >= productImages.length - 1 || imageFading}
-                    onClick={() => goToMobileImage(mobileIndex + 1, productImages.length)}
-                    className="flex h-8 w-7 shrink-0 items-center justify-center rounded-sm border border-neutral-200 text-neutral-600 transition-colors enabled:hover:border-neutral-400 enabled:hover:text-neutral-900 disabled:opacity-30"
-                  >
-                    <FaChevronRight size={11} />
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Sticky product info */}

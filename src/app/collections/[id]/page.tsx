@@ -1,13 +1,19 @@
 "use client";
 
 import PageLoadingSpinner from '@/components/PageLoadingSpinner';
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { FaTimes, FaFilter, FaSearch, FaTimesCircle, FaChevronDown } from 'react-icons/fa';
-import ProductCard from '@/components/ProductCard/ProductCard';
+import ProductCard, { persistListingState } from '@/components/ProductCard/ProductCard';
 import { fetchCachedJson } from '@/app/lib/client-fetch-cache';
 import { matchesFilterSelection, uniqueFilterValues } from '@/app/lib/filter-values';
 import { WhatsAppBarButton } from '@/app/components/WhatsAppButton/WhatsAppButton';
+import {
+  getCollectionPath,
+  looksLikeCollectionId,
+} from '@/app/lib/product-display';
+
+const SCROLL_RESTORE_KEY = 'listingScrollRestore';
 
 interface Product {
   _id: string;
@@ -49,8 +55,17 @@ interface Filters {
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
+type ListingRestore = {
+  path: string;
+  y?: number;
+  productId?: string;
+  page?: number;
+  sortBy?: SortOption;
+  filters?: Filters;
+};
+
 const MOBILE_FILTER_MS = 320;
-const PRODUCTS_PER_PAGE = 16;
+const PRODUCTS_PER_PAGE = 20;
 const FILTER_LOADING_MS = 400;
 
 function parseSpecNumber(value: string): number {
@@ -70,38 +85,40 @@ function sortSpecValues(key: string, values: string[]): string[] {
   return unique;
 }
 
+const ALLOWED_SPEC_KEYS = ['fuqia', 'ngjyra', 'forma'] as const;
+
+function normalizeSpecKey(key: string): string {
+  return key.trim().toLowerCase();
+}
+
 function buildAvailableSpecs(
   products: Product[]
 ): Array<{ key: string; values: string[] }> {
-  const map = new Map<string, string[]>();
-  const excludedKeys = new Set([
-    'lloji',
-    'tipi',
-    'temperatura e ngjyres',
-    'temperatura e ngjyrës',
-    'permasat',
-    'përmasat',
-  ]);
+  const map = new Map<string, { label: string; values: string[] }>();
 
   for (const product of products) {
     for (const char of product.characteristics ?? []) {
       const key = char.key?.trim();
       const value = char.value?.trim();
       if (!key || !value) continue;
-      if (excludedKeys.has(key.toLowerCase())) continue;
-      const existing = map.get(key) ?? [];
-      existing.push(value);
-      map.set(key, existing);
+      const normalized = normalizeSpecKey(key);
+      if (!(ALLOWED_SPEC_KEYS as readonly string[]).includes(normalized)) continue;
+      const existing = map.get(normalized) ?? { label: key, values: [] };
+      existing.values.push(value);
+      map.set(normalized, existing);
     }
   }
 
-  return Array.from(map.entries())
-    .map(([key, values]) => ({
-      key,
-      values: sortSpecValues(key, values),
-    }))
-    .filter((entry) => entry.values.length > 0)
-    .sort((a, b) => a.key.localeCompare(b.key, 'sq', { sensitivity: 'base' }));
+  return ALLOWED_SPEC_KEYS.map((normalized) => {
+    const entry = map.get(normalized);
+    if (!entry) return null;
+    return {
+      key: entry.label,
+      values: sortSpecValues(entry.label, entry.values),
+    };
+  }).filter((entry): entry is { key: string; values: string[] } =>
+    Boolean(entry && entry.values.length > 0)
+  );
 }
 
 function countSelectedSpecs(specs: Record<string, string[]>): number {
@@ -268,27 +285,73 @@ function FilterPanelContent({
           expanded={expandedFilters.specs}
           onToggle={() => setExpandedFilters((prev) => ({ ...prev, specs: !prev.specs }))}
         >
-          {availableSpecs.map(({ key, values }) => (
-            <div key={key} className="rounded-md border border-neutral-200/70 bg-white px-1.5 py-1.5">
-              <p className="mb-0.5 px-1 font-bwseidoround text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                {key}
-              </p>
-              <div className="space-y-0">
-                {values.map((value) => (
-                  <CheckboxFilter
-                    key={`${key}-${value}`}
-                    label={value}
-                    checked={(filters.specs[key] ?? []).includes(value)}
-                    onChange={() => handleSpecFilter(key, value)}
-                  />
-                ))}
+          {availableSpecs.map(({ key, values }) => {
+            const normalized = normalizeSpecKey(key);
+            const valuesClass =
+              normalized === 'fuqia'
+                ? 'grid grid-cols-3 gap-x-1 gap-y-0'
+                : normalized === 'ngjyra'
+                  ? 'grid grid-cols-2 gap-x-1 gap-y-0'
+                  : 'space-y-0';
+            return (
+              <div key={key} className="rounded-md border border-neutral-200/70 bg-white px-1.5 py-1.5">
+                <p className="mb-0.5 px-1 font-bwseidoround text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                  {key}
+                </p>
+                <div className={valuesClass}>
+                  {values.map((value) => (
+                    <CheckboxFilter
+                      key={`${key}-${value}`}
+                      label={value}
+                      checked={(filters.specs[key] ?? []).includes(value)}
+                      onChange={() => handleSpecFilter(key, value)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </FilterSection>
       )}
     </>
   );
+}
+
+function getPaginationItems(currentPage: number, totalPages: number): Array<number | 'ellipsis'> {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const items: Array<number | 'ellipsis'> = [1];
+  const showLeftEllipsis = currentPage > 3;
+  const showRightEllipsis = currentPage < totalPages - 2;
+
+  if (showLeftEllipsis) {
+    items.push('ellipsis');
+  } else if (totalPages > 1) {
+    items.push(2);
+  }
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let page = start; page <= end; page++) {
+    if (page !== 1 && page !== totalPages && !items.includes(page)) {
+      items.push(page);
+    }
+  }
+
+  if (showRightEllipsis) {
+    items.push('ellipsis');
+  } else if (!items.includes(totalPages - 1) && totalPages - 1 > 1) {
+    items.push(totalPages - 1);
+  }
+
+  if (!items.includes(totalPages)) {
+    items.push(totalPages);
+  }
+
+  return items;
 }
 
 function Pagination({
@@ -302,28 +365,66 @@ function Pagination({
 }) {
   if (totalPages <= 1) return null;
 
+  const items = getPaginationItems(currentPage, totalPages);
+
   return (
-    <nav className="mt-12 flex flex-wrap items-center justify-center gap-2" aria-label="Pagination">
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-        <button
-          key={page}
-          type="button"
-          onClick={() => onPageChange(page)}
-          className={`min-w-10 cursor-pointer rounded-md border px-3 py-2 font-bwseidoround text-sm transition-colors ${
-            currentPage === page
-              ? 'border-neutral-900 bg-neutral-900 text-white'
-              : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-900'
-          }`}
-        >
-          {page}
-        </button>
-      ))}
+    <nav
+      className="mt-10 flex items-center justify-center gap-1 font-bwseidoround text-sm text-neutral-600"
+      aria-label="Pagination"
+    >
+      <button
+        type="button"
+        aria-label="Faqja e mëparshme"
+        disabled={currentPage <= 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        className="cursor-pointer rounded px-2 py-1.5 transition-colors enabled:hover:bg-neutral-100 enabled:hover:text-[#0a9945] disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        ‹
+      </button>
+
+      {items.map((item, index) =>
+        item === 'ellipsis' ? (
+          <span key={`ellipsis-${index}`} className="px-1.5 text-neutral-400" aria-hidden>
+            …
+          </span>
+        ) : (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onPageChange(item)}
+            className={`min-w-8 cursor-pointer rounded px-2 py-1.5 transition-colors ${
+              currentPage === item
+                ? 'bg-[#0a9945] font-medium text-white'
+                : 'hover:bg-neutral-100 hover:text-[#0a9945]'
+            }`}
+          >
+            {item}
+          </button>
+        )
+      )}
+
+      <button
+        type="button"
+        aria-label="Faqja e radhës"
+        disabled={currentPage >= totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        className="cursor-pointer rounded px-2 py-1.5 transition-colors enabled:hover:bg-neutral-100 enabled:hover:text-[#0a9945] disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        ›
+      </button>
     </nav>
   );
 }
 
 export default function CollectionPage() {
   const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const restoreScrollYRef = useRef<number | null>(null);
+  const restoreProductIdRef = useRef<string | null>(null);
+  const restoredPageRef = useRef<number | null>(null);
+  const didRestoreRef = useRef(false);
+
   const [collection, setCollection] = useState<Collection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -381,29 +482,72 @@ export default function CollectionPage() {
   }, [isMobileFiltersOpen, mobileFiltersMounted]);
 
   useEffect(() => {
-    if (loading || !collection) return;
-
-    const raw = sessionStorage.getItem('listingScrollRestore');
-    if (!raw) return;
-
-    try {
-      const { path, y } = JSON.parse(raw) as { path: string; y: number };
-      const current = window.location.pathname + window.location.search;
-      if (path === current && typeof y === 'number') {
-        sessionStorage.removeItem('listingScrollRestore');
-        requestAnimationFrame(() => {
-          window.scrollTo({ top: y, behavior: 'auto' });
-        });
-      }
-    } catch {
-      sessionStorage.removeItem('listingScrollRestore');
+    if (typeof window === 'undefined') return;
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
     }
-  }, [loading, collection]);
+
+    if (didRestoreRef.current) return;
+
+    const pathOnly = window.location.pathname;
+    const raw = sessionStorage.getItem(SCROLL_RESTORE_KEY);
+
+    if (raw) {
+      try {
+        const saved = JSON.parse(raw) as ListingRestore;
+        const savedPath = (saved.path || '').split('?')[0];
+        if (savedPath === pathOnly) {
+          didRestoreRef.current = true;
+          sessionStorage.removeItem(SCROLL_RESTORE_KEY);
+
+          if (saved.filters) setFilters(saved.filters);
+          if (saved.sortBy) setSortBy(saved.sortBy);
+
+          const page =
+            typeof saved.page === 'number' && saved.page > 0 ? saved.page : 1;
+          restoredPageRef.current = page;
+          setCurrentPage(page);
+
+          const params = new URLSearchParams(window.location.search);
+          if (page <= 1) params.delete('page');
+          else params.set('page', String(page));
+          const qs = params.toString();
+          router.replace(qs ? `${pathOnly}?${qs}` : pathOnly, { scroll: false });
+
+          if (typeof saved.productId === 'string' && saved.productId) {
+            restoreProductIdRef.current = saved.productId;
+          }
+          if (typeof saved.y === 'number') {
+            restoreScrollYRef.current = saved.y;
+          }
+          return;
+        }
+      } catch {
+        sessionStorage.removeItem(SCROLL_RESTORE_KEY);
+      }
+    }
+
+    const pageParam = Number(new URLSearchParams(window.location.search).get('page'));
+    if (pageParam > 1) {
+      restoredPageRef.current = pageParam;
+      setCurrentPage(pageParam);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !pathname) return;
+    persistListingState({
+      path: pathname,
+      page: currentPage,
+      sortBy,
+      filters,
+    });
+  }, [pathname, currentPage, sortBy, filters]);
 
   async function fetchCollection(id: string) {
     try {
       const data = await fetchCachedJson<Collection & { products: Product[] }>(
-        `/api/collections/${id}`
+        `/api/collections/${encodeURIComponent(id)}`
       );
       if (data.products) {
         data.products = data.products.sort(
@@ -411,13 +555,19 @@ export default function CollectionPage() {
             new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
         );
       }
+
+      const prettyPath = getCollectionPath(data);
+      if (looksLikeCollectionId(id) && prettyPath !== `/collections/${id}`) {
+        router.replace(prettyPath);
+      }
+
       setCollection(data);
 
       setAvailableBrands(uniqueFilterValues(data.products.map((p: Product) => p.brand)));
       setAvailableSubcategories(uniqueFilterValues(data.products.map((p: Product) => p.subcategory)));
       setAvailableSpecs(buildAvailableSpecs(data.products));
 
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && restoreScrollYRef.current == null && !didRestoreRef.current) {
         setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
       }
     } catch (error) {
@@ -428,7 +578,20 @@ export default function CollectionPage() {
     }
   }
 
+  const resetToFirstPage = useCallback(() => {
+    restoredPageRef.current = null;
+    setCurrentPage(1);
+    if (!pathname) return;
+    const params = new URLSearchParams(
+      typeof window !== 'undefined' ? window.location.search : ''
+    );
+    params.delete('page');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [pathname, router]);
+
   const handleBrandFilter = (brand: string) => {
+    resetToFirstPage();
     setFilters((prev) => ({
       ...prev,
       brands: prev.brands.includes(brand)
@@ -438,6 +601,7 @@ export default function CollectionPage() {
   };
 
   const handleSubcategoryFilter = (subcategory: string) => {
+    resetToFirstPage();
     setFilters((prev) => ({
       ...prev,
       subcategories: prev.subcategories.includes(subcategory)
@@ -447,6 +611,7 @@ export default function CollectionPage() {
   };
 
   const handleSpecFilter = (key: string, value: string) => {
+    resetToFirstPage();
     setFilters((prev) => {
       const current = prev.specs[key] ?? [];
       const nextValues = current.includes(value)
@@ -463,6 +628,7 @@ export default function CollectionPage() {
   };
 
   const clearFilters = () => {
+    resetToFirstPage();
     setFilters({
       type: null,
       categories: [],
@@ -526,7 +692,14 @@ export default function CollectionPage() {
       }
 
       setFilteredProducts(filtered);
-      setCurrentPage(1);
+
+      if (restoredPageRef.current != null) {
+        const page = restoredPageRef.current;
+        const maxPage = Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE));
+        setCurrentPage(Math.min(page, maxPage));
+        restoredPageRef.current = null;
+      }
+
       setFilterLoading(false);
     }, FILTER_LOADING_MS);
 
@@ -534,14 +707,95 @@ export default function CollectionPage() {
   }, [collection, filters, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
   const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * PRODUCTS_PER_PAGE,
-    currentPage * PRODUCTS_PER_PAGE
+    (safePage - 1) * PRODUCTS_PER_PAGE,
+    safePage * PRODUCTS_PER_PAGE
   );
 
+  useEffect(() => {
+    if (loading || filterLoading || !collection) return;
+    if (restoreProductIdRef.current == null && restoreScrollYRef.current == null) return;
+
+    const productId = restoreProductIdRef.current;
+    const y = restoreScrollYRef.current;
+    let done = false;
+
+    const restorePosition = () => {
+      if (done) return true;
+
+      if (productId) {
+        const el = document.querySelector(
+          `[data-product-id="${CSS.escape(productId)}"]`
+        ) as HTMLElement | null;
+        if (el) {
+          el.scrollIntoView({ block: 'center', behavior: 'auto' });
+          done = true;
+          restoreProductIdRef.current = null;
+          restoreScrollYRef.current = null;
+          return true;
+        }
+      }
+
+      if (typeof y === 'number') {
+        window.scrollTo({ top: y, behavior: 'auto' });
+      }
+      return false;
+    };
+
+    const timers = [0, 50, 120, 250, 450, 700, 1100].map((delay) =>
+      window.setTimeout(() => {
+        if (restorePosition()) return;
+        if (delay >= 1100) {
+          restoreProductIdRef.current = null;
+          restoreScrollYRef.current = null;
+        }
+      }, delay)
+    );
+
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [
+    loading,
+    filterLoading,
+    collection,
+    safePage,
+    paginatedProducts.map((p) => p._id).join(','),
+  ]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    restoredPageRef.current = null;
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const params = new URLSearchParams(
+      typeof window !== 'undefined' ? window.location.search : ''
+    );
+    if (page <= 1) params.delete('page');
+    else params.set('page', String(page));
+    const qs = params.toString();
+    const nextUrl = qs ? `${pathname}?${qs}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+
+    persistListingState({
+      path: pathname,
+      page,
+      sortBy,
+      filters,
+    });
+
+    window.scrollTo(0, 0);
+  };
+
+  const handleSortChange = (value: SortOption) => {
+    if (value === sortBy) return;
+    resetToFirstPage();
+    setSortBy(value);
   };
 
   const filterPanelProps = {
@@ -658,7 +912,7 @@ export default function CollectionPage() {
               </h1>
               {totalPages > 1 && !filterLoading && (
                 <p className="mt-0.5 font-bwseidoround text-xs text-neutral-400 sm:text-sm">
-                  Faqja {currentPage} / {totalPages}
+                  Faqja {safePage} / {totalPages}
                 </p>
               )}
             </div>
@@ -667,7 +921,7 @@ export default function CollectionPage() {
               <span className="sr-only">Rendit</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                onChange={(e) => handleSortChange(e.target.value as SortOption)}
                 className="cursor-pointer appearance-none rounded-lg border border-neutral-900 bg-white py-2.5 pl-3.5 pr-8 font-bwseidoround text-xs text-neutral-900 transition-colors hover:bg-neutral-50 focus:outline-none sm:text-sm"
               >
                 <option value="default" disabled>
@@ -695,18 +949,19 @@ export default function CollectionPage() {
             <>
               <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-5 xl:gap-y-10">
                 {paginatedProducts.map((product: Product) => (
-                  <ProductCard
-                    key={product._id}
-                    product={{
-                      ...product,
-                      stock: undefined,
-                      description: product.description || '',
-                    }}
-                  />
+                  <div key={product._id} data-product-id={product._id}>
+                    <ProductCard
+                      product={{
+                        ...product,
+                        stock: undefined,
+                        description: product.description || '',
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
               <Pagination
-                currentPage={currentPage}
+                currentPage={safePage}
                 totalPages={totalPages}
                 onPageChange={goToPage}
               />

@@ -7,6 +7,7 @@ import { getValidImage, optimizeImageUrl, hasDisplayPrice } from '@/app/lib/imag
 import { formatProductDisplayTitle, getProductPath } from '@/app/lib/product-display';
 
 const SCROLL_RESTORE_KEY = 'listingScrollRestore';
+export const LISTING_STATE_KEY = 'listingState';
 
 interface Product {
   _id: string;
@@ -45,16 +46,33 @@ function collectImages(product: Product): string[] {
   return [...new Set(candidates)];
 }
 
-export function saveListingScrollAndGoTop() {
+export function persistListingState(state: Record<string, unknown>) {
   if (typeof window === 'undefined') return;
+  sessionStorage.setItem(LISTING_STATE_KEY, JSON.stringify(state));
+}
+
+export function saveListingScrollAndGoTop(productId?: string) {
+  if (typeof window === 'undefined') return;
+
+  let listing: Record<string, unknown> = {};
+  try {
+    listing = JSON.parse(sessionStorage.getItem(LISTING_STATE_KEY) || '{}') as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    listing = {};
+  }
+
   sessionStorage.setItem(
     SCROLL_RESTORE_KEY,
     JSON.stringify({
-      path: window.location.pathname + window.location.search,
+      ...listing,
+      path: window.location.pathname,
       y: window.scrollY,
+      productId: productId || null,
     })
   );
-  window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 export default function ProductCard({ product, className = '' }: ProductCardProps) {
@@ -81,12 +99,13 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const productHref = getProductPath({ _id, title });
 
   const handleNavigate = () => {
-    saveListingScrollAndGoTop();
+    saveListingScrollAndGoTop(_id);
     setIsNavigating(true);
   };
 
   return (
     <article
+      data-product-id={_id}
       className={`group relative bg-white ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

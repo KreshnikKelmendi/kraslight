@@ -27,3 +27,18 @@ export function looksLikeProductId(value: string): boolean {
     /^[0-9a-f]{24}$/i.test(value)
   );
 }
+
+/** URL-safe slug from collection name (same rules as product titles). */
+export function slugifyCollectionName(name: string): string {
+  return slugifyProductTitle(name);
+}
+
+/** Storefront path for a collection page, e.g. `/collections/ndriqim`. */
+export function getCollectionPath(collection: { _id: string; name: string }): string {
+  const slug = slugifyCollectionName(collection.name);
+  return `/collections/${slug || collection._id}`;
+}
+
+export function looksLikeCollectionId(value: string): boolean {
+  return looksLikeProductId(value);
+}

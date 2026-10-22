@@ -1,6 +1,10 @@
 import { createSupabaseServerClient } from './server';
 import { collectionRowToDoc } from './row-map';
 import { findProducts } from './products';
+import {
+  looksLikeCollectionId,
+  slugifyCollectionName,
+} from '@/app/lib/product-display';
 
 /** Lightweight list for nav / homepage showcase (no product joins). */
 export async function findCollectionsNav() {
@@ -81,6 +85,25 @@ export async function findCollectionById(id: string) {
     return { ...collection, products: categoryProducts };
   }
   return collection;
+}
+
+/** Resolve a collection by UUID/legacy id or by name slug (e.g. `ndriqim`). */
+export async function findCollectionBySlugOrId(slugOrId: string) {
+  const raw = decodeURIComponent(slugOrId).trim();
+  if (!raw) return null;
+
+  if (looksLikeCollectionId(raw)) {
+    const byId = await findCollectionById(raw);
+    if (byId) return byId;
+  }
+
+  const nav = await findCollectionsNav();
+  const match = nav.find((collection) => slugifyCollectionName(collection.name) === raw);
+  if (match) {
+    return findCollectionById(match._id);
+  }
+
+  return findCollectionById(raw);
 }
 
 export async function createCollection(input: {

@@ -8,6 +8,7 @@ import { FaSave, FaEdit, FaCheck } from 'react-icons/fa';
 import UploadCompressionInfo from '../../components/admin/UploadCompressionInfo';
 import type { CompressionStats } from '@/app/lib/images';
 import { invalidateFetchCache } from '@/app/lib/client-fetch-cache';
+import { getCollectionPath } from '@/app/lib/product-display';
 
 interface Slide {
   image: string;
@@ -376,7 +377,7 @@ export default function SliderAdmin() {
                                       type="button"
                                       className="block w-full text-left px-5 py-3 hover:bg-gray-50 text-gray-900 text-base font-semibold"
                                       onClick={() => {
-                                        updateSlide(index, 'link', `/collections/${collection._id}`);
+                                        updateSlide(index, 'link', getCollectionPath(collection));
                                         setShowCollectionDropdown(null);
                                       }}
                                     >

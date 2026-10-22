@@ -1220,17 +1220,56 @@ export default function OrdersPage() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-center mt-8">
-                <nav className="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button
-                      key={i + 1}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1 ? 'z-10 bg-[#0a9945] border-[#0a9945] text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'} focus:z-20 focus:outline-none`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+              <div className="mt-8 flex justify-center">
+                <nav className="inline-flex flex-wrap items-center justify-center gap-1" aria-label="Pagination">
+                  {(() => {
+                    const items: Array<number | 'ellipsis'> = [];
+                    if (totalPages <= 7) {
+                      for (let i = 1; i <= totalPages; i++) items.push(i);
+                    } else {
+                      items.push(1);
+                      const showLeft = currentPage > 3;
+                      const showRight = currentPage < totalPages - 2;
+                      if (showLeft) items.push('ellipsis');
+                      else items.push(2);
+                      const start = Math.max(2, currentPage - 1);
+                      const end = Math.min(totalPages - 1, currentPage + 1);
+                      for (let page = start; page <= end; page++) {
+                        if (page !== 1 && page !== totalPages && !items.includes(page)) {
+                          items.push(page);
+                        }
+                      }
+                      if (showRight) items.push('ellipsis');
+                      else if (!items.includes(totalPages - 1) && totalPages - 1 > 1) {
+                        items.push(totalPages - 1);
+                      }
+                      if (!items.includes(totalPages)) items.push(totalPages);
+                    }
+                    return items.map((item, index) =>
+                      item === 'ellipsis' ? (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-2 py-2 text-sm text-gray-400"
+                          aria-hidden
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setCurrentPage(item)}
+                          className={`relative inline-flex min-w-10 items-center justify-center rounded-md border px-3 py-2 text-sm font-medium focus:z-20 focus:outline-none ${
+                            currentPage === item
+                              ? 'z-10 border-[#0a9945] bg-[#0a9945] text-white'
+                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    );
+                  })()}
                 </nav>
               </div>
             )}

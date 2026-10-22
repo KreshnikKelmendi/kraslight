@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   deleteCollectionById,
   findCollectionById,
+  findCollectionBySlugOrId,
   updateCollection,
 } from '@/app/lib/supabase/collections';
 import { deleteImageAsset } from '@/app/lib/cloudinary';
@@ -12,7 +13,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const collection = await findCollectionById(id);
+    const collection = await findCollectionBySlugOrId(id);
     if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(collection);
   } catch (error) {

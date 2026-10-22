@@ -15,6 +15,7 @@ import GlobalDiscountRibbon from './GlobalDiscountRibbon';
 import { IMAGE_PLACEHOLDER, optimizeImageUrl } from '@/app/lib/images';
 import { useStorefrontData } from '@/app/lib/StorefrontDataContext';
 import { STORE_ADDRESS } from '@/app/lib/contact';
+import { getCollectionPath } from '@/app/lib/product-display';
 
 const MOBILE_MENU_TRANSITION_MS = 420;
 const MOBILE_MENU_STAGGER_MS = 75;
@@ -218,7 +219,7 @@ const Header = () => {
             : 'max-height 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease',
         }}
       >
-        <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:px-10 2xl:px-24">
+        <div className="bg-gradient-to-r from-[#0a9945] to-gray-800 text-white py-3 px-4 lg:py-2 lg:px-10 2xl:px-24">
           <div className="flex items-center justify-between text-[12px] lg:text-sm">
             <div className="flex items-center space-x-3">
               <span className="text-gray-300 font-medium">{STORE_ADDRESS}</span>
@@ -241,7 +242,7 @@ const Header = () => {
         <div className="mx-auto px-2 lg:px-10 2xl:px-24">
             <div
               className={`flex items-center justify-between transition-[height] duration-300 ease-out ${
-                isScrolled ? 'h-16 lg:h-20' : 'h-20 lg:h-28'
+                isScrolled ? 'h-16 lg:h-16' : 'h-20 lg:h-[5.25rem]'
               }`}
             >
               <div className="lg:hidden relative z-20">
@@ -263,7 +264,7 @@ const Header = () => {
                   height={56}
                   priority
                   className={`h-auto object-contain transition-[width] duration-300 ease-out ${
-                    isScrolled ? 'w-[148px]' : 'w-[160px]'
+                    isScrolled ? 'w-[132px]' : 'w-[148px]'
                   }`}
                 />
               </Link>
@@ -358,7 +359,7 @@ const Header = () => {
                               return (
                               <Link
                                 key={col._id}
-                                href={`/collections/${col._id}`}
+                                href={getCollectionPath(col)}
                                 onClick={() => {
                                   setNavigatingCollectionId(col._id);
                                   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -571,7 +572,7 @@ const Header = () => {
                                   isOpen={isMobileMenuOpen && isMobileProduktetNdricimitOpen}
                                 >
                                   <Link
-                                    href={`/collections/${col._id}`}
+                                    href={getCollectionPath(col)}
                                     onClick={() => {
                                       scrollToTop();
                                       closeAllMobileDropdowns();
