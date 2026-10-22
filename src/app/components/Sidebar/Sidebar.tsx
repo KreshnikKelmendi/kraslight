@@ -15,23 +15,22 @@ import {
   FiBookOpen,
   FiX,
 } from 'react-icons/fi';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type SidebarProps = {
   mobileOpen?: boolean;
   onClose?: () => void;
 };
 
-function SidebarNav({
+function SidebarContent({
   onClose,
-  showCloseButton,
+  showCloseButton = false,
 }: {
   onClose?: () => void;
   showCloseButton?: boolean;
 }) {
   const { logout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const { count: pendingOrderCount } = usePendingOrderCount();
 
   const handleSignOut = () => {
@@ -44,29 +43,23 @@ function SidebarNav({
     onClose?.();
   };
 
-  const linkClass = (href: string, exact = false) => {
-    const active = exact
-      ? pathname === href
-      : pathname === href || pathname?.startsWith(`${href}/`);
-    return `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group min-h-11 ${
-      active
-        ? 'bg-white/15 text-white'
-        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-    }`;
-  };
+  const navLinkClass =
+    'flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200 group';
 
   return (
-    <div className="flex h-full min-h-full w-64 flex-col bg-gradient-to-t from-[#0a9945] to-gray-800 shadow-2xl">
-      <div className="border-b border-white/20 p-4">
-        <div className="flex items-center justify-between gap-2 lg:justify-center">
-          <div className="flex flex-1 flex-col items-center">
-            <Image
-              src="/assets/logo/kraslight-logo.png"
-              alt="Kraslight Logo"
-              width={120}
-              height={40}
-              className="h-14 w-auto lg:h-16"
-            />
+    <div className="flex min-h-full h-full w-64 flex-col bg-gradient-to-t from-[#0a9945] to-gray-800 shadow-2xl">
+      <div className="border-b border-white p-4">
+        <div className={`flex items-center ${showCloseButton ? 'justify-between' : 'justify-center'}`}>
+          <div className={showCloseButton ? 'flex-1' : ''}>
+            <div className="flex items-center justify-center">
+              <Image
+                src="/assets/logo/kraslight-logo.png"
+                alt="Kraslight Logo"
+                width={120}
+                height={40}
+                className="h-16 w-auto"
+              />
+            </div>
             <p className="mt-2 text-center text-sm font-light text-slate-400">Admin Panel</p>
           </div>
           {showCloseButton ? (
@@ -82,14 +75,14 @@ function SidebarNav({
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-4 sm:p-6">
-        <Link href="/" onClick={handleNav} className={linkClass('/', true)}>
-          <FiHome className="h-5 w-5 shrink-0 group-hover:text-blue-400" />
+      <nav className="flex-1 space-y-2 p-6">
+        <Link href="/" onClick={handleNav} className={navLinkClass}>
+          <FiHome className="h-5 w-5 transition-colors group-hover:text-blue-400" />
           <span className="font-medium">Go to Website</span>
         </Link>
 
-        <Link href="/admin/orders" onClick={handleNav} className={linkClass('/admin/orders')}>
-          <FiClipboard className="h-5 w-5 shrink-0 group-hover:text-green-400" />
+        <Link href="/admin/orders" onClick={handleNav} className={navLinkClass}>
+          <FiClipboard className="h-5 w-5 shrink-0 transition-colors group-hover:text-green-400" />
           <span className="flex-1 font-medium">Porositë</span>
           {pendingOrderCount > 0 && (
             <span
@@ -101,53 +94,41 @@ function SidebarNav({
           )}
         </Link>
 
-        <Link
-          href="/admin/products/list"
-          onClick={handleNav}
-          className={linkClass('/admin/products/list')}
-        >
-          <FiList className="h-5 w-5 shrink-0 group-hover:text-orange-400" />
+        <Link href="/admin/products/list" onClick={handleNav} className={navLinkClass}>
+          <FiList className="h-5 w-5 transition-colors group-hover:text-orange-400" />
           <span className="font-medium">Lista e Produkteve</span>
         </Link>
 
-        <Link href="/admin/slider" onClick={handleNav} className={linkClass('/admin/slider')}>
-          <FiImage className="h-5 w-5 shrink-0 group-hover:text-pink-400" />
+        <Link href="/admin/slider" onClick={handleNav} className={navLinkClass}>
+          <FiImage className="h-5 w-5 transition-colors group-hover:text-pink-400" />
           <span className="font-medium">Menaxho Slider</span>
         </Link>
 
-        <Link
-          href="/admin/products/collections"
-          onClick={handleNav}
-          className={linkClass('/admin/products/collections')}
-        >
-          <FiList className="h-5 w-5 shrink-0 group-hover:text-indigo-400" />
+        <Link href="/admin/products/collections" onClick={handleNav} className={navLinkClass}>
+          <FiList className="h-5 w-5 transition-colors group-hover:text-indigo-400" />
           <span className="font-medium">Menaxho Koleksionet</span>
         </Link>
 
-        <Link
-          href="/admin/subscribers"
-          onClick={handleNav}
-          className={linkClass('/admin/subscribers')}
-        >
-          <FiMail className="h-5 w-5 shrink-0 group-hover:text-cyan-400" />
+        <Link href="/admin/subscribers" onClick={handleNav} className={navLinkClass}>
+          <FiMail className="h-5 w-5 transition-colors group-hover:text-cyan-400" />
           <span className="font-medium">Abonuesit</span>
         </Link>
       </nav>
 
-      <div className="space-y-2 border-t border-slate-700 p-4 sm:p-6">
+      <div className="space-y-2 border-t border-slate-700 p-6">
         <Link
           href="/admin/udhezime"
           onClick={handleNav}
-          className="group flex min-h-11 items-center space-x-3 rounded-xl border border-amber-500/30 bg-amber-500/20 px-4 py-3 text-amber-300 transition-all duration-200 hover:bg-amber-500/30 hover:text-amber-200"
+          className="group flex items-center space-x-3 rounded-xl border border-amber-500/30 bg-amber-500/20 px-4 py-3 text-amber-300 transition-all duration-200 hover:bg-amber-500/30 hover:text-amber-200"
         >
-          <FiBookOpen className="h-5 w-5 text-amber-400 group-hover:text-amber-300" />
+          <FiBookOpen className="h-5 w-5 text-amber-400 transition-colors group-hover:text-amber-300" />
           <span className="font-semibold">Udhëzime</span>
         </Link>
 
         <button
           type="button"
           onClick={handleSignOut}
-          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-700 hover:text-red-400"
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-700 hover:text-red-400"
         >
           <FiLogOut className="h-4 w-4" />
           Sign Out
@@ -173,10 +154,12 @@ const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
 
   return (
     <>
-      <aside className="fixed left-0 top-0 z-40 hidden h-full overflow-y-auto lg:block">
-        <SidebarNav />
+      {/* Large devices: same fixed sidebar as before */}
+      <aside className="fixed left-0 top-0 z-50 hidden h-full w-64 overflow-y-auto lg:block">
+        <SidebarContent />
       </aside>
 
+      {/* Mobile: drawer only */}
       <div
         className={`fixed inset-0 z-50 lg:hidden ${
           mobileOpen ? 'pointer-events-auto' : 'pointer-events-none'
@@ -196,7 +179,7 @@ const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <SidebarNav onClose={onClose} showCloseButton />
+          <SidebarContent onClose={onClose} showCloseButton />
         </aside>
       </div>
     </>
