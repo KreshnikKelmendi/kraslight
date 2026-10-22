@@ -263,11 +263,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-2">
-      <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Editoni Produktin</h1>
-          <p className="text-gray-500 mt-2">Përditësoni të dhënat e produktit tuaj këtu.</p>
+    <div className="flex min-h-screen items-start justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-3 py-6 sm:px-4 sm:py-10 lg:items-center">
+      <div className="mx-auto w-full max-w-3xl space-y-6 rounded-2xl bg-white p-4 shadow-xl sm:space-y-8 sm:p-6 lg:p-8">
+        <div className="mb-4 text-center sm:mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Editoni Produktin</h1>
+          <p className="mt-2 text-sm text-gray-500 sm:text-base">Përditësoni të dhënat e produktit tuaj këtu.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}

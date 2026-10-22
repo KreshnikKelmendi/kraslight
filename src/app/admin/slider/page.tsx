@@ -195,12 +195,12 @@ export default function SliderAdmin() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gray-100 p-3 sm:p-4 lg:p-8">
+        <div className="mx-auto max-w-4xl">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-32 bg-gray-200 rounded"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 w-1/4 rounded bg-gray-200"></div>
+            <div className="h-32 rounded bg-gray-200"></div>
+            <div className="h-64 rounded bg-gray-200"></div>
           </div>
         </div>
       </div>
@@ -208,9 +208,9 @@ export default function SliderAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Menaxho Slider</h1>
+    <div className="min-h-screen bg-gray-100 p-3 sm:p-4 lg:p-8">
+      <div className="mx-auto max-w-4xl">
+        <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-3xl">Menaxho Slider</h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -224,9 +224,9 @@ export default function SliderAdmin() {
 
         <form onSubmit={handleSubmit} className="space-y-10">
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <label className="block text-lg font-semibold text-gray-800 mb-1">
+                <label className="mb-1 block text-lg font-semibold text-gray-800">
                   Slides
                 </label>
                 <p className="text-gray-500 text-sm">Add, edit, or remove slides for your homepage slider. Only the image is required.</p>

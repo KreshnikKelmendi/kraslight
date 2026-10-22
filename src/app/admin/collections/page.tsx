@@ -363,10 +363,10 @@ export default function CollectionsAdminPage() {
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
-      <header className="sticky top-0 z-30 w-full border-b border-gray-200 bg-white">
-        <div className="flex w-full items-center justify-between px-4 py-5 lg:px-8">
+      <header className="sticky top-14 z-20 w-full border-b border-gray-200 bg-white lg:top-0 lg:z-30">
+        <div className="flex w-full flex-col gap-3 px-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-5 lg:px-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">Menaxho Koleksionet</h1>
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">Menaxho Koleksionet</h1>
             <p className="mt-1 text-sm text-gray-500">
               Renditja (#1, #2…) shfaqet njësoj në website
             </p>
@@ -374,7 +374,7 @@ export default function CollectionsAdminPage() {
           <button
             type="button"
             onClick={() => setShowForm(!showForm)}
-            className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+            className="min-h-10 shrink-0 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
           >
             {showForm ? "Mbyll" : "Shto Koleksion"}
           </button>
@@ -390,7 +390,7 @@ export default function CollectionsAdminPage() {
         </div>
       )}
 
-      <main className="w-full px-4 py-8 lg:px-8">
+      <main className="w-full px-3 py-5 sm:px-4 sm:py-8 lg:px-8">
         {lastCompression && (
           <UploadCompressionInfo stats={lastCompression} className="mb-6" />
         )}

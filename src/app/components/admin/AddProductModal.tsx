@@ -161,9 +161,9 @@ export default function AddProductModal({ open, onClose, onSuccess }: AddProduct
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !isLoading && !showSuccess && onClose()} />
-      <div className="relative w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+      <div className="relative max-h-[96vh] w-full max-w-6xl overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:rounded-2xl">
         {showSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 px-8 text-center">
             <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-5">
@@ -177,17 +177,17 @@ export default function AddProductModal({ open, onClose, onSuccess }: AddProduct
           </div>
         ) : (
           <>
-            <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-2 border-b bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 sm:px-8 sm:py-2">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Shto Produkt të Ri</h2>
+                <h2 className="text-lg font-bold text-gray-900 sm:text-xl">Shto Produkt të Ri</h2>
                 <p className="text-sm text-gray-600">Shto produkte ndriçimi dhe elektrike</p>
               </div>
-              <button type="button" onClick={onClose} disabled={isLoading} className="p-2 rounded-lg hover:bg-white/80">
+              <button type="button" onClick={onClose} disabled={isLoading} className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-white/80">
                 <FaTimes />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-8 py-4 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 px-4 py-4 sm:px-8">
               {error && (
                 <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">{error}</div>
               )}

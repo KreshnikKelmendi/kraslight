@@ -661,11 +661,11 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
         {/* Header Section */}
-        <div className="mb-12">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bwseidoround font-light text-slate-900 mb-3 tracking-tight">
+        <div className="mb-8 sm:mb-12">
+          <div className="mb-6 text-center sm:mb-8">
+            <h1 className="mb-3 font-bwseidoround text-2xl font-light tracking-tight text-slate-900 sm:text-3xl">
               Menaxhimi i Porosive
             </h1>
             <p className="text-slate-600 text-base font-bwseidoround font-light max-w-2xl mx-auto">

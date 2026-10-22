@@ -539,7 +539,7 @@ function ProductsList() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 lg:p-6">
 
 
       {/* Error Message */}
@@ -587,17 +587,17 @@ function ProductsList() {
 
       {/* Header */}
       <div className="mb-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Lista e Produkteve</h1>
+            <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">Lista e Produkteve</h1>
             <p className="mt-1 text-sm text-gray-500">
               Menaxho të gjitha produktet në sistem
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex min-h-10 flex-1 items-center justify-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:flex-none rounded-md"
             >
               <FaFilter className="mr-2 h-4 w-4" />
               Filtro
@@ -605,7 +605,7 @@ function ProductsList() {
 
             <button
               onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0a9945] hover:bg-[#088038] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0a9945]"
+              className="inline-flex min-h-10 flex-1 items-center justify-center rounded-md border border-transparent bg-[#0a9945] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#088038] focus:outline-none focus:ring-2 focus:ring-[#0a9945] focus:ring-offset-2 sm:flex-none"
             >
               <FaPlus className="mr-2 h-4 w-4" />
               Shto Produkt
@@ -1073,7 +1073,7 @@ function ProductsList() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleEdit(product._id)}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
                             title="Ndrysho"
                           >
                             <FaEdit className="w-4 h-4" />
@@ -1081,7 +1081,7 @@ function ProductsList() {
                           <button
                             onClick={() => handleDelete(product._id)}
                             disabled={deleteLoading === product._id}
-                            className="p-1 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                             title="Fshi"
                           >
                             {deleteLoading === product._id ? (
